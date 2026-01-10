@@ -44,8 +44,6 @@ CRON_SECRET="your-cron-secret-here"
 GEMINI_API_KEY=""
 AIRTABLE_API_KEY=""
 AIRTABLE_BASE_ID=""
-AIRTABLE_TABLE_ID=""
-AIRTABLE_TABLE_NAME=""
 RESEND_API_KEY=""
 ```
 
@@ -307,3 +305,4 @@ In the admin console, go to **News > Integrations** tab:
 - Test individual API endpoints using the admin console
 
 Happy building! 🚀
+

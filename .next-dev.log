@@ -1,0 +1,897 @@
+
+> cucina-labs@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1447ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.2s (584 modules)
+ GET / 200 in 3335ms
+ ✓ Compiled in 107ms (296 modules)
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 1738ms (519 modules)
+ GET /api/auth/session 200 in 2513ms
+ GET /api/auth/session 200 in 2521ms
+ ✓ Compiled /login in 340ms (851 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /login 200 in 398ms
+ GET / 200 in 39ms
+ GET /api/auth/session 200 in 61ms
+ GET /api/auth/session 200 in 60ms
+ GET /login 200 in 22ms
+ GET /api/auth/session 200 in 15ms
+ GET /api/auth/session 200 in 16ms
+ ○ Compiling /api/subscribe ...
+ ✓ Compiled /api/subscribe in 533ms (627 modules)
+ ⨯ Error: Missing API key. Pass it to the constructor `new Resend("re_123")`
+    at new Resend (webpack-internal:///(rsc)/./node_modules/resend/dist/index.mjs:514:15)
+    at eval (webpack-internal:///(rsc)/./app/api/subscribe/route.ts:14:16)
+    at (rsc)/./app/api/subscribe/route.ts (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:132:1)
+    at __webpack_require__ (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/webpack-runtime.js:33:43)
+    at eval (webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2Froute&page=%2Fapi%2Fsubscribe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2Froute.ts&appDir=%2FUsers%2Filiohan%2FDocuments%2FClaude%20Projects%2FCucina%20Labs%202%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2FUsers%2Filiohan%2FDocuments%2FClaude%20Projects%2FCucina%20Labs%202&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!:15:139)
+    at (rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader.js?name=app%2Fapi%2Fsubscribe%2Froute&page=%2Fapi%2Fsubscribe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fsubscribe%2Froute.ts&appDir=%2FUsers%2Filiohan%2FDocuments%2FClaude%20Projects%2FCucina%20Labs%202%2Fapp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=%2FUsers%2Filiohan%2FDocuments%2FClaude%20Projects%2FCucina%20Labs%202&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D! (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:122:1)
+    at __webpack_require__ (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/webpack-runtime.js:33:43)
+    at __webpack_exec__ (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:152:39)
+    at /Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:153:126
+    at __webpack_require__.X (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/webpack-runtime.js:237:21)
+    at /Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:153:47
+    at Object.<anonymous> (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/.next/server/app/api/subscribe/route.js:156:3)
+    at Module._compile (node:internal/modules/cjs/loader:1760:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1480:32)
+    at Module._load (node:internal/modules/cjs/loader:1299:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:244:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1503:12)
+    at mod.require (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:152:16)
+    at requirePage (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/require.js:109:84)
+    at /Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/load-components.js:103:84
+    at async loadComponentsImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/load-components.js:103:26)
+    at async DevServer.findPageComponentsImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/next-server.js:714:36)
+    at async DevServer.findPageComponents (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/base-server.js:818:17)
+    at async /Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/Users/iliohan/Documents/Claude Projects/Cucina Labs 2/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  page: '/api/subscribe'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 606ms (1160 modules)
+ POST /api/subscribe 500 in 1400ms
+ GET /api/auth/session 200 in 36ms
+ GET /login 200 in 278ms
+ GET /api/auth/session 200 in 46ms
+ GET /api/auth/session 200 in 53ms
+ ✓ Compiled in 760ms (1090 modules)
+ ✓ Compiled in 144ms (505 modules)
+ GET /api/auth/providers 200 in 48ms
+ GET /api/auth/csrf 200 in 6ms
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 4799ms
+ ✓ Compiled in 1188ms (1090 modules)
+ GET /api/auth/session 200 in 474ms
+ ✓ Compiled /middleware in 497ms (174 modules)
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 1314ms (1376 modules)
+ GET /admin?_rsc=ejla4 200 in 50ms
+ ✓ Compiled /api/integrations in 215ms (774 modules)
+ GET /api/integrations 200 in 325ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 366ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ ✓ Compiled /api/airtable/tables in 149ms (776 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ POST /api/airtable/tables 200 in 1971ms
+ POST /api/airtable/tables 200 in 1958ms
+ GET /api/auth/csrf 200 in 82ms
+ POST /api/auth/signout 200 in 20ms
+ GET /login 200 in 103ms
+ GET /api/auth/session 200 in 9ms
+ GET /api/auth/session 200 in 14ms
+ GET /api/auth/providers 200 in 14ms
+ GET /api/auth/csrf 200 in 8ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 119ms
+ GET /api/auth/session 200 in 8ms
+ GET /admin?_rsc=ejla4 200 in 14ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 18ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 20ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 314ms
+ POST /api/airtable/tables 200 in 339ms
+ GET /api/auth/csrf 200 in 31ms
+ POST /api/auth/signout 200 in 7ms
+ GET /login 200 in 71ms
+ GET /api/auth/session 200 in 10ms
+ GET /api/auth/session 200 in 11ms
+ ✓ Compiled in 330ms (653 modules)
+ ✓ Compiled in 428ms (1429 modules)
+ GET /login 200 in 122ms
+ GET /api/auth/session 200 in 99ms
+ GET /api/auth/session 200 in 105ms
+ GET /api/auth/providers 200 in 30ms
+ GET /api/auth/csrf 200 in 11ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 160ms
+ GET /api/auth/session 200 in 8ms
+ GET /admin?_rsc=ejla4 200 in 35ms
+ GET /api/integrations 200 in 139ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 162ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ POST /api/airtable/tables 200 in 410ms
+ POST /api/airtable/tables 200 in 439ms
+ GET /api/auth/csrf 200 in 17ms
+ POST /api/auth/signout 200 in 13ms
+ GET /login 200 in 25ms
+ GET /api/auth/session 200 in 11ms
+ GET /api/auth/session 200 in 10ms
+ ○ Compiling /api/subscribe ...
+ ✓ Compiled /api/subscribe in 579ms (824 modules)
+ POST /api/subscribe 503 in 659ms
+ ✓ Compiled in 527ms (1477 modules)
+ ✓ Compiled in 214ms (1477 modules)
+ POST /api/subscribe 503 in 34ms
+ GET / 200 in 48ms
+ GET /api/auth/session 200 in 26ms
+ GET /api/auth/session 200 in 21ms
+ POST /api/subscribe 503 in 9ms
+ POST /api/subscribe 503 in 12ms
+ ✓ Compiled in 415ms (1472 modules)
+ POST /api/subscribe 503 in 55ms
+ ✓ Compiled in 401ms (1472 modules)
+ POST /api/subscribe 503 in 11ms
+ POST /api/subscribe 503 in 278ms
+ ✓ Compiled in 625ms (1386 modules)
+ ○ Compiling /api/subscribe ...
+ ✓ Compiled /api/subscribe in 655ms (818 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/subscribe 200 in 1692ms
+ ✓ Compiled in 799ms (1386 modules)
+ GET / 200 in 146ms
+ ✓ Compiled /api/auth/[...nextauth] in 256ms (737 modules)
+ GET /api/auth/session 200 in 388ms
+ GET /api/auth/session 200 in 388ms
+ GET / 200 in 56ms
+ GET /api/auth/session 200 in 40ms
+ GET /api/auth/session 200 in 36ms
+ ✓ Compiled /api/subscribe in 255ms (820 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/subscribe 200 in 1356ms
+ GET /login 200 in 127ms
+ GET /api/auth/session 200 in 47ms
+ GET /api/auth/session 200 in 44ms
+ GET /api/auth/providers 200 in 12ms
+ GET /api/auth/csrf 200 in 8ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 170ms
+ GET /api/auth/session 200 in 8ms
+ GET /admin?_rsc=ejla4 200 in 11ms
+ ○ Compiling /api/integrations ...
+ ✓ Compiled /api/integrations in 568ms (822 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 601ms
+ GET /api/integrations 200 in 716ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ ✓ Compiled /api/airtable/tables in 135ms (824 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ POST /api/airtable/tables 200 in 1941ms
+ POST /api/airtable/tables 200 in 2095ms
+ ✓ Compiled in 660ms (1429 modules)
+ GET /admin?_rsc=ejla4 200 in 143ms
+ ✓ Compiled in 189ms (653 modules)
+ GET /admin?_rsc=ejla4 200 in 31ms
+ ✓ Compiled in 557ms (1429 modules)
+ GET /admin?_rsc=ejla4 200 in 123ms
+ ✓ Compiled in 718ms (653 modules)
+ GET /admin?_rsc=ejla4 200 in 28ms
+ ✓ Compiled in 988ms (1386 modules)
+ GET /admin?_rsc=ejla4 200 in 112ms
+ ✓ Compiled /api/auth/[...nextauth] in 336ms (737 modules)
+ GET /api/auth/session 200 in 471ms
+ GET /api/auth/csrf 200 in 11ms
+ POST /api/auth/signout 200 in 8ms
+ GET /login 200 in 105ms
+ GET /api/auth/session 200 in 11ms
+ GET /api/auth/session 200 in 11ms
+ ○ Compiling /api/subscribe ...
+ ✓ Compiled /api/subscribe in 610ms (820 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Failed to send welcome email: Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.
+ POST /api/subscribe 200 in 1551ms
+ GET /login 200 in 125ms
+ GET /api/auth/session 200 in 96ms
+ GET /api/auth/session 200 in 99ms
+ GET /api/auth/providers 200 in 34ms
+ GET /api/auth/csrf 200 in 16ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 109ms
+ GET /api/auth/session 200 in 7ms
+ GET /admin?_rsc=ejla4 200 in 15ms
+ ✓ Compiled /api/integrations in 411ms (822 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 465ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 568ms
+ ○ Compiling /api/airtable/tables ...
+ ✓ Compiled /api/airtable/tables in 644ms (824 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ ✓ Compiled /api/email-templates/welcome in 236ms (826 modules)
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 323ms
+ GET /api/email-templates/welcome 200 in 319ms
+ POST /api/airtable/tables 200 in 2162ms
+ POST /api/airtable/tables 200 in 2088ms
+prisma:query INSERT INTO "public"."EmailTemplate" ("id","type","html","enabled","updatedAt","createdAt") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("type") DO UPDATE SET "html" = $7, "enabled" = $8, "updatedAt" = $9 WHERE ("public"."EmailTemplate"."type" = $10 AND 1=1) RETURNING "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt"
+ POST /api/email-templates/welcome 200 in 149ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 55ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 56ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ POST /api/airtable/tables 200 in 213ms
+ POST /api/airtable/tables 200 in 237ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 21ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 20ms
+ ✓ Compiled /api/sequences in 240ms (828 modules)
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 319ms
+ GET /api/sequences 200 in 318ms
+ GET /api/email-templates/welcome 200 in 11ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 14ms
+ GET /api/sequences 200 in 20ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 24ms
+ GET /api/email-templates/welcome 200 in 19ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 21ms
+ ✓ Compiled /api/ingestion/config in 236ms (830 modules)
+ ✓ Compiled (832 modules)
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 508ms
+ GET /api/ingestion/config 200 in 466ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 171ms
+ GET /api/email-templates/welcome 200 in 173ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 558ms
+ GET /api/rss-sources 200 in 516ms
+prisma:query SELECT 1
+prisma:query INSERT INTO "public"."EmailTemplate" ("id","type","html","enabled","updatedAt","createdAt") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("type") DO UPDATE SET "html" = $7, "enabled" = $8, "updatedAt" = $9 WHERE ("public"."EmailTemplate"."type" = $10 AND 1=1) RETURNING "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt"
+ POST /api/email-templates/welcome 200 in 54ms
+ GET /api/auth/csrf 200 in 23ms
+ POST /api/auth/signout 200 in 8ms
+ GET /login 200 in 80ms
+ GET /api/auth/session 200 in 76ms
+ GET /api/auth/session 200 in 85ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Failed to send welcome email: Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.
+ POST /api/subscribe 200 in 862ms
+ ✓ Compiled in 1357ms (1386 modules)
+ GET / 200 in 109ms
+ ✓ Compiled /api/auth/[...nextauth] in 226ms (737 modules)
+ GET /api/auth/session 200 in 339ms
+ GET /api/auth/session 200 in 347ms
+ ○ Compiling /api/subscribe ...
+ ✓ Compiled /api/subscribe in 539ms (820 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/subscribe 200 in 3062ms
+ GET /login 200 in 148ms
+ GET /api/auth/session 200 in 18ms
+ GET /api/auth/session 200 in 20ms
+ GET /api/auth/providers 200 in 12ms
+ GET /api/auth/csrf 200 in 6ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 156ms
+ GET /api/auth/session 200 in 7ms
+ GET /admin?_rsc=ejla4 200 in 10ms
+ ✓ Compiled /api/integrations in 286ms (822 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 321ms
+ GET /api/integrations 200 in 548ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ ✓ Compiled /api/airtable/tables in 411ms (824 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ ✓ Compiled /api/email-templates/welcome in 181ms (826 modules)
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 227ms
+ GET /api/email-templates/welcome 200 in 229ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 2092ms
+ POST /api/airtable/tables 200 in 1858ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 16ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 20ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 130ms
+ POST /api/airtable/tables 200 in 167ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query UPDATE "public"."ApiKey" SET "resendFromName" = $1, "resendFromEmail" = $2, "updatedAt" = $3 WHERE ("public"."ApiKey"."service" = $4 AND 1=1) RETURNING "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt"
+ POST /api/integrations 200 in 45ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 7ms
+ ✓ Compiled /api/sequences in 174ms (828 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 238ms
+ GET /api/sequences 200 in 239ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 79ms
+ GET /api/integrations 200 in 74ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 272ms
+ POST /api/airtable/tables 200 in 284ms
+ GET /api/auth/csrf 200 in 17ms
+ POST /api/auth/signout 200 in 6ms
+ GET /login 200 in 49ms
+ GET /api/auth/session 200 in 16ms
+ GET /api/auth/session 200 in 12ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/subscribe 200 in 2050ms
+ GET /login 200 in 24ms
+ GET /api/auth/session 200 in 53ms
+ GET /api/auth/session 200 in 33ms
+ GET /api/auth/providers 200 in 23ms
+ GET /api/auth/csrf 200 in 15ms
+prisma:query SELECT "public"."User"."id", "public"."User"."email", "public"."User"."password", "public"."User"."role", "public"."User"."createdAt", "public"."User"."updatedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/auth/callback/credentials 200 in 96ms
+ GET /api/auth/session 200 in 8ms
+ GET /admin?_rsc=ejla4 200 in 23ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 28ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 53ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 367ms
+ POST /api/airtable/tables 200 in 372ms
+ ✓ Compiled /api/airtable/bases in 398ms (828 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/bases 200 in 613ms
+ ✓ Compiled /api/ingestion/config in 261ms (830 modules)
+ ✓ Compiled (832 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 496ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 494ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 589ms
+ GET /api/ingestion/config 200 in 589ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query UPDATE "public"."IngestionConfig" SET "schedule" = $1, "time" = $2, "timezone" = $3, "timeFrame" = $4, "systemPrompt" = $5, "userPrompt" = $6, "updatedAt" = $7 WHERE ("public"."IngestionConfig"."id" = $8 AND 1=1) RETURNING "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt"
+ POST /api/ingestion/config 200 in 66ms
+ ○ Compiling /api/ingestion/test ...
+ ✓ Compiled /api/ingestion/test in 656ms (999 modules)
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE "public"."RssSource"."enabled" = $1 OFFSET $2
+(node:81356) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 70ms
+ GET /api/sequences 200 in 79ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ ✓ Compiled /api/sequences/defaults in 303ms (1001 modules)
+ ✓ Compiled (1003 modules)
+ GET /api/sequences/defaults 200 in 513ms
+ GET /api/sequences/defaults 200 in 515ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 655ms
+ GET /api/resend/audiences 200 in 665ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable error: AirtableError {
+  error: 'NOT_FOUND',
+  message: 'Could not find what you are looking for',
+  statusCode: 404
+}
+prisma:query INSERT INTO "public"."Article" ("id","title","category","creator","aiSummary","whyItMatters","businessValue","publishedDate","sourceLink","canonicalLink","imageLink","ingestedAt","daysSincePublished","isRecent") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("canonicalLink") DO UPDATE SET "title" = $15, "sourceLink" = $16, "imageLink" = $17, "ingestedAt" = $18 WHERE ("public"."Article"."canonicalLink" = $19 AND 1=1) RETURNING "public"."Article"."id", "public"."Article"."title", "public"."Article"."category", "public"."Article"."creator", "public"."Article"."aiSummary", "public"."Article"."whyItMatters", "public"."Article"."businessValue", "public"."Article"."publishedDate", "public"."Article"."sourceLink", "public"."Article"."canonicalLink", "public"."Article"."imageLink", "public"."Article"."ingestedAt", "public"."Article"."daysSincePublished", "public"."Article"."isRecent"
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable error: AirtableError {
+  error: 'NOT_FOUND',
+  message: 'Could not find what you are looking for',
+  statusCode: 404
+}
+prisma:query INSERT INTO "public"."Article" ("id","title","category","creator","aiSummary","whyItMatters","businessValue","publishedDate","sourceLink","canonicalLink","imageLink","ingestedAt","daysSincePublished","isRecent") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("canonicalLink") DO UPDATE SET "title" = $15, "sourceLink" = $16, "imageLink" = $17, "ingestedAt" = $18 WHERE ("public"."Article"."canonicalLink" = $19 AND 1=1) RETURNING "public"."Article"."id", "public"."Article"."title", "public"."Article"."category", "public"."Article"."creator", "public"."Article"."aiSummary", "public"."Article"."whyItMatters", "public"."Article"."businessValue", "public"."Article"."publishedDate", "public"."Article"."sourceLink", "public"."Article"."canonicalLink", "public"."Article"."imageLink", "public"."Article"."ingestedAt", "public"."Article"."daysSincePublished", "public"."Article"."isRecent"
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable error: AirtableError {
+  error: 'NOT_FOUND',
+  message: 'Could not find what you are looking for',
+  statusCode: 404
+}
+prisma:query INSERT INTO "public"."Article" ("id","title","category","creator","aiSummary","whyItMatters","businessValue","publishedDate","sourceLink","canonicalLink","imageLink","ingestedAt","daysSincePublished","isRecent") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("canonicalLink") DO UPDATE SET "title" = $15, "sourceLink" = $16, "imageLink" = $17, "ingestedAt" = $18 WHERE ("public"."Article"."canonicalLink" = $19 AND 1=1) RETURNING "public"."Article"."id", "public"."Article"."title", "public"."Article"."category", "public"."Article"."creator", "public"."Article"."aiSummary", "public"."Article"."whyItMatters", "public"."Article"."businessValue", "public"."Article"."publishedDate", "public"."Article"."sourceLink", "public"."Article"."canonicalLink", "public"."Article"."imageLink", "public"."Article"."ingestedAt", "public"."Article"."daysSincePublished", "public"."Article"."isRecent"
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable error: AirtableError {
+  error: 'NOT_FOUND',
+  message: 'Could not find what you are looking for',
+  statusCode: 404
+}
+prisma:query INSERT INTO "public"."Article" ("id","title","category","creator","aiSummary","whyItMatters","businessValue","publishedDate","sourceLink","canonicalLink","imageLink","ingestedAt","daysSincePublished","isRecent") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("canonicalLink") DO UPDATE SET "title" = $15, "sourceLink" = $16, "imageLink" = $17, "ingestedAt" = $18 WHERE ("public"."Article"."canonicalLink" = $19 AND 1=1) RETURNING "public"."Article"."id", "public"."Article"."title", "public"."Article"."category", "public"."Article"."creator", "public"."Article"."aiSummary", "public"."Article"."whyItMatters", "public"."Article"."businessValue", "public"."Article"."publishedDate", "public"."Article"."sourceLink", "public"."Article"."canonicalLink", "public"."Article"."imageLink", "public"."Article"."ingestedAt", "public"."Article"."daysSincePublished", "public"."Article"."isRecent"
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable error: AirtableError {
+  error: 'NOT_FOUND',
+  message: 'Could not find what you are looking for',
+  statusCode: 404
+}
+prisma:query INSERT INTO "public"."Article" ("id","title","category","creator","aiSummary","whyItMatters","businessValue","publishedDate","sourceLink","canonicalLink","imageLink","ingestedAt","daysSincePublished","isRecent") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("canonicalLink") DO UPDATE SET "title" = $15, "sourceLink" = $16, "imageLink" = $17, "ingestedAt" = $18 WHERE ("public"."Article"."canonicalLink" = $19 AND 1=1) RETURNING "public"."Article"."id", "public"."Article"."title", "public"."Article"."category", "public"."Article"."creator", "public"."Article"."aiSummary", "public"."Article"."whyItMatters", "public"."Article"."businessValue", "public"."Article"."publishedDate", "public"."Article"."sourceLink", "public"."Article"."canonicalLink", "public"."Article"."imageLink", "public"."Article"."ingestedAt", "public"."Article"."daysSincePublished", "public"."Article"."isRecent"
+ POST /api/ingestion/test 200 in 32112ms
+ ✓ Compiled /api/sequences/preview in 426ms (1004 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable config check: {
+  hasKey: true,
+  hasBaseId: true,
+  hasTableId: true,
+  baseId: 'appYMSgNlSoNymJZ6',
+  tableId: 'tblMMPHIYmhLypPhz'
+}
+Attempting to fetch articles from Airtable...
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Fetched 20 articles from Airtable
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Using Gemini model: gemini-2.0-flash-exp
+Gemini raw response: ```json
+{
+  "subject": "AI Product Briefing - Daily Digest for 2026-01-08",
+  "intro": "Today's briefing covers key developments in AI, including the potential global expansion of AI price wars, growing regulatory scrutiny of AI chip deals, and advancements in AI agent runtimes for enterprise applications. Product Managers should be aware of these factors as they develop and deploy AI-powered products.",
+  "featured_story": {
+    "id": 1,
+    "headline": "China’s Zhipu Says AI Price War Will Spr...
+Parsed Gemini response keys: [
+  'subject',
+  'intro',
+  'featured_story',
+  'top_stories',
+  'looking_ahead',
+  'article_ids_selected'
+]
+ POST /api/sequences/preview 200 in 4859ms
+ ✓ Compiled /api/sequences/test in 389ms (994 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Using Gemini model: gemini-2.0-flash-exp
+Gemini raw response: ```json
+{
+  "subject": "AI Product Briefing - Daily Digest for 2026-01-08",
+  "intro": "Today's briefing covers China's AI ambitions, on-device AI advancements, and the growing importance of responsible AI practices. Key developments include strategic IPOs and the expansion of AI into healthcare.",
+  "featured_story": {
+    "id": 12,
+    "headline": "Nous Research's NousCoder-14B: Open-Source Coding Model Rivals Claude Code",
+    "why_this_matters": "The release of NousCoder-14B highlights the r...
+Parsed Gemini response keys: [
+  'subject',
+  'intro',
+  'featured_story',
+  'top_stories',
+  'looking_ahead',
+  'article_ids_selected'
+]
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Sending test email to jim.iliohan@gmail.com from Cucina News <hello@jimmy-iliohan.com>
+ POST /api/sequences/test 200 in 5372ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 44ms
+ ✓ Compiled /api/email-templates/welcome in 197ms (939 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 263ms
+ GET /api/email-templates/welcome 200 in 301ms
+ GET /api/sequences 200 in 11ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 12ms
+ ✓ Compiled /api/ingestion/config in 180ms (941 modules)
+ ✓ Compiled (943 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 343ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 346ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 355ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 359ms
+ ✓ Compiled /api/integrations in 268ms (945 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 297ms
+ GET /api/integrations 200 in 299ms
+ ✓ Compiled /api/airtable/tables in 113ms (947 modules)
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 121ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 122ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ GET /api/email-templates/welcome 200 in 13ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 16ms
+ POST /api/airtable/tables 200 in 661ms
+ POST /api/airtable/tables 200 in 697ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 85ms
+ GET /api/sequences 200 in 79ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 1044ms (737 modules)
+ GET /api/auth/session 200 in 1171ms
+ ○ Compiling /api/ingestion/config ...
+ ✓ Compiled /api/ingestion/config in 671ms (772 modules)
+ ✓ Compiled (776 modules)
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 788ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 792ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 1152ms
+ GET /api/integrations 200 in 1185ms
+ GET /api/rss-sources 200 in 793ms
+ GET /api/rss-sources 200 in 800ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ ✓ Compiled /api/email-templates/welcome in 155ms (778 modules)
+ ✓ Compiled (780 modules)
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 574ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 597ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 558ms
+ GET /api/email-templates/welcome 200 in 559ms
+ GET /api/sequences 200 in 12ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 13ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 12ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 16ms
+ GET /api/ingestion/config 200 in 16ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 17ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 16ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 19ms
+ ✓ Compiled /api/airtable/tables in 189ms (782 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+ POST /api/airtable/tables 200 in 2066ms
+ POST /api/airtable/tables 200 in 2097ms
+ ✓ Compiled /api/airtable/bases in 363ms (784 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/bases 200 in 563ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 23ms
+ GET /api/ingestion/config 200 in 27ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 28ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 32ms
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 22ms
+ GET /api/sequences 200 in 28ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ ✓ Compiled /api/sequences/defaults in 300ms (786 modules)
+ ✓ Compiled (788 modules)
+ GET /api/sequences/defaults 200 in 489ms
+ GET /api/sequences/defaults 200 in 488ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 705ms
+ GET /api/resend/audiences 200 in 719ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 13ms
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/sequences/defaults 200 in 223ms
+ GET /api/sequences/defaults 200 in 223ms
+ GET /api/resend/audiences 200 in 333ms
+ GET /api/resend/audiences 200 in 412ms
+ ✓ Compiled in 1481ms (1386 modules)
+ ✓ Compiled in 235ms (653 modules)
+ GET /admin?_rsc=ejla4 200 in 156ms
+ GET /admin?_rsc=ejla4 200 in 15ms
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 1052ms (737 modules)
+ GET /api/auth/session 200 in 1257ms
+ GET /admin 200 in 170ms
+ ✓ Compiled /api/integrations in 163ms (774 modules)
+ GET /api/auth/session 200 in 290ms
+ GET /api/auth/session 200 in 291ms
+prisma:query SELECT 1
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 395ms
+ GET /api/integrations 200 in 397ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ ✓ Compiled /api/airtable/tables in 225ms (776 modules)
+ ✓ Compiled /api/sequences in 127ms (778 modules)
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE "public"."ApiKey"."service" IN ($1,$2) OFFSET $3
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 332ms
+ GET /api/sequences 200 in 333ms
+ ✓ Compiled /api/sequences/defaults in 155ms (780 modules)
+ ✓ Compiled (782 modules)
+ POST /api/airtable/tables 200 in 1982ms
+ GET /api/sequences/defaults 200 in 328ms
+ GET /api/sequences/defaults 200 in 330ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 1992ms
+ GET /api/resend/audiences 200 in 507ms
+ GET /api/resend/audiences 200 in 514ms
+ ○ Compiling /api/sequences/preview ...
+ ✓ Compiled /api/sequences/preview in 511ms (941 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Airtable config check: {
+  hasKey: true,
+  hasBaseId: true,
+  hasTableId: true,
+  baseId: 'appYMSgNlSoNymJZ6',
+  tableId: 'tblMMPHIYmhLypPhz'
+}
+Attempting to fetch articles from Airtable...
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Fetched 20 articles from Airtable
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Using Gemini model: gemini-2.0-flash-exp
+Gemini raw response: ```json
+{
+  "subject": "AI Product Briefing - Daily Digest for 2026-01-08",
+  "intro": "Today's briefing covers key developments in AI, including the potential spread of price wars internationally, Lenovo's advancements in on-device AI, and increasing regulatory scrutiny of cross-border AI deals. Product managers need to consider these factors when planning their AI product strategies and navigating the competitive landscape.",
+  "featured_story": {
+    "id": 1,
+    "headline": "China’s Zhipu Sa...
+Parsed Gemini response keys: [
+  'subject',
+  'intro',
+  'featured_story',
+  'top_stories',
+  'looking_ahead',
+  'article_ids_selected'
+]
+ POST /api/sequences/preview 200 in 5237ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 38ms
+ GET /admin 200 in 121ms
+ GET /api/integrations 200 in 31ms
+ GET /api/integrations 200 in 27ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/auth/session 200 in 23ms
+ GET /api/auth/session 200 in 27ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ POST /api/airtable/tables 200 in 267ms
+ GET /api/sequences 200 in 19ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 24ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/sequences/defaults 200 in 59ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/sequences/defaults 200 in 68ms
+ GET /api/resend/audiences 200 in 181ms
+ GET /api/resend/audiences 200 in 239ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 36ms
+ ✓ Compiled in 798ms (1435 modules)
+ GET /admin?_rsc=1uqa8 200 in 105ms
+ GET /api/sequences/defaults 200 in 67ms
+ GET /api/sequences/defaults 200 in 70ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 520ms
+ GET /api/resend/audiences 200 in 551ms
+prisma:query INSERT INTO "public"."Sequence" ("id","name","audienceId","schedule","dayOfWeek","time","timezone","systemPrompt","userPrompt","status","createdAt","updatedAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt"
+ POST /api/sequences 201 in 90ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 14ms
+ ✓ Compiled in 1085ms (1429 modules)
+ ✓ Compiled in 1ms (776 modules)
+ ✓ Compiled in 0ms (776 modules)
+ ✓ Compiled in 0ms (776 modules)
+prisma:query SELECT 1
+prisma:query SELECT 1
+ GET /api/sequences 200 in 671ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 717ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /admin?_rsc=1uqa8 200 in 491ms
+ GET /api/resend/audiences 200 in 956ms
+ GET /api/resend/audiences 200 in 957ms
+ ✓ Compiled in 406ms (1427 modules)
+ GET /admin?_rsc=1uqa8 200 in 43ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 322ms
+ GET /api/resend/audiences 200 in 317ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 27ms
+ ✓ Compiled /api/email-templates/welcome in 287ms (776 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 328ms
+ GET /api/email-templates/welcome 200 in 327ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/sequences 200 in 38ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT 1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 44ms
+ GET /api/resend/audiences 200 in 167ms
+ GET /api/resend/audiences 200 in 184ms
+ GET /api/email-templates/welcome 200 in 44ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 45ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 37ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 27ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Failed to fetch audiences from Resend: {"statusCode":429,"message":"Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.","name":"rate_limit_exceeded"}
+ GET /api/resend/audiences 200 in 76ms
+Failed to fetch audiences from Resend: {"statusCode":429,"message":"Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.","name":"rate_limit_exceeded"}
+ GET /api/resend/audiences 200 in 112ms
+ ✓ Compiled /api/ingestion/config in 155ms (778 modules)
+ ✓ Compiled (780 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 280ms
+ GET /api/rss-sources 200 in 282ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 285ms
+ GET /api/ingestion/config 200 in 285ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+ GET /api/sequences 200 in 36ms
+ GET /api/sequences 200 in 45ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 109ms
+ GET /api/resend/audiences 200 in 110ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 15ms
+prisma:query SELECT "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt" FROM "public"."EmailTemplate" WHERE ("public"."EmailTemplate"."type" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/email-templates/welcome 200 in 15ms
+prisma:query INSERT INTO "public"."EmailTemplate" ("id","type","html","enabled","updatedAt","createdAt") VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT ("type") DO UPDATE SET "html" = $7, "enabled" = $8, "updatedAt" = $9 WHERE ("public"."EmailTemplate"."type" = $10 AND 1=1) RETURNING "public"."EmailTemplate"."id", "public"."EmailTemplate"."type", "public"."EmailTemplate"."subject", "public"."EmailTemplate"."html", "public"."EmailTemplate"."enabled", "public"."EmailTemplate"."updatedAt", "public"."EmailTemplate"."createdAt"
+ POST /api/email-templates/welcome 200 in 30ms
+ GET /api/sequences 200 in 21ms
+ GET /api/sequences 200 in 25ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 158ms
+ GET /api/resend/audiences 200 in 177ms
+ GET /api/rss-sources 200 in 16ms
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 17ms
+ GET /api/ingestion/config 200 in 18ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+ GET /api/rss-sources 200 in 19ms
+ GET /api/sequences 200 in 42ms
+ GET /api/sequences 200 in 46ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+Failed to fetch audiences from Resend: {"statusCode":429,"message":"Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.","name":"rate_limit_exceeded"}
+ GET /api/resend/audiences 200 in 100ms
+Failed to fetch audiences from Resend: {"statusCode":429,"message":"Too many requests. You can only make 2 requests per second. See rate limit response headers for more information. Or contact support to increase rate limit.","name":"rate_limit_exceeded"}
+ GET /api/resend/audiences 200 in 106ms
+ GET /admin 200 in 157ms
+ ✓ Compiled /api/auth/[...nextauth] in 181ms (782 modules)
+ ✓ Compiled (784 modules)
+ GET /api/auth/session 200 in 398ms
+ GET /api/auth/session 200 in 401ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 408ms
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE 1=1 OFFSET $1
+ GET /api/integrations 200 in 414ms
+ ✓ Compiled /api/airtable/tables in 93ms (786 modules)
+prisma:query SELECT 1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/sequences 200 in 37ms
+ GET /api/sequences 200 in 37ms
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Sequence"."id", "public"."Sequence"."name", "public"."Sequence"."audienceId", "public"."Sequence"."schedule", "public"."Sequence"."dayOfWeek", "public"."Sequence"."time", "public"."Sequence"."timezone", "public"."Sequence"."systemPrompt", "public"."Sequence"."userPrompt", "public"."Sequence"."status", "public"."Sequence"."lastSent", "public"."Sequence"."createdAt", "public"."Sequence"."updatedAt" FROM "public"."Sequence" WHERE 1=1 ORDER BY "public"."Sequence"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+prisma:query SELECT "public"."ApiKey"."id", "public"."ApiKey"."service", "public"."ApiKey"."key", "public"."ApiKey"."status", "public"."ApiKey"."geminiModel", "public"."ApiKey"."airtableBaseId", "public"."ApiKey"."airtableBaseName", "public"."ApiKey"."airtableTableId", "public"."ApiKey"."airtableTableName", "public"."ApiKey"."resendFromName", "public"."ApiKey"."resendFromEmail", "public"."ApiKey"."updatedAt", "public"."ApiKey"."createdAt" FROM "public"."ApiKey" WHERE ("public"."ApiKey"."service" = $1 AND 1=1) LIMIT $2 OFFSET $3
+ GET /api/resend/audiences 200 in 175ms
+ GET /api/resend/audiences 200 in 195ms
+ POST /api/airtable/tables 200 in 1918ms
+prisma:query SELECT 1
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT 1
+ GET /api/rss-sources 200 in 75ms
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+prisma:query SELECT "public"."RssSource"."id", "public"."RssSource"."name", "public"."RssSource"."url", "public"."RssSource"."category", "public"."RssSource"."enabled", "public"."RssSource"."isDefault", "public"."RssSource"."createdAt", "public"."RssSource"."updatedAt" FROM "public"."RssSource" WHERE 1=1 ORDER BY "public"."RssSource"."createdAt" DESC OFFSET $1
+prisma:query SELECT 1
+prisma:query SELECT "public"."IngestionConfig"."id", "public"."IngestionConfig"."schedule", "public"."IngestionConfig"."time", "public"."IngestionConfig"."timezone", "public"."IngestionConfig"."timeFrame", "public"."IngestionConfig"."systemPrompt", "public"."IngestionConfig"."userPrompt", "public"."IngestionConfig"."updatedAt", "public"."IngestionConfig"."createdAt" FROM "public"."IngestionConfig" WHERE 1=1 LIMIT $1 OFFSET $2
+ GET /api/ingestion/config 200 in 75ms
+ GET /api/ingestion/config 200 in 75ms
+ GET /api/rss-sources 200 in 81ms
+ GET /api/auth/session 200 in 819ms
+ GET /api/auth/session 200 in 162ms
+ GET /api/auth/session 200 in 70ms

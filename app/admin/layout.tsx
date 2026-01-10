@@ -16,7 +16,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen text-foreground">
+    <div className="min-h-screen text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
       <div className="relative z-10 flex">
         <AdminSidebar />
         <main className="flex-1 ml-64">

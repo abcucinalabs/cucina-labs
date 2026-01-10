@@ -56,8 +56,6 @@ NEXTAUTH_SECRET="your-secret-key-here"
 GEMINI_API_KEY=""
 AIRTABLE_API_KEY=""
 AIRTABLE_BASE_ID=""
-AIRTABLE_TABLE_ID=""
-AIRTABLE_TABLE_NAME=""
 RESEND_API_KEY=""
 
 # Encryption
@@ -66,8 +64,6 @@ ENCRYPTION_KEY="your-32-character-encryption-key-here"
 # Cron (for Vercel Cron)
 CRON_SECRET="your-cron-secret"
 ```
-
-Note: Never commit secrets. Keep real values in `.env` and only commit `.env.example`.
 
 3. Set up the database:
 
@@ -91,14 +87,6 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Git Secrets Guard (Recommended)
-
-Enable the pre-commit hook to prevent committing secret files:
-
-```bash
-git config core.hooksPath .githooks
-```
 
 ## Project Structure
 
@@ -170,3 +158,4 @@ If deploying to Vercel, add to `vercel.json`:
 ## License
 
 MIT
+

@@ -24,10 +24,14 @@ npm install
 ```
 
 ### 2. Create .env File
-Copy `.env.example` and update with your values:
+Copy this template and update with your values:
 
-```bash
-cp .env.example .env
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/cucina_labs?schema=public"
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="$(openssl rand -base64 32)"
+ENCRYPTION_KEY="$(openssl rand -hex 16)"
+CRON_SECRET="$(openssl rand -base64 24)"
 ```
 
 ### 3. Set Up Database
@@ -67,3 +71,4 @@ npm run dev
 ## Need Help?
 
 Check `SETUP.md` for detailed instructions and troubleshooting.
+
