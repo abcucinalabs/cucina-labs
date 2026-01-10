@@ -1,0 +1,114 @@
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/db"
+import { logNewsActivity } from "@/lib/news-activity"
+import { z } from "zod"
+
+const configSchema = z.object({
+  schedule: z.array(z.string()),
+  time: z.string(),
+  timezone: z.string(),
+  timeFrame: z.number(),
+  systemPrompt: z.string(),
+  userPrompt: z.string(),
+})
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Get the first (and should be only) config
+    const config = await prisma.ingestionConfig.findFirst()
+
+    if (!config) {
+      return NextResponse.json(null)
+    }
+
+    return NextResponse.json({
+      schedule: config.schedule,
+      time: config.time,
+      timezone: config.timezone,
+      timeFrame: config.timeFrame,
+      systemPrompt: config.systemPrompt,
+      userPrompt: config.userPrompt,
+    })
+  } catch (error) {
+    console.error("Failed to fetch config:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch config" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const data = configSchema.parse(body)
+
+    // Get existing config or create new one
+    const existing = await prisma.ingestionConfig.findFirst()
+
+    if (existing) {
+      await prisma.ingestionConfig.update({
+        where: { id: existing.id },
+        data: {
+          schedule: data.schedule,
+          time: data.time,
+          timezone: data.timezone,
+          timeFrame: data.timeFrame,
+          systemPrompt: data.systemPrompt,
+          userPrompt: data.userPrompt,
+        },
+      })
+    } else {
+      await prisma.ingestionConfig.create({
+        data: {
+          schedule: data.schedule,
+          time: data.time,
+          timezone: data.timezone,
+          timeFrame: data.timeFrame,
+          systemPrompt: data.systemPrompt,
+          userPrompt: data.userPrompt,
+        },
+      })
+    }
+
+    await logNewsActivity({
+      event: "ingestion.config.saved",
+      status: "success",
+      message: "Ingestion configuration saved.",
+      metadata: { user: session.user?.email },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    console.error("Failed to save config:", error)
+    await logNewsActivity({
+      event: "ingestion.config.error",
+      status: "error",
+      message: "Failed to save ingestion configuration.",
+      metadata: { error: String(error) },
+    })
+    return NextResponse.json(
+      { error: "Failed to save config" },
+      { status: 500 }
+    )
+  }
+}
