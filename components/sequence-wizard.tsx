@@ -523,7 +523,7 @@ export function SequenceWizard({
               
               {!preview && !previewError && !isLoadingPreview && (
                 <div className="flex items-center justify-center h-64 border border-dashed border-[var(--border-default)] rounded-lg">
-                  <p className="text-muted-foreground">Click "Generate Preview" to see your newsletter</p>
+                  <p className="text-muted-foreground">Click &ldquo;Generate Preview&rdquo; to see your newsletter</p>
                 </div>
               )}
 

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const content = await generateNewsletterContent(
       articles,
       systemPrompt || "",
-      userPrompt
+      userPrompt || ""
     )
 
     const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXTAUTH_URL || ""

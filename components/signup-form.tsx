@@ -99,7 +99,7 @@ export function SignUpForm() {
             </svg>
           </div>
           <div>
-            <p className="text-white font-medium">You're in!</p>
+            <p className="text-white font-medium">You&apos;re in!</p>
             <p className="text-white/70 text-sm">
               {successMessage || "Check your inbox for confirmation."}
             </p>

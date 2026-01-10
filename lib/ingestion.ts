@@ -190,7 +190,7 @@ async function fetchRssFeed(url: string): Promise<Article[]> {
       content: item.content || item.contentSnippet || "",
       link: item.link || "",
       pubDate: item.pubDate || new Date().toISOString(),
-      imageUrl: extractImageFromItem(item),
+      imageUrl: extractImageFromItem(item) || undefined,
     }))
   } catch (error) {
     console.error(`Failed to fetch RSS feed ${url}:`, error)
@@ -460,7 +460,7 @@ async function saveToAirtable(article: Article): Promise<boolean> {
           filterByFormula: `{${field}} = "${fieldValue}"`,
         }).firstPage((err, records) => {
           if (err) reject(err)
-          else resolve(records || [])
+          else resolve(records ? [...records] : [])
         })
       })
 
@@ -613,7 +613,7 @@ async function saveToAirtable(article: Article): Promise<boolean> {
     } else {
       // Create new
       await new Promise<void>((resolve, reject) => {
-        table.create(recordData, (err) => {
+        table.create(recordData as any, (err: any) => {
           if (err) reject(err)
           else resolve()
         })
