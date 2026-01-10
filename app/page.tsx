@@ -20,9 +20,9 @@ export default function Home() {
         {/* Content */}
         <div className="relative z-10 min-h-screen flex flex-col">
           {/* Header */}
-          <header className="bg-white py-4 px-6 lg:px-12">
+          <header className="bg-white py-3 px-4 sm:py-4 sm:px-6 lg:px-12">
             <div className="max-w-7xl mx-auto">
-              <h1 style={{ fontFamily: 'Arial, sans-serif' }} className="text-xl text-black">
+              <h1 style={{ fontFamily: 'Arial, sans-serif' }} className="text-lg sm:text-xl text-black">
                 cucina <span className="font-bold">labs</span>
               </h1>
             </div>
@@ -30,20 +30,20 @@ export default function Home() {
 
           {/* Main Content */}
           <main className="flex-1 flex items-center">
-            <div className="w-full max-w-7xl mx-auto px-6 lg:px-12 py-20">
+            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 lg:py-20">
               <HomeCarousel />
             </div>
           </main>
 
           {/* Footer */}
-          <footer className="relative z-10 py-6 px-6 lg:px-12">
+          <footer className="relative z-10 py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <p className="text-white/60 text-sm">
+              <p className="text-white/60 text-xs sm:text-sm">
                 © {new Date().getFullYear()} Cucina Labs
               </p>
               <a
                 href="/login"
-                className="text-white/60 hover:text-[color:var(--accent-primary)] text-sm transition-colors"
+                className="text-white/60 hover:text-[color:var(--accent-primary)] text-xs sm:text-sm transition-colors"
               >
                 Admin
               </a>
