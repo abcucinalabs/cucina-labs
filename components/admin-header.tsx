@@ -4,7 +4,7 @@ export function AdminHeader({ email }: { email: string }) {
   return (
     <header className="h-16 border-b border-[var(--border-default)] bg-white/80 backdrop-blur-xl">
       <div className="h-full flex items-center justify-between px-12">
-        <h1 className="text-xl font-semibold text-[color:var(--accent-primary-dark)]">Cucina Labs</h1>
+        <h1 className="text-xl text-[color:var(--accent-primary-dark)]">Cucina <span className="font-bold">Labs</span></h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-[color:var(--text-secondary)] px-3 py-1.5 rounded-[var(--radius-md)] bg-[var(--bg-subtle)]">
             {email}
