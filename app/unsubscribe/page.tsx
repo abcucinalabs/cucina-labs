@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-export default function UnsubscribePage() {
+function UnsubscribeContent() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState<string | null>(null)
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -84,5 +84,25 @@ export default function UnsubscribePage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function UnsubscribePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Unsubscribe</CardTitle>
+            <CardDescription>Processing your request...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">Please wait...</p>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <UnsubscribeContent />
+    </Suspense>
   )
 }
