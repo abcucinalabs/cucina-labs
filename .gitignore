@@ -18,6 +18,8 @@
 # misc
 .DS_Store
 *.pem
+.next-dev.log
+*.code-workspace
 
 # keys and certs
 *.key
