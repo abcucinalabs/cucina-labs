@@ -12,27 +12,6 @@ export function HomeCarousel() {
   const slides = [
     {
       id: 0,
-      badge: "ABOUT US",
-      title: (
-        <>
-          What is{" "}
-          <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
-            cucina labs
-          </span>
-          ?
-        </>
-      ),
-      content: (
-        <p className="text-lg md:text-xl text-white/75 leading-relaxed">
-          <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
-            cucina labs
-          </span>{" "}
-          is an AI test kitchen for builders. We experiment with emerging AI technologies, push them into real-world workflows, and document what actually works.
-        </p>
-      ),
-    },
-    {
-      id: 1,
       badge: "AI PRODUCT BRIEFING",
       title: (
         <>
@@ -54,6 +33,27 @@ export function HomeCarousel() {
             Join the lab. <span className="text-[var(--accent-primary)]">Get the recipes first.</span>
           </p>
         </>
+      ),
+    },
+    {
+      id: 1,
+      badge: "ABOUT US",
+      title: (
+        <>
+          What is{" "}
+          <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
+            cucina labs
+          </span>
+          ?
+        </>
+      ),
+      content: (
+        <p className="text-lg md:text-xl text-white/75 leading-relaxed">
+          <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
+            cucina labs
+          </span>{" "}
+          is an AI test kitchen for builders. We experiment with emerging AI technologies, push them into real-world workflows, and document what actually works.
+        </p>
       ),
     },
   ]
