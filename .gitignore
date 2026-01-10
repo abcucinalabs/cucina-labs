@@ -18,6 +18,24 @@
 # misc
 .DS_Store
 *.pem
+.next-dev.log
+*.code-workspace
+
+# keys and certs
+*.key
+*.p12
+*.pfx
+*.crt
+*.der
+*.jks
+*.keystore
+*.pkcs12
+*.pkcs8
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+.ssh/
 
 # debug
 npm-debug.log*
@@ -27,6 +45,8 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+.env.backup
+.code-workspace
 
 # vercel
 .vercel
@@ -37,4 +57,3 @@ next-env.d.ts
 
 # prisma
 /prisma/migrations
-
