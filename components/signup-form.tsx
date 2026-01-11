@@ -116,7 +116,7 @@ export function SignUpForm() {
           <input
             type="email"
             placeholder="Enter your email"
-            className="w-full h-14 px-6 rounded-full border border-white/20 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] focus:border-[var(--accent-primary)] focus:bg-white/10 transition-all duration-300"
+            className="w-full h-12 sm:h-14 px-4 sm:px-6 text-sm sm:text-base rounded-full border border-white/20 bg-white/5 text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] focus:border-[var(--accent-primary)] focus:bg-white/10 transition-all duration-300"
             {...register("email")}
           />
         </div>
@@ -124,18 +124,18 @@ export function SignUpForm() {
           type="submit"
           disabled={isSubmitting}
           isLoading={isSubmitting}
-          className="h-14 px-8 rounded-full whitespace-nowrap bg-gradient-to-br from-[var(--accent-primary)] to-[#7ce8b5] text-[#0d0d0d] shadow-[0_12px_24px_-8px_rgba(155,242,202,0.4)] hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_rgba(155,242,202,0.5)] active:translate-y-0"
+          className="h-12 sm:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-full whitespace-nowrap bg-gradient-to-br from-[var(--accent-primary)] to-[#7ce8b5] text-[#0d0d0d] shadow-[0_12px_24px_-8px_rgba(155,242,202,0.4)] hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_rgba(155,242,202,0.5)] active:translate-y-0"
         >
           Sign Up
         </Button>
       </div>
-      
+
       {errors.email && (
-        <p className="text-red-300 text-sm mt-3 ml-4">{errors.email.message}</p>
+        <p className="text-red-300 text-xs sm:text-sm mt-2 sm:mt-3 ml-2 sm:ml-4">{errors.email.message}</p>
       )}
 
       {error && (
-        <p className="text-red-300 text-sm mt-3 ml-4">{error}</p>
+        <p className="text-red-300 text-xs sm:text-sm mt-2 sm:mt-3 ml-2 sm:ml-4">{error}</p>
       )}
     </form>
   )

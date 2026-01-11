@@ -23,13 +23,13 @@ export function HomeCarousel() {
       ),
       content: (
         <>
-          <p className="text-lg md:text-xl text-white/75 mb-12 leading-relaxed max-w-xl">
+          <p className="text-base sm:text-lg md:text-xl text-white/75 mb-6 sm:mb-8 md:mb-12 leading-relaxed max-w-xl">
             Fresh recipes, emerging trends, and the latest
             developments in artificial intelligence — served straight to
             your inbox.
           </p>
           <SignUpForm />
-          <p className="text-sm text-white/55 mt-6">
+          <p className="text-xs sm:text-sm text-white/55 mt-4 sm:mt-6">
             Join the lab. <span className="text-[var(--accent-primary)]">Get the recipes first.</span>
           </p>
         </>
@@ -71,15 +71,15 @@ export function HomeCarousel() {
   }
 
   return (
-    <div className="relative w-full flex justify-center">
+    <div className="relative w-full flex justify-center px-4 sm:px-6">
       {/* Card Container */}
-      <div className="w-[768px] rounded-[var(--radius-2xl)] border border-white/15 bg-[#0d0d0d]/56 p-10 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative overflow-hidden">
+      <div className="w-full max-w-[768px] rounded-[var(--radius-2xl)] border border-white/15 bg-[#0d0d0d]/56 p-6 sm:p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-2xl relative overflow-hidden">
         <div className="pointer-events-none absolute -top-28 right-0 h-60 w-60 rounded-full bg-[radial-gradient(circle,rgba(74,95,217,0.25)_0%,transparent_70%)]" />
         <div className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(155,242,202,0.2)_0%,transparent_70%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent" />
 
         {/* Slide Content */}
-        <div className="relative z-10 h-[350px]">
+        <div className="relative z-10 min-h-[400px] sm:min-h-[380px] md:h-[350px]">
           {slides.map((slide, index) => (
             <div
               key={slide.id}
@@ -87,12 +87,12 @@ export function HomeCarousel() {
                 currentSlide === index ? "opacity-100" : "opacity-0 absolute inset-0 pointer-events-none"
               }`}
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(60,53,242,0.4)] bg-[linear-gradient(135deg,rgba(60,53,242,0.18),rgba(74,95,217,0.18))] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--accent-primary)] mb-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(60,53,242,0.4)] bg-[linear-gradient(135deg,rgba(60,53,242,0.18),rgba(74,95,217,0.18))] px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--accent-primary)] mb-4 sm:mb-6">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
                 {slide.badge}
               </div>
 
-              <h1 className={`${instrumentSerif.className} text-5xl md:text-6xl font-normal text-white mb-6 leading-[1.15] tracking-[-0.03em] pt-1`}>
+              <h1 className={`${instrumentSerif.className} text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-white mb-4 sm:mb-6 leading-[1.15] tracking-[-0.03em] pt-1`}>
                 {slide.title}
               </h1>
 
@@ -102,14 +102,14 @@ export function HomeCarousel() {
         </div>
 
         {/* Navigation Arrows */}
-        <div className="relative z-10 flex items-center justify-between mt-8">
+        <div className="relative z-10 flex items-center justify-between mt-6 sm:mt-8">
           <button
             onClick={prevSlide}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:-translate-x-0.5"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:-translate-x-0.5 shrink-0"
             aria-label="Previous slide"
           >
             <svg
-              className="w-5 h-5 text-white"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -131,7 +131,7 @@ export function HomeCarousel() {
                 onClick={() => goToSlide(index)}
                 className={`transition-all duration-300 rounded-full ${
                   currentSlide === index
-                    ? "w-8 h-2 bg-[var(--accent-primary)]"
+                    ? "w-6 sm:w-8 h-2 bg-[var(--accent-primary)]"
                     : "w-2 h-2 bg-white/30 hover:bg-white/50"
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
@@ -141,11 +141,11 @@ export function HomeCarousel() {
 
           <button
             onClick={nextSlide}
-            className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:translate-x-0.5"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 hover:translate-x-0.5 shrink-0"
             aria-label="Next slide"
           >
             <svg
-              className="w-5 h-5 text-white"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
