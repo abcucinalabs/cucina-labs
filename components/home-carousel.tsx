@@ -46,7 +46,7 @@ export function HomeCarousel() {
         <>
           What is{" "}
           <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
-            cucina labs
+            cucina <span className="font-bold">labs</span>
           </span>
           ?
         </>
@@ -54,7 +54,7 @@ export function HomeCarousel() {
       content: (
         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/75 leading-relaxed">
           <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
-            cucina labs
+            cucina <span className="font-bold">labs</span>
           </span>{" "}
           is an AI test kitchen for builders. We experiment with emerging AI technologies, push them into real-world workflows, and document what actually works.
         </p>
