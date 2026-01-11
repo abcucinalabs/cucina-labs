@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, token } = unsubscribeSchema.parse(body)
+    const normalizedEmail = email.trim().toLowerCase()
 
     // Verify token (HMAC)
     const secret = process.env.NEXTAUTH_SECRET || ""
@@ -42,19 +43,19 @@ export async function POST(request: NextRequest) {
         const resend = new Resend(resendApiKey)
 
         // Get all audiences to find the contact
-        console.log(`[Unsubscribe] Finding contact for email: ${email}`)
+        console.log(`[Unsubscribe] Finding contact for email: ${normalizedEmail}`)
         const audiencesResponse = await resend.audiences.list()
         const audiences = audiencesResponse.data?.data || []
 
         // Find the contact in any audience and update it
         for (const audience of audiences) {
           try {
-            const contactsResponse = await resend.contacts.list({
+            const contactResponse = await resend.contacts.get({
               audienceId: audience.id,
+              email: normalizedEmail,
             })
 
-            const contacts = contactsResponse.data?.data || []
-            const contact = contacts.find((c) => c.email === email)
+            const contact = contactResponse.data
 
             if (contact) {
               console.log(`[Unsubscribe] Found contact in audience ${audience.name}, updating unsubscribed flag`)
@@ -114,4 +115,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
