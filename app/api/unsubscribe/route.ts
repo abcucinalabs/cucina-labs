@@ -34,58 +34,33 @@ export async function POST(request: NextRequest) {
       where: { service: "resend" },
     })
 
-    let removedFromAudiences = 0
+    let unsubscribedInResend = false
 
     if (resendConfig && resendConfig.key) {
       try {
         const resendApiKey = decrypt(resendConfig.key)
         const resend = new Resend(resendApiKey)
 
-        // Get all audiences
-        console.log(`[Unsubscribe Debug] Fetching audiences for email: ${email}`)
-        const audiencesResponse = await resend.audiences.list()
-        const audiences = audiencesResponse.data?.data || []
-        console.log(`[Unsubscribe Debug] Found ${audiences.length} audiences:`, audiences.map(a => ({ id: a.id, name: a.name })))
+        // Update contact to set unsubscribed flag
+        console.log(`[Unsubscribe] Setting unsubscribed flag for email: ${email}`)
+        const updateResponse = await resend.contacts.update({
+          email: email,
+          unsubscribed: true,
+        })
 
-        // Remove contact from all audiences
-        for (const audience of audiences) {
-          try {
-            console.log(`[Unsubscribe Debug] Checking audience: ${audience.name} (${audience.id})`)
+        console.log(`[Unsubscribe] Update response:`, updateResponse)
 
-            // Get contacts in this audience
-            const contactsResponse = await resend.contacts.list({
-              audienceId: audience.id,
-            })
-
-            const contacts = contactsResponse.data?.data || []
-            console.log(`[Unsubscribe Debug] Found ${contacts.length} contacts in audience ${audience.name}`)
-            console.log(`[Unsubscribe Debug] Contact emails:`, contacts.map(c => c.email))
-
-            const contact = contacts.find((c) => c.email === email)
-            console.log(`[Unsubscribe Debug] Contact match for ${email}:`, contact ? `Found (ID: ${contact.id})` : 'Not found')
-
-            if (contact) {
-              // Remove the contact from this audience
-              console.log(`[Unsubscribe Debug] Attempting to remove contact ${contact.id} from audience ${audience.id}`)
-              const removeResponse = await resend.contacts.remove({
-                audienceId: audience.id,
-                id: contact.id,
-              })
-              console.log(`[Unsubscribe Debug] Remove response:`, removeResponse)
-              removedFromAudiences++
-              console.log(`[Unsubscribe Debug] Successfully removed ${email} from audience: ${audience.name}`)
-            }
-          } catch (error) {
-            console.error(`[Unsubscribe Debug] Failed to remove from audience ${audience.id}:`, error)
-          }
+        if (updateResponse.data) {
+          unsubscribedInResend = true
+          console.log(`[Unsubscribe] Successfully unsubscribed ${email} in Resend`)
+        } else if (updateResponse.error) {
+          console.error(`[Unsubscribe] Failed to unsubscribe in Resend:`, updateResponse.error)
         }
-
-        console.log(`[Unsubscribe Debug] Total audiences removed from: ${removedFromAudiences}`)
       } catch (error) {
-        console.error("[Unsubscribe Debug] Failed to process Resend unsubscribe:", error)
+        console.error("[Unsubscribe] Failed to process Resend unsubscribe:", error)
       }
     } else {
-      console.log("[Unsubscribe Debug] No Resend config found or no API key")
+      console.log("[Unsubscribe] No Resend config found or no API key")
     }
 
     // Update local database status
@@ -96,8 +71,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: removedFromAudiences > 0
-        ? `Successfully unsubscribed from ${removedFromAudiences} audience(s)`
+      message: unsubscribedInResend
+        ? "Successfully unsubscribed from all Cucina Labs emails"
         : "Successfully unsubscribed",
     })
   } catch (error) {
