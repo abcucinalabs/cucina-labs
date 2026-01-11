@@ -27,7 +27,9 @@ export function AdminSidebar() {
       <div className="flex h-full flex-col">
         {/* Logo area */}
         <div className="flex h-16 items-center border-b border-[var(--border-default)] px-6">
-          <span className="text-lg font-semibold text-foreground">Admin Console</span>
+          <span className="text-lg font-semibold text-foreground">
+            cucina <span className="font-bold">labs</span>
+          </span>
         </div>
 
         {/* Navigation */}

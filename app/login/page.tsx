@@ -94,7 +94,9 @@ export default function LoginPage() {
                   <h1 className={`${instrumentSerif.className} text-3xl sm:text-4xl md:text-5xl font-normal text-white mb-4 leading-[1.15] tracking-[-0.03em]`}>
                     Welcome back, chef
                   </h1>
-                  <p className="text-sm sm:text-base text-white/70">Sign in to access the admin console</p>
+                  <p className="text-sm sm:text-base text-white/70">
+                    Sign in to access cucina <span className="font-bold">labs</span>
+                  </p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
