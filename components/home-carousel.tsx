@@ -30,7 +30,11 @@ export function HomeCarousel() {
           </p>
           <SignUpForm />
           <p className="text-xs sm:text-sm text-white/55 mt-4 sm:mt-6">
-            Join the lab. <span className="text-[var(--accent-primary)]">Get the recipes first.</span>
+            Join the kitchen. By clicking 'Sign Up' you agree to our{" "}
+            <a href="/privacy" className="text-[var(--accent-primary)] hover:underline">
+              privacy policy
+            </a>
+            .
           </p>
         </>
       ),
