@@ -110,7 +110,7 @@ function UnsubscribeContent() {
                       <Button
                         variant="outline"
                         size="lg"
-                        className="flex-1"
+                        className="flex-1 border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30"
                         onClick={() => (window.location.href = "/")}
                       >
                         Cancel
