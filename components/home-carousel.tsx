@@ -30,7 +30,7 @@ export function HomeCarousel() {
           </p>
           <SignUpForm />
           <p className="text-xs sm:text-sm text-white/55 mt-4 sm:mt-6">
-            Join the kitchen. By clicking 'Sign Up' you agree to our{" "}
+            Join the kitchen. By clicking &apos;Sign Up&apos; you agree to our{" "}
             <a href="/privacy" className="text-[var(--accent-primary)] hover:underline">
               privacy policy
             </a>
