@@ -67,11 +67,8 @@ export function SequenceWizard({
 
   useEffect(() => {
     if (open) {
-      if (!sequence) {
-        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-      } else if (!customHtml) {
-        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-      }
+      // Always set default template when dialog opens
+      setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
       fetchAudiences()
       fetchTemplates()
       if (sequence) {
@@ -90,6 +87,7 @@ export function SequenceWizard({
       }
       setPreviewData(null)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, sequence])
 
   const fetchAudiences = async () => {
@@ -620,7 +618,7 @@ export function SequenceWizard({
               
               {!preview && !previewError && !isLoadingPreview && (
                 <div className="flex items-center justify-center h-64 border border-dashed border-[var(--border-default)] rounded-lg">
-                  <p className="text-muted-foreground">Click "Generate Preview" to see your newsletter</p>
+                  <p className="text-muted-foreground">Click &quot;Generate Preview&quot; to see your newsletter</p>
                 </div>
               )}
 

@@ -71,6 +71,7 @@ export function IntegrationsTab() {
     if (expandedItem === "airtable" && (airtableKey || integrations.airtable?.hasKey) && airtableBases.length === 0) {
       fetchAirtableBases()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedItem, airtableKey, integrations.airtable?.hasKey])
 
   // Auto-fetch tables when a base is selected
@@ -78,6 +79,7 @@ export function IntegrationsTab() {
     if (selectedBase && airtableTables.length === 0 && (airtableKey || integrations.airtable?.hasKey)) {
       fetchAirtableTables(selectedBase.id)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBase, airtableKey, integrations.airtable?.hasKey])
 
   const fetchIntegrations = async () => {
