@@ -97,7 +97,7 @@ function UnsubscribeContent() {
                         Unsubscribe
                       </h1>
                       <p className="text-sm sm:text-base text-white/70">
-                        Are you sure you want to unsubscribe from all Cucina Labs newsletters?
+                        Are you sure you want to unsubscribe from all cucina <span className="font-bold">labs</span> newsletters?
                       </p>
                     </div>
 
@@ -153,7 +153,7 @@ function UnsubscribeContent() {
                         {message}
                       </p>
                       <p className="text-sm text-white/60 mb-2">
-                        You will no longer receive emails from Cucina Labs at <span className="text-white">{email}</span>.
+                        You will no longer receive emails from cucina <span className="font-bold">labs</span> at <span className="text-white">{email}</span>.
                       </p>
                       <p className="text-sm text-white/60">
                         We&apos;re sorry to see you go. If you change your mind, you can always resubscribe on our website.
@@ -206,7 +206,7 @@ function UnsubscribeContent() {
           <footer className="relative z-10 py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               <p className="text-white/60 text-xs sm:text-sm">
-                © {new Date().getFullYear()} Cucina Labs
+                © {new Date().getFullYear()} cucina <span className="font-bold">labs</span>
               </p>
               <Link href="/" className="text-white/60 hover:text-[color:var(--accent-primary)] text-xs sm:text-sm transition-colors">
                 Home

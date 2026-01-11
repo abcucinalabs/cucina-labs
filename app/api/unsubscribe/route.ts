@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: unsubscribedInResend
-        ? "Successfully unsubscribed from all Cucina Labs emails"
+        ? "Successfully unsubscribed from all cucina labs emails"
         : "Successfully unsubscribed",
     })
   } catch (error) {

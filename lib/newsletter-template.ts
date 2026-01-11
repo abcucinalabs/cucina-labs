@@ -5,7 +5,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>\${newsletter.subject || "Cucina Labs Briefing"}</title>
+  <title>\${newsletter.subject || "cucina labs Briefing"}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.7; color: #0d0d0d; background-color: #f5f5f5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5;">
@@ -34,7 +34,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                               <tr>
                                 <td align="left" style="font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">
-                                  Cucina Labs
+                                  cucina <strong>labs</strong>
                                 </td>
                                 <td align="right" style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">
                                   \${formatDate(new Date())}
@@ -42,7 +42,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                               </tr>
                             </table>
                             <p style="margin: 20px 0 10px; font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">AI Product Briefing</p>
-                            <h1 style="margin: 0; font-size: 34px; font-weight: 600; color: #ffffff; line-height: 1.15; letter-spacing: -0.03em;">\${newsletter.subject || "Cucina Labs Briefing"}</h1>
+                            <h1 style="margin: 0; font-size: 34px; font-weight: 600; color: #ffffff; line-height: 1.15; letter-spacing: -0.03em;">\${newsletter.subject || "cucina labs Briefing"}</h1>
                           </td>
                         </tr>
                       </table>
@@ -104,7 +104,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 <tr>
                   <td style="padding: 24px 40px 36px; text-align: center;">
                     <div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent); margin: 0 0 20px;"></div>
-                    <p style="margin: 0 0 10px; color: rgba(13, 13, 13, 0.5); font-size: 12px;">You are receiving this because you subscribed to Cucina Labs.</p>
+                    <p style="margin: 0 0 10px; color: rgba(13, 13, 13, 0.5); font-size: 12px;">You are receiving this because you subscribed to cucina <strong>labs</strong>.</p>
                     <a href="\${unsubscribeUrl}" style="color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 12px;">Unsubscribe</a>
                   </td>
                 </tr>
@@ -150,7 +150,7 @@ export const buildNewsletterTemplateContext = ({
   const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
 
   const newsletter = {
-    subject: content?.subject || "Cucina Labs Briefing",
+    subject: content?.subject || "cucina labs Briefing",
     intro: content?.intro || "",
     featured_story: {
       id: featured?.id,

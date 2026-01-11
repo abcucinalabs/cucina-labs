@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(decryptedKey)
 
     // Build from address
-    const fromName = resendConfig.resendFromName || "Cucina Labs"
+    const fromName = resendConfig.resendFromName || "cucina labs"
     const fromEmail = resendConfig.resendFromEmail || "newsletter@cucinalabs.com"
     const from = `${fromName} <${fromEmail}>`
 

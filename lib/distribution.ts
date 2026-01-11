@@ -297,7 +297,7 @@ ${lookingAhead ? `LOOKING AHEAD
 ${lookingAhead}` : ""}
 
 ---
-© ${new Date().getFullYear()} Cucina Labs
+© ${new Date().getFullYear()} cucina labs
 Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
   `.trim()
 }
@@ -357,7 +357,7 @@ export async function runDistribution(sequenceId: string): Promise<void> {
       const htmlWithUnsubscribe = html.replace("{{email}}", subscriber.email).replace("{{token}}", token)
 
       await resend.emails.send({
-        from: "Cucina Labs <newsletter@cucinalabs.com>",
+        from: "cucina labs <newsletter@cucinalabs.com>",
         to: subscriber.email,
         subject: sequence.name,
         html: htmlWithUnsubscribe,

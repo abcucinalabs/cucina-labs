@@ -69,13 +69,13 @@ export async function POST(request: NextRequest) {
         if (!welcomeTemplate.html) {
           welcomeEmailError = "Welcome email is enabled but the template is empty."
         } else {
-          const fromName = resendConfig.resendFromName || "Cucina Labs"
+          const fromName = resendConfig.resendFromName || "cucina labs"
           const fromEmail =
             resendConfig.resendFromEmail || "newsletter@cucinalabs.com"
           const emailPayload = {
             from: `${fromName} <${fromEmail}>`,
             to: email,
-            subject: welcomeTemplate.subject || "Welcome to Cucina Labs",
+            subject: welcomeTemplate.subject || "Welcome to cucina labs",
             html: welcomeTemplate.html,
           }
 

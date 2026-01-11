@@ -39,7 +39,7 @@ export default function Home() {
           <footer className="relative z-10 py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
               <p className="text-white/60 text-xs sm:text-sm">
-                © {new Date().getFullYear()} Cucina Labs
+                © {new Date().getFullYear()} cucina <span className="font-bold">labs</span>
               </p>
               <a
                 href="/login"
