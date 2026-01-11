@@ -432,7 +432,7 @@ export function IntegrationsTab() {
                   ))}
                   {airtableBases.length === 0 && !selectedBase && (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Click "Fetch Bases" to load available bases
+                      Click &ldquo;Fetch Bases&rdquo; to load available bases
                     </div>
                   )}
                 </SelectContent>
@@ -486,7 +486,7 @@ export function IntegrationsTab() {
                   ))}
                   {airtableTables.length === 0 && !selectedTable && selectedBase && (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Click "Fetch Tables" to load available tables
+                      Click &ldquo;Fetch Tables&rdquo; to load available tables
                     </div>
                   )}
                 </SelectContent>

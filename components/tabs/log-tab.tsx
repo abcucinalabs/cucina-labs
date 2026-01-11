@@ -76,7 +76,7 @@ export function LogTab() {
               <CardTitle>News Activity Log</CardTitle>
               <CardDescription>Track ingestion, integrations, and RSS changes.</CardDescription>
             </div>
-            <Button variant="outline" onClick={fetchLogs} disabled={isLoading} isLoading={isLoading}>
+            <Button variant="outline" onClick={() => fetchLogs()} disabled={isLoading} isLoading={isLoading}>
               <RefreshCcw className="mr-2 h-4 w-4" />
               Refresh
             </Button>

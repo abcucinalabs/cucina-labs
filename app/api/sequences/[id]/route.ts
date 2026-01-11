@@ -13,6 +13,7 @@ const updateSequenceSchema = z.object({
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1).optional(),
   status: z.enum(["draft", "active", "paused"]).optional(),
+  schedule: z.string().optional(),
 })
 
 export async function PUT(

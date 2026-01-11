@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers"
 const instrumentSans = Instrument_Sans({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Cucina Labs - AI Product Newsletter",
+  title: "cucina labs",
   description: "Curated AI product content for builders",
 }
 

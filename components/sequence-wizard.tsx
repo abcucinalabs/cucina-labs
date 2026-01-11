@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -89,7 +89,7 @@ export function SequenceWizard({
       }
       setPreviewData(null)
     }
-  }, [open, sequence])
+  }, [open, sequence, customHtml])
 
   const fetchAudiences = async () => {
     try {
@@ -261,27 +261,49 @@ export function SequenceWizard({
       setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
     }
     setCustomHtmlOpen(true)
+    // Set the textarea value after dialog opens
+    setTimeout(() => {
+      if (htmlTextareaRef.current) {
+        htmlTextareaRef.current.value = customHtml || DEFAULT_NEWSLETTER_TEMPLATE
+      }
+    }, 100)
   }
 
   const handleApplyCustomHtml = () => {
-    if (!customHtml.trim()) return
+    console.log("Apply HTML clicked")
+    const htmlValue = htmlTextareaRef.current?.value || ""
+    console.log("HTML value length:", htmlValue.length)
+
+    if (!htmlValue.trim()) {
+      console.log("HTML is empty")
+      alert("Please enter some HTML content")
+      return
+    }
+
     if (!previewData) {
+      console.log("No preview data available")
+      alert("Please generate a preview first by clicking 'Generate Preview' button")
       setPreviewError("Generate a preview first to load newsletter data.")
+      setCustomHtmlOpen(false)
       return
     }
 
     try {
+      console.log("Rendering custom HTML...")
       const context = buildNewsletterTemplateContext({
         content: previewData.content,
         articles: previewData.articles,
         origin: typeof window !== "undefined" ? window.location.origin : "",
       })
-      const html = renderNewsletterTemplate(customHtml, context)
+      const html = renderNewsletterTemplate(htmlValue, context)
       setPreview(html)
+      setCustomHtml(htmlValue) // Update state with the new value
       setPreviewError("")
       setCustomHtmlOpen(false)
+      console.log("Custom HTML applied successfully")
     } catch (error) {
       console.error("Failed to render custom HTML:", error)
+      alert(`Failed to render HTML: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setPreviewError("Failed to render custom HTML. Check the template syntax.")
     }
   }
@@ -619,28 +641,38 @@ export function SequenceWizard({
               
               {!preview && !previewError && !isLoadingPreview && (
                 <div className="flex items-center justify-center h-64 border border-dashed border-[var(--border-default)] rounded-lg">
-                  <p className="text-muted-foreground">Click "Generate Preview" to see your newsletter</p>
+                  <p className="text-muted-foreground">Click &quot;Generate Preview&quot; to see your newsletter</p>
                 </div>
               )}
 
-              <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen}>
-                <DialogContent className="max-w-3xl">
+              <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen} modal={true}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Customize HTML</DialogTitle>
                     <DialogDescription>Edit the generated HTML and apply it to the preview.</DialogDescription>
                   </DialogHeader>
-                  <Textarea
-                    value={customHtml}
-                    onChange={(event) => setCustomHtml(event.target.value)}
-                    rows={18}
-                    className="font-mono text-xs"
+                  <textarea
+                    ref={htmlTextareaRef}
+                    defaultValue={customHtml}
+                    rows={20}
+                    className="w-full min-h-[500px] font-mono text-xs p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y bg-white text-gray-900"
                     placeholder="Paste or edit HTML here..."
+                    spellCheck={false}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    style={{
+                      WebkitUserSelect: 'text',
+                      userSelect: 'text',
+                      pointerEvents: 'auto',
+                      cursor: 'text'
+                    }}
                   />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setCustomHtmlOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleApplyCustomHtml} disabled={!customHtml.trim()}>
+                    <Button onClick={handleApplyCustomHtml}>
                       Apply HTML
                     </Button>
                   </DialogFooter>
