@@ -1,3 +1,5 @@
+import { wrapRedirectUrl } from "./url-utils"
+
 export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <html>
 <head>
@@ -121,15 +123,18 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`
 
-export const normalizeNewsletterArticles = (articles: any[]) =>
-  (articles || []).map((article) => ({
-    ...article,
-    source_link: article.source_link || article.sourceLink || article.link || "",
-    image_link: article.image_link || article.imageUrl || article.image_url || "",
-    summary: article.summary || article.aiSummary || article.ai_generated_summary || "",
-    why_it_matters: article.whyItMatters || article.why_it_matters || "",
-    business_value: article.businessValue || article.business_value || "",
-  }))
+export const normalizeNewsletterArticles = (articles: any[], origin?: string) =>
+  (articles || []).map((article) => {
+    const sourceLink = article.source_link || article.sourceLink || article.link || ""
+    return {
+      ...article,
+      source_link: origin && sourceLink ? wrapRedirectUrl(sourceLink, origin) : sourceLink,
+      image_link: article.image_link || article.imageUrl || article.image_url || "",
+      summary: article.summary || article.aiSummary || article.ai_generated_summary || "",
+      why_it_matters: article.whyItMatters || article.why_it_matters || "",
+      business_value: article.businessValue || article.business_value || "",
+    }
+  })
 
 export const buildNewsletterTemplateContext = ({
   content,
@@ -142,7 +147,7 @@ export const buildNewsletterTemplateContext = ({
 }) => {
   const featured = content?.featuredStory || content?.featured_story || {}
   const stories = content?.topStories || content?.top_stories || []
-  const normalizedArticles = normalizeNewsletterArticles(articles || [])
+  const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
 
   const newsletter = {
     subject: content?.subject || "Cucina Labs Briefing",
@@ -151,13 +156,13 @@ export const buildNewsletterTemplateContext = ({
       id: featured?.id,
       headline: featured?.title || featured?.headline || "",
       why_this_matters: featured?.summary || featured?.why_this_matters || "",
-      link: featured?.link || "",
+      link: featured?.link && origin ? wrapRedirectUrl(featured.link, origin) : (featured?.link || ""),
     },
     top_stories: (stories || []).map((story: any) => ({
       id: story?.id,
       headline: story?.title || story?.headline || "",
       why_read_it: story?.summary || story?.why_read_it || "",
-      link: story?.link || "",
+      link: story?.link && origin ? wrapRedirectUrl(story.link, origin) : (story?.link || ""),
       category: story?.category || "",
       creator: story?.creator || "",
     })),

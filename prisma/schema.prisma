@@ -124,3 +124,12 @@ model NewsActivity {
   metadata  Json?
   createdAt DateTime @default(now())
 }
+
+model NewsletterTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  html        String   @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

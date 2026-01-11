@@ -59,6 +59,11 @@ export function SequenceWizard({
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testEmailStatus, setTestEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const htmlTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const [templates, setTemplates] = useState<any[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
+  const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false)
+  const [newTemplateName, setNewTemplateName] = useState("")
+  const [saveAsDefault, setSaveAsDefault] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -68,6 +73,7 @@ export function SequenceWizard({
         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
       }
       fetchAudiences()
+      fetchTemplates()
       if (sequence) {
         setFormData({
           name: sequence.name || "",
@@ -84,7 +90,7 @@ export function SequenceWizard({
       }
       setPreviewData(null)
     }
-  }, [open, sequence, customHtml])
+  }, [open, sequence])
 
   const fetchAudiences = async () => {
     try {
@@ -95,6 +101,54 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
+    }
+  }
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await fetch("/api/newsletter-templates")
+      if (response.ok) {
+        const data = await response.json()
+        setTemplates(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch templates:", error)
+    }
+  }
+
+  const handleSaveTemplate = async () => {
+    if (!newTemplateName.trim() || !customHtml.trim()) return
+
+    try {
+      const response = await fetch("/api/newsletter-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newTemplateName,
+          html: customHtml,
+          isDefault: saveAsDefault
+        })
+      })
+
+      if (response.ok) {
+        const template = await response.json()
+        // Refresh the templates list to get updated isDefault flags
+        await fetchTemplates()
+        setSelectedTemplateId(template.id)
+        setSaveTemplateDialogOpen(false)
+        setNewTemplateName("")
+        setSaveAsDefault(false)
+      }
+    } catch (error) {
+      console.error("Failed to save template:", error)
+    }
+  }
+
+  const handleLoadTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId)
+    if (template) {
+      setCustomHtml(template.html)
+      setSelectedTemplateId(templateId)
     }
   }
 
@@ -148,12 +202,15 @@ export function SequenceWizard({
     setIsLoadingPreview(true)
     setPreviewError("")
     setPreview("")
-    
+
     try {
       const response = await fetch("/api/sequences/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          htmlTemplate: customHtml
+        }),
       })
       
       const data = await response.json()
@@ -205,49 +262,27 @@ export function SequenceWizard({
       setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
     }
     setCustomHtmlOpen(true)
-    // Set the textarea value after dialog opens
-    setTimeout(() => {
-      if (htmlTextareaRef.current) {
-        htmlTextareaRef.current.value = customHtml || DEFAULT_NEWSLETTER_TEMPLATE
-      }
-    }, 100)
   }
 
   const handleApplyCustomHtml = () => {
-    console.log("Apply HTML clicked")
-    const htmlValue = htmlTextareaRef.current?.value || ""
-    console.log("HTML value length:", htmlValue.length)
-
-    if (!htmlValue.trim()) {
-      console.log("HTML is empty")
-      alert("Please enter some HTML content")
-      return
-    }
-
+    if (!customHtml.trim()) return
     if (!previewData) {
-      console.log("No preview data available")
-      alert("Please generate a preview first by clicking 'Generate Preview' button")
       setPreviewError("Generate a preview first to load newsletter data.")
-      setCustomHtmlOpen(false)
       return
     }
 
     try {
-      console.log("Rendering custom HTML...")
       const context = buildNewsletterTemplateContext({
         content: previewData.content,
         articles: previewData.articles,
         origin: typeof window !== "undefined" ? window.location.origin : "",
       })
-      const html = renderNewsletterTemplate(htmlValue, context)
+      const html = renderNewsletterTemplate(customHtml, context)
       setPreview(html)
-      setCustomHtml(htmlValue) // Update state with the new value
       setPreviewError("")
       setCustomHtmlOpen(false)
-      console.log("Custom HTML applied successfully")
     } catch (error) {
       console.error("Failed to render custom HTML:", error)
-      alert(`Failed to render HTML: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setPreviewError("Failed to render custom HTML. Check the template syntax.")
     }
   }
@@ -523,6 +558,45 @@ export function SequenceWizard({
                   Customize HTML
                 </Button>
               </div>
+
+              {/* Template Management */}
+              <div className="flex items-center gap-4">
+                <div className="flex-1 space-y-2">
+                  <Label htmlFor="template-select">Load Template</Label>
+                  <Select
+                    value={selectedTemplateId}
+                    onValueChange={(value) => {
+                      if (value === "default") {
+                        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+                        setSelectedTemplateId("")
+                      } else {
+                        handleLoadTemplate(value)
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="template-select">
+                      <SelectValue placeholder="Select a template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default Template</SelectItem>
+                      {templates.map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name} {template.isDefault && "(Default)"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="pt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSaveTemplateDialogOpen(true)}
+                    disabled={!customHtml.trim()}
+                  >
+                    Save as Template
+                  </Button>
+                </div>
+              </div>
               
               {previewError && (
                 <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
@@ -546,39 +620,78 @@ export function SequenceWizard({
               
               {!preview && !previewError && !isLoadingPreview && (
                 <div className="flex items-center justify-center h-64 border border-dashed border-[var(--border-default)] rounded-lg">
-                  <p className="text-muted-foreground">Click &quot;Generate Preview&quot; to see your newsletter</p>
+                  <p className="text-muted-foreground">Click "Generate Preview" to see your newsletter</p>
                 </div>
               )}
 
-              <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen} modal={true}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen}>
+                <DialogContent className="max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>Customize HTML</DialogTitle>
                     <DialogDescription>Edit the generated HTML and apply it to the preview.</DialogDescription>
                   </DialogHeader>
-                  <textarea
-                    ref={htmlTextareaRef}
-                    defaultValue={customHtml}
-                    rows={20}
-                    className="w-full min-h-[500px] font-mono text-xs p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y bg-white text-gray-900"
+                  <Textarea
+                    value={customHtml}
+                    onChange={(event) => setCustomHtml(event.target.value)}
+                    rows={18}
+                    className="font-mono text-xs"
                     placeholder="Paste or edit HTML here..."
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    style={{
-                      WebkitUserSelect: 'text',
-                      userSelect: 'text',
-                      pointerEvents: 'auto',
-                      cursor: 'text'
-                    }}
                   />
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setCustomHtmlOpen(false)}>
                       Cancel
                     </Button>
-                    <Button onClick={handleApplyCustomHtml}>
+                    <Button onClick={handleApplyCustomHtml} disabled={!customHtml.trim()}>
                       Apply HTML
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Save Template Dialog */}
+              <Dialog open={saveTemplateDialogOpen} onOpenChange={setSaveTemplateDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Save Template</DialogTitle>
+                    <DialogDescription>Save the current HTML as a reusable template.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="template-name">Template Name</Label>
+                      <Input
+                        id="template-name"
+                        value={newTemplateName}
+                        onChange={(e) => setNewTemplateName(e.target.value)}
+                        placeholder="My Custom Template"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="save-as-default"
+                        checked={saveAsDefault}
+                        onCheckedChange={(checked) => setSaveAsDefault(checked as boolean)}
+                      />
+                      <Label htmlFor="save-as-default">
+                        Set as default template
+                      </Label>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSaveTemplateDialogOpen(false)
+                        setNewTemplateName("")
+                        setSaveAsDefault(false)
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveTemplate}
+                      disabled={!newTemplateName.trim()}
+                    >
+                      Save Template
                     </Button>
                   </DialogFooter>
                 </DialogContent>
