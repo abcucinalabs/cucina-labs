@@ -145,6 +145,14 @@ export const buildNewsletterTemplateContext = ({
   articles: any[]
   origin?: string
 }) => {
+  const normalizeTitle = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/['’"]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+
   const featured = content?.featuredStory || content?.featured_story || {}
   const stories = content?.topStories || content?.top_stories || []
   const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
@@ -158,7 +166,8 @@ export const buildNewsletterTemplateContext = ({
       why_this_matters: featured?.summary || featured?.why_this_matters || "",
       link: featured?.link && origin ? wrapRedirectUrl(featured.link, origin) : (featured?.link || ""),
     },
-    top_stories: (stories || []).map((story: any) => ({
+    top_stories: (stories || []).map((story: any, index: number) => ({
+      __index: index,
       id: story?.id,
       headline: story?.title || story?.headline || "",
       why_read_it: story?.summary || story?.why_read_it || "",
@@ -177,6 +186,8 @@ export const buildNewsletterTemplateContext = ({
     const storyId = story.id
     const storyLink = story.link
     const storyTitle = story.headline || story.title
+    const storyIndex = typeof story.__index === "number" ? story.__index : null
+    const normalizedStoryTitle = storyTitle ? normalizeTitle(storyTitle) : ""
 
     return (
       (storyId ? normalizedArticles.find((article) => article.id === storyId) : null) ||
@@ -186,6 +197,12 @@ export const buildNewsletterTemplateContext = ({
       (storyTitle
         ? normalizedArticles.find((article) => article.title === storyTitle)
         : null) ||
+      (normalizedStoryTitle
+        ? normalizedArticles.find(
+            (article) => normalizeTitle(article.title || "") === normalizedStoryTitle
+          )
+        : null) ||
+      (storyIndex !== null ? normalizedArticles[storyIndex] : null) ||
       null
     )
   }
