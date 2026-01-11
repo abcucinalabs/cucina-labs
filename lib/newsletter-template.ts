@@ -126,10 +126,11 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 export const normalizeNewsletterArticles = (articles: any[], origin?: string) =>
   (articles || []).map((article) => {
     const sourceLink = article.source_link || article.sourceLink || article.link || ""
+    const imageLink = article.image_link || article.imageUrl || article.image_url || ""
     return {
       ...article,
       source_link: origin && sourceLink ? wrapRedirectUrl(sourceLink, origin) : sourceLink,
-      image_link: article.image_link || article.imageUrl || article.image_url || "",
+      image_link: origin && imageLink ? wrapRedirectUrl(imageLink, origin) : imageLink,
       summary: article.summary || article.aiSummary || article.ai_generated_summary || "",
       why_it_matters: article.whyItMatters || article.why_it_matters || "",
       business_value: article.businessValue || article.business_value || "",
