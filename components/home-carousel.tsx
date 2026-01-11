@@ -37,7 +37,7 @@ export function HomeCarousel() {
     },
     {
       id: 1,
-      badge: "ABOUT US",
+      badge: "",
       title: (
         <>
           What is{" "}
@@ -87,10 +87,13 @@ export function HomeCarousel() {
                 currentSlide === index ? "opacity-100" : "opacity-0 absolute inset-0 pointer-events-none"
               }`}
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(60,53,242,0.4)] bg-[linear-gradient(135deg,rgba(60,53,242,0.18),rgba(74,95,217,0.18))] px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--accent-primary)] mb-4 sm:mb-6">
-                <span className="h-2 w-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
-                {slide.badge}
-              </div>
+              {slide.badge && (
+                <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(60,53,242,0.4)] bg-[linear-gradient(135deg,rgba(60,53,242,0.18),rgba(74,95,217,0.18))] px-3 py-1.5 sm:px-4 sm:py-2 text-[10px] sm:text-xs font-medium uppercase tracking-[0.18em] text-[color:var(--accent-primary)] mb-4 sm:mb-6">
+                  <span className="h-2 w-2 rounded-full bg-[var(--accent-primary)] animate-pulse" />
+                  {slide.badge}
+                </div>
+              )}
+              {!slide.badge && <div className="mb-4 sm:mb-6 h-[38px] sm:h-[42px]" />}
 
               <h1 className={`${instrumentSerif.className} text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-normal text-white mb-4 sm:mb-6 leading-[1.15] tracking-[-0.03em] pt-1`}>
                 {slide.title}
