@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { systemPrompt, userPrompt } = body
+    const { systemPrompt, userPrompt, htmlTemplate } = body
 
     // Check if Airtable is configured
     const airtableConfig = await prisma.apiKey.findUnique({
@@ -85,8 +85,12 @@ export async function POST(request: NextRequest) {
 
     const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXTAUTH_URL || ""
 
-    // Generate HTML
-    const html = generateEmailHtml(content, { articles, origin })
+    // Generate HTML with custom template if provided
+    const html = generateEmailHtml(content, {
+      articles,
+      origin,
+      template: htmlTemplate
+    })
 
     return NextResponse.json({ 
       html,
