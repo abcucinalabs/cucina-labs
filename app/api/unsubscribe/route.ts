@@ -41,20 +41,44 @@ export async function POST(request: NextRequest) {
         const resendApiKey = decrypt(resendConfig.key)
         const resend = new Resend(resendApiKey)
 
-        // Update contact to set unsubscribed flag
-        console.log(`[Unsubscribe] Setting unsubscribed flag for email: ${email}`)
-        const updateResponse = await resend.contacts.update({
-          email: email,
-          unsubscribed: true,
-        })
+        // Get all audiences to find the contact
+        console.log(`[Unsubscribe] Finding contact for email: ${email}`)
+        const audiencesResponse = await resend.audiences.list()
+        const audiences = audiencesResponse.data?.data || []
 
-        console.log(`[Unsubscribe] Update response:`, updateResponse)
+        // Find the contact in any audience and update it
+        for (const audience of audiences) {
+          try {
+            const contactsResponse = await resend.contacts.list({
+              audienceId: audience.id,
+            })
 
-        if (updateResponse.data) {
-          unsubscribedInResend = true
-          console.log(`[Unsubscribe] Successfully unsubscribed ${email} in Resend`)
-        } else if (updateResponse.error) {
-          console.error(`[Unsubscribe] Failed to unsubscribe in Resend:`, updateResponse.error)
+            const contacts = contactsResponse.data?.data || []
+            const contact = contacts.find((c) => c.email === email)
+
+            if (contact) {
+              console.log(`[Unsubscribe] Found contact in audience ${audience.name}, updating unsubscribed flag`)
+              const updateResponse = await resend.contacts.update({
+                audienceId: audience.id,
+                id: contact.id,
+                unsubscribed: true,
+              })
+
+              console.log(`[Unsubscribe] Update response:`, updateResponse)
+
+              if (updateResponse.data) {
+                unsubscribedInResend = true
+                console.log(`[Unsubscribe] Successfully unsubscribed ${email} in Resend`)
+                break // Contact updated, no need to check other audiences
+              }
+            }
+          } catch (error) {
+            console.error(`[Unsubscribe] Error updating contact in audience ${audience.id}:`, error)
+          }
+        }
+
+        if (!unsubscribedInResend) {
+          console.log(`[Unsubscribe] Contact ${email} not found in any audience`)
         }
       } catch (error) {
         console.error("[Unsubscribe] Failed to process Resend unsubscribe:", error)
