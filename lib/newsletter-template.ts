@@ -160,7 +160,7 @@ export const normalizeNewsletterArticles = (articles: any[], origin?: string) =>
     return {
       ...article,
       source_link: origin && sourceLink ? wrapRedirectUrl(sourceLink, origin) : sourceLink,
-      image_link: origin && imageLink ? wrapRedirectUrl(imageLink, origin) : imageLink,
+      image_link: imageLink, // Don't wrap image links - email clients load images directly
       summary: article.summary || article.aiSummary || article.ai_generated_summary || "",
       why_it_matters: article.whyItMatters || article.why_it_matters || "",
       business_value: article.businessValue || article.business_value || "",
