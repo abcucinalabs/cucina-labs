@@ -296,7 +296,7 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       .replace(/\$\{([^}]+)\}/g, (match, content) => {
         // Check if content contains || operator for default values
         if (content.includes('||')) {
-          const parts = content.split('||').map(p => p.trim())
+          const parts = content.split('||').map((p: string) => p.trim())
           // Convert to Handlebars (or) helper syntax
           return `{{or ${parts.join(' ')}}}`
         }
