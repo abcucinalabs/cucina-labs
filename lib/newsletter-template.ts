@@ -1,4 +1,5 @@
 import { wrapRedirectUrl } from "./url-utils"
+import Handlebars from "handlebars"
 
 export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <html>
@@ -104,8 +105,37 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 <tr>
                   <td style="padding: 24px 40px 36px; text-align: center;">
                     <div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent); margin: 0 0 20px;"></div>
-                    <p style="margin: 0 0 10px; color: rgba(13, 13, 13, 0.5); font-size: 12px;">You are receiving this because you subscribed to cucina <strong>labs</strong>.</p>
-                    <a href="\${unsubscribeUrl}" style="color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 12px;">Unsubscribe</a>
+
+                    <!-- CAN-SPAM Compliant Footer -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 480px; margin: 0 auto;">
+                      <tr>
+                        <td style="padding-bottom: 16px;">
+                          <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 13px; line-height: 1.6;">
+                            You are receiving this email because you subscribed to the <strong>cucina labs</strong> AI Product Briefing newsletter.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 16px;">
+                          <a href="\${unsubscribeUrl}" style="display: inline-block; color: #ffffff; background-color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 13px; padding: 10px 24px; border-radius: 8px; margin-bottom: 8px;">Unsubscribe</a>
+                          <p style="margin: 8px 0 0; color: rgba(13, 13, 13, 0.5); font-size: 11px;">
+                            You can unsubscribe at any time by clicking the link above.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, 0.06);">
+                          <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 12px; line-height: 1.6;">
+                            <strong>cucina labs</strong><br>
+                            \${businessAddress || "Business Address Required"}<br>
+                            \${businessCity || "City"}, \${businessState || "State"} \${businessZip || "ZIP"}
+                          </p>
+                          <p style="margin: 8px 0 0; color: rgba(13, 13, 13, 0.5); font-size: 11px;">
+                            © \${new Date().getFullYear()} cucina labs. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               </table>
@@ -218,8 +248,14 @@ export const buildNewsletterTemplateContext = ({
     })
 
   const baseUrl = origin || ""
-  const unsubscribeUrl = `${baseUrl}/unsubscribe?email={{email}}&token={{token}}`
+  const unsubscribeUrl = `${baseUrl}/unsubscribe?email={{email}}&token={{token}}&exp={{exp}}`
   const bannerUrl = `${baseUrl}/video-background-2-still.png`
+
+  // CAN-SPAM compliance: Business address (should be configured via environment variables)
+  const businessAddress = process.env.BUSINESS_ADDRESS || "123 Main Street"
+  const businessCity = process.env.BUSINESS_CITY || "San Francisco"
+  const businessState = process.env.BUSINESS_STATE || "CA"
+  const businessZip = process.env.BUSINESS_ZIP || "94102"
 
   return {
     newsletter,
@@ -229,13 +265,37 @@ export const buildNewsletterTemplateContext = ({
     findArticle,
     unsubscribeUrl,
     bannerUrl,
+    businessAddress,
+    businessCity,
+    businessState,
+    businessZip,
   }
 }
 
+// Register Handlebars helper for date formatting
+Handlebars.registerHelper('formatDate', function(date: Date) {
+  if (!date || !(date instanceof Date)) {
+    return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  }
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+})
+
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
-  const keys = Object.keys(context)
-  const values = Object.values(context)
-  // eslint-disable-next-line no-new-func
-  const renderer = new Function(...keys, `return \`${template}\`;`)
-  return renderer(...values)
+  try {
+    // Convert template from ES6 template literal syntax to Handlebars syntax
+    // ${variable} -> {{variable}}
+    const handlebarsTemplate = template
+      .replace(/\$\{([^}]+)\}/g, '{{$1}}')
+
+    // Compile the template with Handlebars (safe, no arbitrary code execution)
+    const compiledTemplate = Handlebars.compile(handlebarsTemplate, {
+      noEscape: false, // Escape HTML by default to prevent XSS
+      strict: false,   // Don't throw on missing properties (return empty string instead)
+    })
+
+    return compiledTemplate(context)
+  } catch (error) {
+    console.error('Template rendering error:', error)
+    throw new Error('Failed to render newsletter template')
+  }
 }

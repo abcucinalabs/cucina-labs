@@ -346,15 +346,27 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   // Send emails
   for (const subscriber of subscribers) {
     try {
-      // Generate unsubscribe token
+      // Generate unsubscribe token with expiration (valid for 90 days)
       const crypto = await import("crypto")
+      const normalizedEmail = subscriber.email.trim().toLowerCase()
+      const expirationDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
+      const timestamp = Math.floor(expirationDate.getTime() / 1000)
+
+      // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
+      const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+
+      // Include email and timestamp in token payload for expiration
+      const payload = `${normalizedEmail}:${timestamp}`
       const token = crypto
-        .createHmac("sha256", process.env.NEXTAUTH_SECRET || "")
-        .update(subscriber.email)
+        .createHmac("sha256", secret)
+        .update(payload)
         .digest("hex")
 
-      const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${token}`
-      const htmlWithUnsubscribe = html.replace("{{email}}", subscriber.email).replace("{{token}}", token)
+      const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${token}&exp=${timestamp}`
+      const htmlWithUnsubscribe = html
+        .replace(/\{\{email\}\}/g, subscriber.email)
+        .replace(/\{\{token\}\}/g, token)
+        .replace(/\{\{exp\}\}/g, String(timestamp))
 
       await resend.emails.send({
         from: "cucina labs <newsletter@cucinalabs.com>",

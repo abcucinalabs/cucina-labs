@@ -3,7 +3,8 @@ import { z } from "zod"
 import { Resend } from "resend"
 import { prisma } from "@/lib/db"
 import { decrypt } from "@/lib/encryption"
-import crypto from "crypto"
+import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
+import { appendEmailFooter } from "@/lib/email-footer"
 
 const REQUEST_SPACING_MS = 650
 const WELCOME_EMAIL_RETRY_DELAY_MS = 1200
@@ -14,6 +15,12 @@ const sleep = (ms: number) =>
   })
 
 export async function POST(request: NextRequest) {
+  // Apply rate limiting: 5 signups per 15 minutes per IP
+  const rateLimitResponse = rateLimit(request, RateLimitPresets.STRICT, "subscribe")
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     const resendConfig = await prisma.apiKey.findUnique({
       where: { service: "resend" },
@@ -74,22 +81,18 @@ export async function POST(request: NextRequest) {
           const fromEmail =
             resendConfig.resendFromEmail || "newsletter@cucinalabs.com"
 
-          // Generate unsubscribe URL with token
-          const secret = process.env.NEXTAUTH_SECRET || ""
-          const unsubscribeToken = crypto
-            .createHmac("sha256", secret)
-            .update(email)
-            .digest("hex")
-          const unsubscribeUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/unsubscribe?email=${encodeURIComponent(email)}&token=${unsubscribeToken}`
-
-          // Replace placeholder in HTML
-          const htmlWithUnsubscribe = welcomeTemplate.html.replace(/{{unsubscribe_url}}/g, unsubscribeUrl)
+          // IMPORTANT: Append CAN-SPAM compliant footer to welcome email
+          const htmlWithFooter = appendEmailFooter(welcomeTemplate.html, {
+            email,
+            includeUnsubscribe: true,
+            origin: process.env.NEXTAUTH_URL,
+          })
 
           const emailPayload = {
             from: `${fromName} <${fromEmail}>`,
             to: email,
             subject: welcomeTemplate.subject || "Welcome to cucina labs",
-            html: htmlWithUnsubscribe,
+            html: htmlWithFooter,
           }
 
           for (let attempt = 0; attempt < 2; attempt += 1) {

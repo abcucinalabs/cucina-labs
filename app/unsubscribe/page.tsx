@@ -12,12 +12,14 @@ function UnsubscribeContent() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [exp, setExp] = useState<string | null>(null)
   const [status, setStatus] = useState<"confirm" | "loading" | "success" | "error">("confirm")
   const [message, setMessage] = useState("")
 
   useEffect(() => {
     const emailParam = searchParams.get("email")
     const tokenParam = searchParams.get("token")
+    const expParam = searchParams.get("exp")
 
     if (!emailParam || !tokenParam) {
       setStatus("error")
@@ -27,6 +29,7 @@ function UnsubscribeContent() {
 
     setEmail(decodeURIComponent(emailParam))
     setToken(tokenParam)
+    setExp(expParam)
   }, [searchParams])
 
   const handleUnsubscribe = async () => {
@@ -35,10 +38,15 @@ function UnsubscribeContent() {
     setStatus("loading")
 
     try {
+      const body: any = { email, token }
+      if (exp) {
+        body.exp = exp
+      }
+
       const response = await fetch("/api/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token }),
+        body: JSON.stringify(body),
       })
 
       const data = await response.json()

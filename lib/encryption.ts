@@ -2,52 +2,100 @@ import crypto from "crypto"
 
 const ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 16
-const SALT_LENGTH = 64
+const SALT_LENGTH = 32
 const TAG_LENGTH = 16
 const KEY_LENGTH = 32
 
-function getKey(): Buffer {
-  const encryptionKey = process.env.ENCRYPTION_KEY
-  if (!encryptionKey) {
-    throw new Error("ENCRYPTION_KEY environment variable is not set")
+// Scrypt parameters for secure key derivation
+const SCRYPT_OPTIONS = {
+  N: 16384,  // CPU/memory cost parameter (2^14)
+  r: 8,      // Block size
+  p: 1,      // Parallelization parameter
+}
+
+function deriveKey(masterKey: string, salt: Buffer): Buffer {
+  if (!masterKey || masterKey.length < 32) {
+    throw new Error("ENCRYPTION_KEY must be at least 32 characters long")
   }
-  // Use the key directly if it's 32 bytes, otherwise derive from it
-  if (encryptionKey.length === 32) {
-    return Buffer.from(encryptionKey, "utf8")
-  }
-  return crypto.scryptSync(encryptionKey, "salt", KEY_LENGTH)
+
+  return crypto.scryptSync(
+    masterKey,
+    salt,
+    KEY_LENGTH,
+    SCRYPT_OPTIONS
+  )
 }
 
 export function encrypt(text: string): string {
-  const key = getKey()
-  const iv = crypto.randomBytes(IV_LENGTH)
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+  const masterKey = process.env.ENCRYPTION_KEY
+  if (!masterKey) {
+    throw new Error("ENCRYPTION_KEY environment variable is not set")
+  }
 
+  // Generate random salt for this encryption (prevents rainbow tables)
+  const salt = crypto.randomBytes(SALT_LENGTH)
+
+  // Derive key from master key + salt
+  const key = deriveKey(masterKey, salt)
+
+  // Generate random IV
+  const iv = crypto.randomBytes(IV_LENGTH)
+
+  // Encrypt
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
   let encrypted = cipher.update(text, "utf8", "hex")
   encrypted += cipher.final("hex")
 
   const tag = cipher.getAuthTag()
 
-  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`
+  // Include salt in output so we can derive the same key during decryption
+  return `${salt.toString("hex")}:${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`
 }
 
 export function decrypt(encryptedText: string): string {
-  const key = getKey()
-  const parts = encryptedText.split(":")
-  if (parts.length !== 3) {
-    throw new Error("Invalid encrypted text format")
+  const masterKey = process.env.ENCRYPTION_KEY
+  if (!masterKey) {
+    throw new Error("ENCRYPTION_KEY environment variable is not set")
   }
 
-  const iv = Buffer.from(parts[0], "hex")
-  const tag = Buffer.from(parts[1], "hex")
-  const encrypted = parts[2]
+  const parts = encryptedText.split(":")
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(tag)
+  // Handle both old format (3 parts) and new format (4 parts with salt)
+  if (parts.length === 4) {
+    // New format with salt
+    const salt = Buffer.from(parts[0], "hex")
+    const iv = Buffer.from(parts[1], "hex")
+    const tag = Buffer.from(parts[2], "hex")
+    const encrypted = parts[3]
 
-  let decrypted = decipher.update(encrypted, "hex", "utf8")
-  decrypted += decipher.final("utf8")
+    const key = deriveKey(masterKey, salt)
 
-  return decrypted
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(tag)
+
+    let decrypted = decipher.update(encrypted, "hex", "utf8")
+    decrypted += decipher.final("utf8")
+
+    return decrypted
+  } else if (parts.length === 3) {
+    // Old format without salt (for backward compatibility during migration)
+    const iv = Buffer.from(parts[0], "hex")
+    const tag = Buffer.from(parts[1], "hex")
+    const encrypted = parts[2]
+
+    // Use old key derivation method for legacy data
+    const legacySalt = "salt"
+    const key = crypto.scryptSync(masterKey, legacySalt, KEY_LENGTH)
+
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(tag)
+
+    let decrypted = decipher.update(encrypted, "hex", "utf8")
+    decrypted += decipher.final("utf8")
+
+    return decrypted
+  } else {
+    throw new Error("Invalid encrypted text format")
+  }
 }
 
