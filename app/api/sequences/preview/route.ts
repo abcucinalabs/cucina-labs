@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
 import { prisma } from "@/lib/db"
+import { logNewsActivity } from "@/lib/news-activity"
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
     if (articles.length === 0) {
       // Check Airtable configuration
       if (!airtableConfig?.airtableBaseId || !airtableConfig?.airtableTableId) {
+        await logNewsActivity({
+          event: "sequences.preview",
+          status: "warning",
+          message: "Preview failed: Airtable not configured.",
+          metadata: { source },
+        })
         return NextResponse.json({
           error: "Airtable not configured",
           details: "Please configure your Airtable integration on the Integrations tab. Select your Base and Table where articles are stored.",
@@ -64,11 +71,23 @@ export async function POST(request: NextRequest) {
       const totalLocalArticles = await prisma.article.count()
       
       if (totalLocalArticles === 0) {
+        await logNewsActivity({
+          event: "sequences.preview",
+          status: "warning",
+          message: "Preview failed: no articles found in Airtable or local DB.",
+          metadata: { source },
+        })
         return NextResponse.json({
           error: "No articles found",
           details: "No articles found in Airtable or the local database. Please ensure your Airtable table contains articles, or run the ingestion workflow to populate articles.",
         }, { status: 400 })
       } else {
+        await logNewsActivity({
+          event: "sequences.preview",
+          status: "warning",
+          message: "Preview failed: no recent articles in local DB.",
+          metadata: { source, totalLocalArticles },
+        })
         return NextResponse.json({
           error: "No recent articles",
           details: `Found ${totalLocalArticles} articles in local database but none from the last 24 hours. Check your Airtable connection or run ingestion again.`,
@@ -92,6 +111,13 @@ export async function POST(request: NextRequest) {
       template: htmlTemplate
     })
 
+    await logNewsActivity({
+      event: "sequences.preview",
+      status: "success",
+      message: "Generated sequence preview.",
+      metadata: { source, articleCount: articles.length },
+    })
+
     return NextResponse.json({ 
       html,
       content,
@@ -106,6 +132,12 @@ export async function POST(request: NextRequest) {
     
     // Provide more specific error messages
     if (error.message?.includes("Airtable")) {
+      await logNewsActivity({
+        event: "sequences.preview",
+        status: "error",
+        message: "Preview failed: Airtable connection failed.",
+        metadata: { details: error.message || String(error) },
+      })
       return NextResponse.json({
         error: "Airtable connection failed",
         details: error.message || "Failed to connect to Airtable. Please check your API key and table configuration.",
@@ -113,12 +145,24 @@ export async function POST(request: NextRequest) {
     }
     
     if (error.message?.includes("Gemini")) {
+      await logNewsActivity({
+        event: "sequences.preview",
+        status: "error",
+        message: "Preview failed: Gemini generation error.",
+        metadata: { details: error.message || String(error) },
+      })
       return NextResponse.json({
         error: "AI generation failed",
         details: error.message || "Failed to generate content with Gemini. Please check your Gemini API key.",
       }, { status: 500 })
     }
 
+    await logNewsActivity({
+      event: "sequences.preview",
+      status: "error",
+      message: "Preview failed: unexpected error.",
+      metadata: { details: error.message || String(error) },
+    })
     return NextResponse.json(
       { error: "Failed to generate preview", details: String(error) },
       { status: 500 }
