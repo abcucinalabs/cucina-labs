@@ -126,9 +126,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       <tr>
                         <td style="padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, 0.06);">
                           <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 12px; line-height: 1.6;">
-                            <strong>cucina labs</strong><br>
-                            \${businessAddress || "Business Address Required"}<br>
-                            \${businessCity || "City"}, \${businessState || "State"} \${businessZip || "ZIP"}
+                            <strong>cucina labs</strong>
                           </p>
                           <p style="margin: 8px 0 0; color: rgba(13, 13, 13, 0.5); font-size: 11px;">
                             © \${new Date().getFullYear()} cucina labs. All rights reserved.
@@ -251,12 +249,6 @@ export const buildNewsletterTemplateContext = ({
   const unsubscribeUrl = `${baseUrl}/unsubscribe`
   const bannerUrl = `${baseUrl}/video-background-2-still.png`
 
-  // CAN-SPAM compliance: Business address (should be configured via environment variables)
-  const businessAddress = process.env.BUSINESS_ADDRESS || "123 Main Street"
-  const businessCity = process.env.BUSINESS_CITY || "San Francisco"
-  const businessState = process.env.BUSINESS_STATE || "CA"
-  const businessZip = process.env.BUSINESS_ZIP || "94102"
-
   return {
     newsletter,
     articles: normalizedArticles,
@@ -265,10 +257,6 @@ export const buildNewsletterTemplateContext = ({
     findArticle,
     unsubscribeUrl,
     bannerUrl,
-    businessAddress,
-    businessCity,
-    businessState,
-    businessZip,
     currentDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
   }
 }
@@ -299,10 +287,6 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       findArticle,
       unsubscribeUrl,
       bannerUrl,
-      businessAddress,
-      businessCity,
-      businessState,
-      businessZip,
       currentDate,
     } = context
 
@@ -316,10 +300,6 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       'findArticle',
       'unsubscribeUrl',
       'bannerUrl',
-      'businessAddress',
-      'businessCity',
-      'businessState',
-      'businessZip',
       'currentDate',
       `return \`${template}\`;`
     )
@@ -332,10 +312,6 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       findArticle,
       unsubscribeUrl,
       bannerUrl,
-      businessAddress,
-      businessCity,
-      businessState,
-      businessZip,
       currentDate
     )
   } catch (error) {
