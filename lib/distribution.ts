@@ -325,6 +325,16 @@ export async function runDistribution(sequenceId: string): Promise<void> {
     metadata: { sequenceId, sequenceName: sequence.name },
   })
 
+  if (!sequence.audienceId) {
+    await logNewsActivity({
+      event: "distribution_failed",
+      status: "error",
+      message: `Sequence is missing audience ID: ${sequence.name}`,
+      metadata: { sequenceId, sequenceName: sequence.name },
+    })
+    throw new Error("Sequence audience ID not configured")
+  }
+
   // Get recent articles
   const articles = await getRecentArticles()
 
@@ -378,107 +388,74 @@ export async function runDistribution(sequenceId: string): Promise<void> {
 
   const resend = new Resend(resendApiKey)
 
-  // Get subscribers
-  const subscribers = await prisma.subscriber.findMany({
-    where: { status: "active" },
-  })
-
   await logNewsActivity({
     event: "distribution_sending",
     status: "info",
-    message: `Sending newsletter to ${subscribers.length} subscribers for sequence: ${sequence.name}`,
-    metadata: { sequenceId, sequenceName: sequence.name, subscriberCount: subscribers.length },
+    message: `Sending newsletter broadcast for sequence: ${sequence.name}`,
+    metadata: {
+      sequenceId,
+      sequenceName: sequence.name,
+      audienceId: sequence.audienceId,
+    },
   })
 
-  // Track email send results
-  let successCount = 0
-  let failureCount = 0
-  const errors: string[] = []
+  // Create and send broadcast
+  const from = "cucina labs <newsletter@cucinalabs.com>"
+  const broadcastResponse = await resend.broadcasts.create({
+    name: `${sequence.name} - ${new Date().toISOString()}`,
+    audienceId: sequence.audienceId,
+    from,
+    subject: sequence.name,
+    html,
+    text: plainText,
+    previewText: content.intro || undefined,
+  })
 
-  // Send emails
-  for (const subscriber of subscribers) {
-    try {
-      // Generate unsubscribe token with expiration (valid for 90 days)
-      const crypto = await import("crypto")
-      const normalizedEmail = subscriber.email.trim().toLowerCase()
-      const expirationDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
-      const timestamp = Math.floor(expirationDate.getTime() / 1000)
-
-      // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
-      const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
-
-      // Include email and timestamp in token payload for expiration
-      const payload = `${normalizedEmail}:${timestamp}`
-      const token = crypto
-        .createHmac("sha256", secret)
-        .update(payload)
-        .digest("hex")
-
-      const unsubscribeUrl = `${process.env.NEXTAUTH_URL}/unsubscribe?email=${encodeURIComponent(subscriber.email)}&token=${token}&exp=${timestamp}`
-      const htmlWithUnsubscribe = html
-        .replace(/\{\{email\}\}/g, subscriber.email)
-        .replace(/\{\{token\}\}/g, token)
-        .replace(/\{\{exp\}\}/g, String(timestamp))
-
-      await resend.emails.send({
-        from: "cucina labs <newsletter@cucinalabs.com>",
-        to: subscriber.email,
-        subject: sequence.name,
-        html: htmlWithUnsubscribe,
-        text: plainText,
-      })
-      successCount++
-    } catch (error) {
-      failureCount++
-      const errorMsg = error instanceof Error ? error.message : String(error)
-      errors.push(`${subscriber.email}: ${errorMsg}`)
-      console.error(`Failed to send email to ${subscriber.email}:`, error)
-    }
-  }
-
-  // Log distribution results
-  if (failureCount === 0) {
-    await logNewsActivity({
-      event: "distribution_completed",
-      status: "success",
-      message: `Successfully sent newsletter to all ${successCount} subscribers for sequence: ${sequence.name}`,
-      metadata: {
-        sequenceId,
-        sequenceName: sequence.name,
-        successCount,
-        failureCount: 0,
-        totalSubscribers: subscribers.length,
-      },
-    })
-  } else if (successCount > 0) {
-    await logNewsActivity({
-      event: "distribution_completed_with_errors",
-      status: "warning",
-      message: `Newsletter sent to ${successCount} subscribers with ${failureCount} failures for sequence: ${sequence.name}`,
-      metadata: {
-        sequenceId,
-        sequenceName: sequence.name,
-        successCount,
-        failureCount,
-        totalSubscribers: subscribers.length,
-        errors: errors.slice(0, 10), // Only log first 10 errors
-      },
-    })
-  } else {
+  if (broadcastResponse.error || !broadcastResponse.data?.id) {
     await logNewsActivity({
       event: "distribution_failed",
       status: "error",
-      message: `Failed to send newsletter to all ${failureCount} subscribers for sequence: ${sequence.name}`,
+      message: `Failed to create broadcast for sequence: ${sequence.name}`,
       metadata: {
         sequenceId,
         sequenceName: sequence.name,
-        successCount: 0,
-        failureCount,
-        totalSubscribers: subscribers.length,
-        errors: errors.slice(0, 10), // Only log first 10 errors
+        audienceId: sequence.audienceId,
+        error: broadcastResponse.error?.message,
       },
     })
+    throw new Error("Failed to create Resend broadcast")
   }
+
+  const broadcastId = broadcastResponse.data.id
+
+  const sendResponse = await resend.broadcasts.send(broadcastId)
+  if (sendResponse.error) {
+    await logNewsActivity({
+      event: "distribution_failed",
+      status: "error",
+      message: `Failed to send broadcast for sequence: ${sequence.name}`,
+      metadata: {
+        sequenceId,
+        sequenceName: sequence.name,
+        audienceId: sequence.audienceId,
+        broadcastId,
+        error: sendResponse.error?.message,
+      },
+    })
+    throw new Error("Failed to send Resend broadcast")
+  }
+
+  await logNewsActivity({
+    event: "distribution_completed",
+    status: "success",
+    message: `Broadcast sent for sequence: ${sequence.name}`,
+    metadata: {
+      sequenceId,
+      sequenceName: sequence.name,
+      audienceId: sequence.audienceId,
+      broadcastId,
+    },
+  })
 
   // Update sequence last sent time
   await prisma.sequence.update({

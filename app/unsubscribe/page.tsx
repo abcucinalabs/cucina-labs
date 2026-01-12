@@ -11,6 +11,7 @@ const instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: ["400"] }
 function UnsubscribeContent() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState<string | null>(null)
+  const [emailInput, setEmailInput] = useState("")
   const [token, setToken] = useState<string | null>(null)
   const [exp, setExp] = useState<string | null>(null)
   const [status, setStatus] = useState<"confirm" | "loading" | "success" | "error">("confirm")
@@ -21,26 +22,34 @@ function UnsubscribeContent() {
     const tokenParam = searchParams.get("token")
     const expParam = searchParams.get("exp")
 
-    if (!emailParam || !tokenParam) {
-      setStatus("error")
-      setMessage("Invalid unsubscribe link")
-      return
+    if (emailParam) {
+      const decodedEmail = decodeURIComponent(emailParam)
+      setEmail(decodedEmail)
+      setEmailInput(decodedEmail)
     }
-
-    setEmail(decodeURIComponent(emailParam))
-    setToken(tokenParam)
-    setExp(expParam)
+    if (tokenParam) {
+      setToken(tokenParam)
+      setExp(expParam)
+    }
   }, [searchParams])
 
   const handleUnsubscribe = async () => {
-    if (!email || !token) return
+    const targetEmail = emailInput.trim()
+    if (!targetEmail) {
+      setStatus("error")
+      setMessage("Please enter your email address.")
+      return
+    }
 
     setStatus("loading")
 
     try {
-      const body: any = { email, token }
-      if (exp) {
-        body.exp = exp
+      const body: any = { email: targetEmail }
+      if (token) {
+        body.token = token
+        if (exp) {
+          body.exp = exp
+        }
       }
 
       const response = await fetch("/api/unsubscribe", {
@@ -110,9 +119,19 @@ function UnsubscribeContent() {
                     </div>
 
                     <div className="mb-6 p-4 rounded-[var(--radius-lg)] bg-white/5 border border-white/10">
-                      <p className="text-sm text-white/60">Email address</p>
-                      <p className="text-white mt-1 break-all">{email}</p>
-                    </div>
+                    <p className="text-sm text-white/60">Email address</p>
+                    {token ? (
+                      <p className="text-white mt-1 break-all">{emailInput}</p>
+                    ) : (
+                      <input
+                        type="email"
+                        value={emailInput}
+                        onChange={(event) => setEmailInput(event.target.value)}
+                        placeholder="you@example.com"
+                        className="mt-2 w-full rounded-[var(--radius-md)] border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+                      />
+                    )}
+                  </div>
 
                     <div className="flex gap-3">
                       <Button
@@ -161,7 +180,7 @@ function UnsubscribeContent() {
                         {message}
                       </p>
                       <p className="text-sm text-white/60 mb-2">
-                        You will no longer receive emails from cucina <span className="font-bold">labs</span> at <span className="text-white">{email}</span>.
+                        You will no longer receive emails from cucina <span className="font-bold">labs</span> at <span className="text-white">{emailInput}</span>.
                       </p>
                       <p className="text-sm text-white/60">
                         We&apos;re sorry to see you go. If you change your mind, you can always resubscribe on our website.

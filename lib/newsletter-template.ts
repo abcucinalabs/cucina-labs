@@ -248,7 +248,7 @@ export const buildNewsletterTemplateContext = ({
     })
 
   const baseUrl = origin || ""
-  const unsubscribeUrl = `${baseUrl}/unsubscribe?email={{email}}&token={{token}}&exp={{exp}}`
+  const unsubscribeUrl = `${baseUrl}/unsubscribe`
   const bannerUrl = `${baseUrl}/video-background-2-still.png`
 
   // CAN-SPAM compliance: Business address (should be configured via environment variables)

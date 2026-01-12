@@ -8,7 +8,7 @@ import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 
 const unsubscribeSchema = z.object({
   email: z.string().email(),
-  token: z.string(),
+  token: z.string().optional(),
   exp: z.string().optional(), // Expiration timestamp (optional for backward compatibility)
 })
 
@@ -24,45 +24,46 @@ export async function POST(request: NextRequest) {
     const { email, token, exp } = unsubscribeSchema.parse(body)
     const normalizedEmail = email.trim().toLowerCase()
 
-    // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
-    const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+    if (token) {
+      // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
+      const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
 
-    // Verify token with expiration check
-    let expectedToken: string
+      // Verify token with expiration check
+      let expectedToken: string
 
-    if (exp) {
-      // New format: token includes timestamp for expiration
-      const expirationTimestamp = parseInt(exp, 10)
+      if (exp) {
+        // New format: token includes timestamp for expiration
+        const expirationTimestamp = parseInt(exp, 10)
 
-      // Check if token has expired
-      const now = Math.floor(Date.now() / 1000)
-      if (now > expirationTimestamp) {
+        // Check if token has expired
+        const now = Math.floor(Date.now() / 1000)
+        if (now > expirationTimestamp) {
+          return NextResponse.json(
+            { error: "Unsubscribe link has expired. Please contact support." },
+            { status: 403 }
+          )
+        }
+
+        // Verify token with normalized email and timestamp
+        const payload = `${normalizedEmail}:${exp}`
+        expectedToken = crypto
+          .createHmac("sha256", secret)
+          .update(payload)
+          .digest("hex")
+      } else {
+        // Old format: token without expiration (for backward compatibility)
+        expectedToken = crypto
+          .createHmac("sha256", secret)
+          .update(email)
+          .digest("hex")
+      }
+
+      if (token !== expectedToken) {
         return NextResponse.json(
-          { error: "Unsubscribe link has expired. Please contact support." },
+          { error: "Invalid unsubscribe token" },
           { status: 403 }
         )
       }
-
-      // Verify token with normalized email and timestamp
-      const payload = `${normalizedEmail}:${exp}`
-      expectedToken = crypto
-        .createHmac("sha256", secret)
-        .update(payload)
-        .digest("hex")
-    } else {
-      // Old format: token without expiration (for backward compatibility)
-      // This handles tokens generated before this security fix
-      expectedToken = crypto
-        .createHmac("sha256", secret)
-        .update(email)
-        .digest("hex")
-    }
-
-    if (token !== expectedToken) {
-      return NextResponse.json(
-        { error: "Invalid unsubscribe token" },
-        { status: 403 }
-      )
     }
 
     // Get Resend API key from database

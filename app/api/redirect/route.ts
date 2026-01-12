@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
+import { prisma } from "@/lib/db"
 
 // Allowlist of domains that are permitted for redirects
 // Add your RSS feed sources and trusted newsletter content domains here
@@ -15,6 +16,7 @@ const ALLOWED_DOMAINS = [
   'cnet.com',
   'zdnet.com',
   'thenextweb.com',
+  'bloomberg.com',
 
   // AI/ML specific
   'openai.com',
@@ -26,10 +28,71 @@ const ALLOWED_DOMAINS = [
   // Add more domains as needed for your newsletter sources
 ]
 
-function isAllowedDomain(hostname: string): boolean {
-  return ALLOWED_DOMAINS.some(domain =>
-    hostname === domain || hostname.endsWith(`.${domain}`)
+const CACHE_TTL_MS = 5 * 60 * 1000
+let cachedDomains: Set<string> | null = null
+let cachedAt = 0
+
+function normalizeHostname(hostname: string): string {
+  return hostname.trim().toLowerCase().replace(/^www\./, "")
+}
+
+function isAllowedDomain(hostname: string, dynamicDomains?: Set<string>): boolean {
+  const normalized = normalizeHostname(hostname)
+  const staticAllowed = ALLOWED_DOMAINS.some(
+    (domain) =>
+      normalized === domain || normalized.endsWith(`.${domain}`)
   )
+  if (staticAllowed) return true
+  if (!dynamicDomains) return false
+  if (dynamicDomains.has(normalized)) return true
+  for (const domain of dynamicDomains) {
+    if (normalized.endsWith(`.${domain}`)) return true
+  }
+  return false
+}
+
+async function getDynamicAllowedDomains(): Promise<Set<string>> {
+  const now = Date.now()
+  if (cachedDomains && now - cachedAt < CACHE_TTL_MS) {
+    return cachedDomains
+  }
+
+  const domains = new Set<string>()
+
+  const rssSources = await prisma.rssSource.findMany({
+    select: { url: true },
+  })
+
+  for (const source of rssSources) {
+    try {
+      const hostname = new URL(source.url).hostname
+      domains.add(normalizeHostname(hostname))
+    } catch {
+      // Ignore invalid URLs stored in DB
+    }
+  }
+
+  // Include recent article link domains (covers feeds that point to other domains).
+  const recentArticles = await prisma.article.findMany({
+    select: { sourceLink: true },
+    where: { sourceLink: { not: "" } },
+    orderBy: { ingestedAt: "desc" },
+    take: 2000,
+  })
+
+  for (const article of recentArticles) {
+    if (!article.sourceLink) continue
+    try {
+      const hostname = new URL(article.sourceLink).hostname
+      domains.add(normalizeHostname(hostname))
+    } catch {
+      // Ignore invalid URLs stored in DB
+    }
+  }
+
+  cachedDomains = domains
+  cachedAt = now
+  return domains
 }
 
 export async function GET(request: NextRequest) {
@@ -64,8 +127,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid URL protocol" }, { status: 400 })
     }
 
-    // Security check: Verify domain is in allowlist
-    if (!isAllowedDomain(urlObj.hostname)) {
+    const dynamicDomains = await getDynamicAllowedDomains()
+
+    // Security check: Verify domain is in allowlist (static + dynamic)
+    if (!isAllowedDomain(urlObj.hostname, dynamicDomains)) {
       console.warn(`Blocked redirect to unauthorized domain: ${urlObj.hostname}`)
       return NextResponse.json({
         error: "Redirect to this domain is not permitted for security reasons"

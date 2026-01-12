@@ -98,25 +98,13 @@ export async function POST(request: NextRequest) {
     const fromEmail = resendConfig.resendFromEmail || "newsletter@cucinalabs.com"
     const from = `${fromName} <${fromEmail}>`
 
-    // Generate unsubscribe token for test email
-    const crypto = await import("crypto")
-    const token = crypto
-      .createHmac("sha256", process.env.NEXTAUTH_SECRET || "")
-      .update(testEmail)
-      .digest("hex")
-
-    // Replace unsubscribe placeholders
-    const htmlWithUnsubscribe = html
-      .replace(/\{\{email\}\}/g, encodeURIComponent(testEmail))
-      .replace(/\{\{token\}\}/g, token)
-
     // Send test email
     console.log(`Sending test email to ${testEmail} from ${from}`)
     await resend.emails.send({
       from,
       to: testEmail,
       subject: "[TEST] AI Product Briefing - Daily Digest",
-      html: htmlWithUnsubscribe,
+      html,
       text: plainText,
     })
 
