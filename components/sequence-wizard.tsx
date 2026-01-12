@@ -64,6 +64,8 @@ export function SequenceWizard({
   const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false)
   const [newTemplateName, setNewTemplateName] = useState("")
   const [saveAsDefault, setSaveAsDefault] = useState(false)
+  const [isSendingNow, setIsSendingNow] = useState(false)
+  const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
     if (open) {
@@ -333,6 +335,36 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to publish sequence:", error)
+    }
+  }
+
+  const handleSendNow = async () => {
+    if (!sequence?.id) {
+      setSendNowStatus({ type: "error", message: "Please save the sequence first" })
+      return
+    }
+
+    setIsSendingNow(true)
+    setSendNowStatus(null)
+
+    try {
+      const response = await fetch(`/api/sequences/${sequence.id}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSendNowStatus({ type: "success", message: data.message || "Newsletter sent successfully to all subscribers!" })
+      } else {
+        setSendNowStatus({ type: "error", message: data.error || "Failed to send newsletter" })
+      }
+    } catch (error) {
+      console.error("Failed to send newsletter:", error)
+      setSendNowStatus({ type: "error", message: "Failed to send newsletter. Please try again." })
+    } finally {
+      setIsSendingNow(false)
     }
   }
 
@@ -785,6 +817,35 @@ export function SequenceWizard({
                   </div>
                 </CardContent>
               </Card>
+
+              {sequence?.id && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Send Newsletter Now</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Manually trigger this newsletter to be sent to all subscribers immediately, regardless of the schedule.
+                    </p>
+                    <Button
+                      onClick={handleSendNow}
+                      disabled={isSendingNow}
+                      className="w-full"
+                    >
+                      {isSendingNow ? "Sending..." : "Send Now to All Subscribers"}
+                    </Button>
+                    {sendNowStatus && (
+                      <div className={`p-3 rounded-md text-sm ${
+                        sendNowStatus.type === "success"
+                          ? "bg-green-50 text-green-800 border border-green-200"
+                          : "bg-red-50 text-red-800 border border-red-200"
+                      }`}>
+                        {sendNowStatus.message}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </div>
