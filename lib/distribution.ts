@@ -371,7 +371,24 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   })
 
   // Generate email HTML and plain text
-  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "" })
+  const origin = process.env.NEXTAUTH_URL || ""
+  let html: string
+
+  // Use custom HTML template if sequence has one, otherwise use default
+  if (sequence.htmlTemplate?.trim()) {
+    try {
+      const { buildNewsletterTemplateContext, renderNewsletterTemplate } = await import("./newsletter-template")
+      const context = buildNewsletterTemplateContext({ content, articles, origin })
+      html = renderNewsletterTemplate(sequence.htmlTemplate, context)
+    } catch (error) {
+      console.error("Failed to render custom HTML template:", error)
+      // Fallback to default template
+      html = generateEmailHtml(content, { articles, origin })
+    }
+  } else {
+    html = generateEmailHtml(content, { articles, origin })
+  }
+
   const plainText = generatePlainText(content)
 
   // Get Resend API key

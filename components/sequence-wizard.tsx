@@ -69,11 +69,10 @@ export function SequenceWizard({
 
   useEffect(() => {
     if (open) {
-      // Always set default template when dialog opens
-      setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
       fetchAudiences()
       fetchTemplates()
       if (sequence) {
+        // Load existing sequence data including custom HTML template
         setFormData({
           name: sequence.name || "",
           audienceId: sequence.audienceId || "",
@@ -83,8 +82,11 @@ export function SequenceWizard({
           systemPrompt: sequence.systemPrompt || "",
           userPrompt: sequence.userPrompt || "",
         })
+        // Load custom HTML template if exists, otherwise use default
+        setCustomHtml(sequence.htmlTemplate || DEFAULT_NEWSLETTER_TEMPLATE)
       } else {
-        // Load default prompts for new sequences
+        // New sequence: use default template and load default prompts
+        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
         loadDefaultPrompts()
       }
       setPreviewData(null)
@@ -328,7 +330,7 @@ export function SequenceWizard({
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, status: "active" }),
+        body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "active" }),
       })
       if (response.ok) {
         onClose()
@@ -375,7 +377,7 @@ export function SequenceWizard({
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, status: "draft" }),
+        body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "draft" }),
       })
       if (response.ok) {
         onClose()
