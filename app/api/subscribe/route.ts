@@ -3,6 +3,7 @@ import { z } from "zod"
 import { Resend } from "resend"
 import { prisma } from "@/lib/db"
 import { decrypt } from "@/lib/encryption"
+import crypto from "crypto"
 
 const REQUEST_SPACING_MS = 650
 const WELCOME_EMAIL_RETRY_DELAY_MS = 1200
@@ -72,11 +73,23 @@ export async function POST(request: NextRequest) {
           const fromName = resendConfig.resendFromName || "cucina labs"
           const fromEmail =
             resendConfig.resendFromEmail || "newsletter@cucinalabs.com"
+
+          // Generate unsubscribe URL with token
+          const secret = process.env.NEXTAUTH_SECRET || ""
+          const unsubscribeToken = crypto
+            .createHmac("sha256", secret)
+            .update(email)
+            .digest("hex")
+          const unsubscribeUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/unsubscribe?email=${encodeURIComponent(email)}&token=${unsubscribeToken}`
+
+          // Replace placeholder in HTML
+          const htmlWithUnsubscribe = welcomeTemplate.html.replace(/{{unsubscribe_url}}/g, unsubscribeUrl)
+
           const emailPayload = {
             from: `${fromName} <${fromEmail}>`,
             to: email,
             subject: welcomeTemplate.subject || "Welcome to cucina labs",
-            html: welcomeTemplate.html,
+            html: htmlWithUnsubscribe,
           }
 
           for (let attempt = 0; attempt < 2; attempt += 1) {

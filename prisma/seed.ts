@@ -376,12 +376,12 @@ async function main() {
   await prisma.emailTemplate.upsert({
     where: { type: 'welcome' },
     update: {
-      subject: 'Welcome to Cucina Labs - AI Product Briefing',
+      subject: 'Welcome to cucina labs!',
       html: welcomeEmailHtml,
     },
     create: {
       type: 'welcome',
-      subject: 'Welcome to Cucina Labs - AI Product Briefing',
+      subject: 'Welcome to cucina labs!',
       html: welcomeEmailHtml,
       enabled: true
     }
