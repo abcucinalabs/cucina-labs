@@ -8,6 +8,7 @@ import {
   buildNewsletterTemplateContext,
   renderNewsletterTemplate,
 } from "./newsletter-template"
+import { logNewsActivity } from "./news-activity"
 
 // Flexible interface to handle different Gemini response structures
 interface NewsletterContent {
@@ -308,16 +309,42 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   })
 
   if (!sequence || sequence.status !== "active") {
+    await logNewsActivity({
+      event: "distribution_failed",
+      status: "error",
+      message: `Sequence not found or not active: ${sequenceId}`,
+      metadata: { sequenceId },
+    })
     throw new Error("Sequence not found or not active")
   }
+
+  await logNewsActivity({
+    event: "distribution_started",
+    status: "info",
+    message: `Starting distribution for sequence: ${sequence.name}`,
+    metadata: { sequenceId, sequenceName: sequence.name },
+  })
 
   // Get recent articles
   const articles = await getRecentArticles()
 
   if (articles.length === 0) {
+    await logNewsActivity({
+      event: "distribution_skipped",
+      status: "warning",
+      message: `No recent articles to send for sequence: ${sequence.name}`,
+      metadata: { sequenceId, sequenceName: sequence.name },
+    })
     console.log("No recent articles to send")
     return
   }
+
+  await logNewsActivity({
+    event: "distribution_articles_fetched",
+    status: "info",
+    message: `Fetched ${articles.length} articles for sequence: ${sequence.name}`,
+    metadata: { sequenceId, sequenceName: sequence.name, articleCount: articles.length },
+  })
 
   // Generate newsletter content
   const content = await generateNewsletterContent(
@@ -326,6 +353,13 @@ export async function runDistribution(sequenceId: string): Promise<void> {
     sequence.userPrompt
   )
 
+  await logNewsActivity({
+    event: "distribution_content_generated",
+    status: "success",
+    message: `Newsletter content generated for sequence: ${sequence.name}`,
+    metadata: { sequenceId, sequenceName: sequence.name },
+  })
+
   // Generate email HTML and plain text
   const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "" })
   const plainText = generatePlainText(content)
@@ -333,6 +367,12 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   // Get Resend API key
   const resendApiKey = await getResendApiKey()
   if (!resendApiKey) {
+    await logNewsActivity({
+      event: "distribution_failed",
+      status: "error",
+      message: `Resend API key not configured for sequence: ${sequence.name}`,
+      metadata: { sequenceId, sequenceName: sequence.name },
+    })
     throw new Error("Resend API key not configured")
   }
 
@@ -342,6 +382,18 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   const subscribers = await prisma.subscriber.findMany({
     where: { status: "active" },
   })
+
+  await logNewsActivity({
+    event: "distribution_sending",
+    status: "info",
+    message: `Sending newsletter to ${subscribers.length} subscribers for sequence: ${sequence.name}`,
+    metadata: { sequenceId, sequenceName: sequence.name, subscriberCount: subscribers.length },
+  })
+
+  // Track email send results
+  let successCount = 0
+  let failureCount = 0
+  const errors: string[] = []
 
   // Send emails
   for (const subscriber of subscribers) {
@@ -375,9 +427,57 @@ export async function runDistribution(sequenceId: string): Promise<void> {
         html: htmlWithUnsubscribe,
         text: plainText,
       })
+      successCount++
     } catch (error) {
+      failureCount++
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      errors.push(`${subscriber.email}: ${errorMsg}`)
       console.error(`Failed to send email to ${subscriber.email}:`, error)
     }
+  }
+
+  // Log distribution results
+  if (failureCount === 0) {
+    await logNewsActivity({
+      event: "distribution_completed",
+      status: "success",
+      message: `Successfully sent newsletter to all ${successCount} subscribers for sequence: ${sequence.name}`,
+      metadata: {
+        sequenceId,
+        sequenceName: sequence.name,
+        successCount,
+        failureCount: 0,
+        totalSubscribers: subscribers.length,
+      },
+    })
+  } else if (successCount > 0) {
+    await logNewsActivity({
+      event: "distribution_completed_with_errors",
+      status: "warning",
+      message: `Newsletter sent to ${successCount} subscribers with ${failureCount} failures for sequence: ${sequence.name}`,
+      metadata: {
+        sequenceId,
+        sequenceName: sequence.name,
+        successCount,
+        failureCount,
+        totalSubscribers: subscribers.length,
+        errors: errors.slice(0, 10), // Only log first 10 errors
+      },
+    })
+  } else {
+    await logNewsActivity({
+      event: "distribution_failed",
+      status: "error",
+      message: `Failed to send newsletter to all ${failureCount} subscribers for sequence: ${sequence.name}`,
+      metadata: {
+        sequenceId,
+        sequenceName: sequence.name,
+        successCount: 0,
+        failureCount,
+        totalSubscribers: subscribers.length,
+        errors: errors.slice(0, 10), // Only log first 10 errors
+      },
+    })
   }
 
   // Update sequence last sent time
