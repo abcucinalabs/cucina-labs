@@ -74,19 +74,21 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
 
   // Include recent article link domains (covers feeds that point to other domains).
   const recentArticles = await prisma.article.findMany({
-    select: { sourceLink: true },
+    select: { sourceLink: true, imageLink: true },
     where: { sourceLink: { not: "" } },
     orderBy: { ingestedAt: "desc" },
     take: 2000,
   })
 
   for (const article of recentArticles) {
-    if (!article.sourceLink) continue
-    try {
-      const hostname = new URL(article.sourceLink).hostname
-      domains.add(normalizeHostname(hostname))
-    } catch {
-      // Ignore invalid URLs stored in DB
+    const candidates = [article.sourceLink, article.imageLink].filter(Boolean) as string[]
+    for (const candidate of candidates) {
+      try {
+        const hostname = new URL(candidate).hostname
+        domains.add(normalizeHostname(hostname))
+      } catch {
+        // Ignore invalid URLs stored in DB
+      }
     }
   }
 
