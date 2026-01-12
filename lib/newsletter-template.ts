@@ -38,7 +38,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                                   cucina <strong>labs</strong>
                                 </td>
                                 <td align="right" style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">
-                                  \${formatDate(new Date())}
+                                  \${currentDate}
                                 </td>
                               </tr>
                             </table>
@@ -269,6 +269,7 @@ export const buildNewsletterTemplateContext = ({
     businessCity,
     businessState,
     businessZip,
+    currentDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
   }
 }
 
@@ -289,27 +290,54 @@ Handlebars.registerHelper('or', function(...args) {
 
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
   try {
-    // Convert template from ES6 template literal syntax to Handlebars syntax
-    // ${variable} -> {{variable}}
-    // Also convert JavaScript || operator to Handlebars (or) helper
-    const handlebarsTemplate = template
-      .replace(/\$\{([^}]+)\}/g, (match, content) => {
-        // Check if content contains || operator for default values
-        if (content.includes('||')) {
-          const parts = content.split('||').map((p: string) => p.trim())
-          // Convert to Handlebars (or) helper syntax
-          return `{{or ${parts.join(' ')}}}`
-        }
-        return `{{${content}}}`
-      })
+    // Extract all variables from context for template evaluation
+    const {
+      newsletter,
+      articles,
+      featured,
+      formatDate,
+      findArticle,
+      unsubscribeUrl,
+      bannerUrl,
+      businessAddress,
+      businessCity,
+      businessState,
+      businessZip,
+      currentDate,
+    } = context
 
-    // Compile the template with Handlebars (safe, no arbitrary code execution)
-    const compiledTemplate = Handlebars.compile(handlebarsTemplate, {
-      noEscape: false, // Escape HTML by default to prevent XSS
-      strict: false,   // Don't throw on missing properties (return empty string instead)
-    })
+    // Use Function constructor to safely evaluate the template literal
+    // This allows us to use ES6 template literals with all JavaScript features
+    const templateFunction = new Function(
+      'newsletter',
+      'articles',
+      'featured',
+      'formatDate',
+      'findArticle',
+      'unsubscribeUrl',
+      'bannerUrl',
+      'businessAddress',
+      'businessCity',
+      'businessState',
+      'businessZip',
+      'currentDate',
+      `return \`${template}\`;`
+    )
 
-    return compiledTemplate(context)
+    return templateFunction(
+      newsletter,
+      articles,
+      featured,
+      formatDate,
+      findArticle,
+      unsubscribeUrl,
+      bannerUrl,
+      businessAddress,
+      businessCity,
+      businessState,
+      businessZip,
+      currentDate
+    )
   } catch (error) {
     console.error('Template rendering error:', error)
     throw new Error('Failed to render newsletter template')
