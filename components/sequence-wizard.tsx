@@ -115,7 +115,10 @@ export function SequenceWizard({
   }
 
   const handleSaveTemplate = async () => {
-    if (!newTemplateName.trim() || !customHtml.trim()) return
+    if (!newTemplateName.trim() || !customHtml.trim()) {
+      alert("Please enter a template name and HTML content")
+      return
+    }
 
     try {
       const response = await fetch("/api/newsletter-templates", {
@@ -136,9 +139,14 @@ export function SequenceWizard({
         setSaveTemplateDialogOpen(false)
         setNewTemplateName("")
         setSaveAsDefault(false)
+        alert("Template saved successfully!")
+      } else {
+        const error = await response.json()
+        alert(`Failed to save template: ${error.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Failed to save template:", error)
+      alert(`Failed to save template: ${error instanceof Error ? error.message : "Unknown error"}`)
     }
   }
 

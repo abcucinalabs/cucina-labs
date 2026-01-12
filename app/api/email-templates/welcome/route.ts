@@ -7,6 +7,7 @@ import { z } from "zod"
 const updateTemplateSchema = z.object({
   html: z.string(),
   enabled: z.boolean(),
+  subject: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -24,12 +25,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         html: "",
         enabled: false,
+        subject: "Welcome to cucina labs",
       })
     }
 
     return NextResponse.json({
       html: template.html,
       enabled: template.enabled,
+      subject: template.subject || "Welcome to cucina labs",
     })
   } catch (error) {
     console.error("Failed to fetch template:", error)
@@ -48,15 +51,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { html, enabled } = updateTemplateSchema.parse(body)
+    const { html, enabled, subject } = updateTemplateSchema.parse(body)
 
     const template = await prisma.emailTemplate.upsert({
       where: { type: "welcome" },
-      update: { html, enabled },
+      update: { html, enabled, subject },
       create: {
         type: "welcome",
         html,
         enabled,
+        subject,
       },
     })
 

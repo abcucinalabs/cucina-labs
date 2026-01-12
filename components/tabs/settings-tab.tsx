@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 
 export function SettingsTab() {
   const [welcomeEmailEnabled, setWelcomeEmailEnabled] = useState(false)
   const [welcomeEmailContent, setWelcomeEmailContent] = useState("")
+  const [welcomeEmailSubject, setWelcomeEmailSubject] = useState("Welcome to cucina labs")
   const [isLoading, setIsLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
@@ -24,6 +26,7 @@ export function SettingsTab() {
         const data = await response.json()
         setWelcomeEmailEnabled(data.enabled)
         setWelcomeEmailContent(data.html || "")
+        setWelcomeEmailSubject(data.subject || "Welcome to cucina labs")
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error)
@@ -39,13 +42,18 @@ export function SettingsTab() {
         body: JSON.stringify({
           enabled: welcomeEmailEnabled,
           html: welcomeEmailContent,
+          subject: welcomeEmailSubject,
         }),
       })
       if (response.ok) {
-        alert("Settings saved!")
+        alert("Welcome email settings saved successfully!")
+      } else {
+        const error = await response.json()
+        alert(`Failed to save: ${error.error || "Unknown error"}`)
       }
     } catch (error) {
       console.error("Failed to save settings:", error)
+      alert("Failed to save settings. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -80,19 +88,35 @@ export function SettingsTab() {
           </div>
 
           {welcomeEmailEnabled && (
-            <div className="space-y-2">
-              <Label htmlFor="email-content">Email Content (HTML)</Label>
-              <Textarea
-                id="email-content"
-                value={welcomeEmailContent}
-                onChange={(e) => setWelcomeEmailContent(e.target.value)}
-                rows={12}
-                placeholder="<html>...</html>"
-              />
-              <p className="text-sm text-muted-foreground">
-                Use HTML to format your welcome email
-              </p>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email-subject">Email Subject</Label>
+                <Input
+                  id="email-subject"
+                  value={welcomeEmailSubject}
+                  onChange={(e) => setWelcomeEmailSubject(e.target.value)}
+                  placeholder="Welcome to cucina labs"
+                />
+                <p className="text-sm text-muted-foreground">
+                  The subject line for the welcome email
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email-content">Email Content (HTML)</Label>
+                <Textarea
+                  id="email-content"
+                  value={welcomeEmailContent}
+                  onChange={(e) => setWelcomeEmailContent(e.target.value)}
+                  rows={12}
+                  placeholder="<html>...</html>"
+                  className="font-mono text-sm"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Use HTML to format your welcome email. A CAN-SPAM compliant footer will be automatically added.
+                </p>
+              </div>
+            </>
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row">
