@@ -280,12 +280,28 @@ Handlebars.registerHelper('formatDate', function(date: Date) {
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 })
 
+// Register Handlebars helper for default values
+Handlebars.registerHelper('or', function(...args) {
+  // Last argument is Handlebars options, so exclude it
+  const values = args.slice(0, -1)
+  return values.find(v => v != null && v !== '') || ''
+})
+
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
   try {
     // Convert template from ES6 template literal syntax to Handlebars syntax
     // ${variable} -> {{variable}}
+    // Also convert JavaScript || operator to Handlebars (or) helper
     const handlebarsTemplate = template
-      .replace(/\$\{([^}]+)\}/g, '{{$1}}')
+      .replace(/\$\{([^}]+)\}/g, (match, content) => {
+        // Check if content contains || operator for default values
+        if (content.includes('||')) {
+          const parts = content.split('||').map(p => p.trim())
+          // Convert to Handlebars (or) helper syntax
+          return `{{or ${parts.join(' ')}}}`
+        }
+        return `{{${content}}}`
+      })
 
     // Compile the template with Handlebars (safe, no arbitrary code execution)
     const compiledTemplate = Handlebars.compile(handlebarsTemplate, {
