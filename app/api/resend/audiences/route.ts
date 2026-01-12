@@ -30,20 +30,25 @@ export async function GET(request: NextRequest) {
       })
 
       if (!response.ok) {
-        console.error("Failed to fetch audiences from Resend:", await response.text())
+        const errorText = await response.text()
+        console.error("Failed to fetch audiences from Resend:", errorText)
+        console.error("Response status:", response.status)
         // Return a default option if the API fails
         return NextResponse.json([
-          { id: "all", name: "All Subscribers (local)" },
+          { id: "local_all", name: "All Subscribers (local database)" },
         ])
       }
 
       const data = await response.json()
-      
+      console.log("Resend API response:", JSON.stringify(data, null, 2))
+
       // Transform the response to match our expected format
       const audiences = data.data?.map((audience: any) => ({
         id: audience.id,
         name: audience.name,
       })) || []
+
+      console.log(`Found ${audiences.length} audiences from Resend`)
 
       // Add "All Subscribers" option for local subscribers
       return NextResponse.json([
