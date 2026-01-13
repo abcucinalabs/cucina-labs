@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Pause, Trash2 } from "lucide-react"
 import { SequenceWizard } from "@/components/sequence-wizard"
+import { DayBlocks } from "@/components/ui/day-blocks"
 
 export function SequencesTab() {
   const [sequences, setSequences] = useState<any[]>([])
@@ -97,6 +98,7 @@ export function SequencesTab() {
                 <TableHead>Name</TableHead>
                 <TableHead>Audience</TableHead>
                 <TableHead>Schedule</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Sent</TableHead>
                 <TableHead>Actions</TableHead>
@@ -111,7 +113,10 @@ export function SequencesTab() {
                       sequence.audienceId}
                   </TableCell>
                   <TableCell>
-                    {sequence.dayOfWeek?.join(", ")} at {sequence.time}
+                    <DayBlocks selectedDays={sequence.dayOfWeek || []} />
+                  </TableCell>
+                  <TableCell>
+                    {sequence.time} {sequence.timezone || 'UTC'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={sequence.status === "active" ? "success" : "outline"}>
