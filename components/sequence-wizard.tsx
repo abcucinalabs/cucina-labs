@@ -123,6 +123,8 @@ export function SequenceWizard({
     }
 
     try {
+      console.log("Saving template:", { name: newTemplateName, htmlLength: customHtml.length, isDefault: saveAsDefault })
+
       const response = await fetch("/api/newsletter-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -133,22 +135,25 @@ export function SequenceWizard({
         })
       })
 
+      const data = await response.json()
+      console.log("Save template response:", { ok: response.ok, status: response.status, data })
+
       if (response.ok) {
-        const template = await response.json()
         // Refresh the templates list to get updated isDefault flags
         await fetchTemplates()
-        setSelectedTemplateId(template.id)
+        setSelectedTemplateId(data.id)
         setSaveTemplateDialogOpen(false)
         setNewTemplateName("")
         setSaveAsDefault(false)
         alert("Template saved successfully!")
       } else {
-        const error = await response.json()
-        alert(`Failed to save template: ${error.error || "Unknown error"}`)
+        const errorMsg = data.details || data.error || "Unknown error"
+        console.error("Failed to save template - Server error:", errorMsg)
+        alert(`Failed to save template: ${errorMsg}`)
       }
     } catch (error) {
-      console.error("Failed to save template:", error)
-      alert(`Failed to save template: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error("Failed to save template - Client error:", error)
+      alert(`Failed to save template: ${error instanceof Error ? error.message : "Network error - please check your connection"}`)
     }
   }
 
@@ -602,11 +607,11 @@ export function SequenceWizard({
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="template-select">Load Template</Label>
                   <Select
-                    value={selectedTemplateId}
+                    value={selectedTemplateId || "default"}
                     onValueChange={(value) => {
                       if (value === "default") {
                         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-                        setSelectedTemplateId("")
+                        setSelectedTemplateId("default")
                       } else {
                         handleLoadTemplate(value)
                       }
