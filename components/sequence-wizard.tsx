@@ -45,6 +45,7 @@ export function SequenceWizard({
     timezone: "America/New_York",
     systemPrompt: "",
     userPrompt: "",
+    templateId: "",
   })
   const [audiences, setAudiences] = useState<any[]>([])
   const [testEmail, setTestEmail] = useState("")
@@ -69,10 +70,11 @@ export function SequenceWizard({
 
   useEffect(() => {
     if (open) {
+      // Always set default template when dialog opens
+      setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
       fetchAudiences()
       fetchTemplates()
       if (sequence) {
-        // Load existing sequence data including custom HTML template
         setFormData({
           name: sequence.name || "",
           audienceId: sequence.audienceId || "",
@@ -81,12 +83,11 @@ export function SequenceWizard({
           timezone: sequence.timezone || "America/New_York",
           systemPrompt: sequence.systemPrompt || "",
           userPrompt: sequence.userPrompt || "",
+          templateId: sequence.templateId || "",
         })
-        // Load custom HTML template if exists, otherwise use default
-        setCustomHtml(sequence.htmlTemplate || DEFAULT_NEWSLETTER_TEMPLATE)
+        setSelectedTemplateId(sequence.templateId || "")
       } else {
-        // New sequence: use default template and load default prompts
-        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+        // Load default prompts for new sequences
         loadDefaultPrompts()
       }
       setPreviewData(null)
@@ -125,6 +126,8 @@ export function SequenceWizard({
     }
 
     try {
+      console.log("Saving template:", { name: newTemplateName, htmlLength: customHtml.length, isDefault: saveAsDefault })
+
       const response = await fetch("/api/newsletter-templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,22 +138,25 @@ export function SequenceWizard({
         })
       })
 
+      const data = await response.json()
+      console.log("Save template response:", { ok: response.ok, status: response.status, data })
+
       if (response.ok) {
-        const template = await response.json()
         // Refresh the templates list to get updated isDefault flags
         await fetchTemplates()
-        setSelectedTemplateId(template.id)
+        setSelectedTemplateId(data.id)
         setSaveTemplateDialogOpen(false)
         setNewTemplateName("")
         setSaveAsDefault(false)
         alert("Template saved successfully!")
       } else {
-        const error = await response.json()
-        alert(`Failed to save template: ${error.error || "Unknown error"}`)
+        const errorMsg = data.details || data.error || "Unknown error"
+        console.error("Failed to save template - Server error:", errorMsg)
+        alert(`Failed to save template: ${errorMsg}`)
       }
     } catch (error) {
-      console.error("Failed to save template:", error)
-      alert(`Failed to save template: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error("Failed to save template - Client error:", error)
+      alert(`Failed to save template: ${error instanceof Error ? error.message : "Network error - please check your connection"}`)
     }
   }
 
@@ -159,6 +165,7 @@ export function SequenceWizard({
     if (template) {
       setCustomHtml(template.html)
       setSelectedTemplateId(templateId)
+      setFormData({ ...formData, templateId })
     }
   }
 
@@ -330,7 +337,7 @@ export function SequenceWizard({
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "active" }),
+        body: JSON.stringify({ ...formData, status: "active" }),
       })
       if (response.ok) {
         onClose()
@@ -377,7 +384,7 @@ export function SequenceWizard({
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "draft" }),
+        body: JSON.stringify({ ...formData, status: "draft" }),
       })
       if (response.ok) {
         onClose()
@@ -604,11 +611,12 @@ export function SequenceWizard({
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="template-select">Load Template</Label>
                   <Select
-                    value={selectedTemplateId}
+                    value={selectedTemplateId || "default"}
                     onValueChange={(value) => {
                       if (value === "default") {
                         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-                        setSelectedTemplateId("")
+                        setSelectedTemplateId("default")
+                        setFormData({ ...formData, templateId: "" })
                       } else {
                         handleLoadTemplate(value)
                       }

@@ -15,8 +15,8 @@ export async function POST(
 
     const sequenceId = params.id
 
-    // Run distribution immediately for this sequence
-    await runDistribution(sequenceId)
+    // Run distribution immediately for this sequence, bypassing the recent articles check
+    await runDistribution(sequenceId, { skipArticleCheck: true })
 
     return NextResponse.json({
       success: true,

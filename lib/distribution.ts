@@ -303,7 +303,7 @@ Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
   `.trim()
 }
 
-export async function runDistribution(sequenceId: string): Promise<void> {
+export async function runDistribution(sequenceId: string, options: { skipArticleCheck?: boolean } = {}): Promise<void> {
   const sequence = await prisma.sequence.findUnique({
     where: { id: sequenceId },
   })
@@ -338,7 +338,7 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   // Get recent articles
   const articles = await getRecentArticles()
 
-  if (articles.length === 0) {
+  if (articles.length === 0 && !options.skipArticleCheck) {
     await logNewsActivity({
       event: "distribution_skipped",
       status: "warning",
@@ -370,25 +370,19 @@ export async function runDistribution(sequenceId: string): Promise<void> {
     metadata: { sequenceId, sequenceName: sequence.name },
   })
 
-  // Generate email HTML and plain text
-  const origin = process.env.NEXTAUTH_URL || ""
-  let html: string
-
-  // Use custom HTML template if sequence has one, otherwise use default
-  if (sequence.htmlTemplate?.trim()) {
-    try {
-      const { buildNewsletterTemplateContext, renderNewsletterTemplate } = await import("./newsletter-template")
-      const context = buildNewsletterTemplateContext({ content, articles, origin })
-      html = renderNewsletterTemplate(sequence.htmlTemplate, context)
-    } catch (error) {
-      console.error("Failed to render custom HTML template:", error)
-      // Fallback to default template
-      html = generateEmailHtml(content, { articles, origin })
+  // Fetch the template if specified
+  let template: string | undefined
+  if (sequence.templateId) {
+    const newsletterTemplate = await prisma.newsletterTemplate.findUnique({
+      where: { id: sequence.templateId },
+    })
+    if (newsletterTemplate) {
+      template = newsletterTemplate.html
     }
-  } else {
-    html = generateEmailHtml(content, { articles, origin })
   }
 
+  // Generate email HTML and plain text
+  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "", template })
   const plainText = generatePlainText(content)
 
   // Get Resend API key
