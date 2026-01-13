@@ -70,11 +70,10 @@ export function SequenceWizard({
 
   useEffect(() => {
     if (open) {
-      // Always set default template when dialog opens
-      setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
       fetchAudiences()
       fetchTemplates()
       if (sequence) {
+        // Load existing sequence data
         setFormData({
           name: sequence.name || "",
           audienceId: sequence.audienceId || "",
@@ -86,8 +85,17 @@ export function SequenceWizard({
           templateId: sequence.templateId || "",
         })
         setSelectedTemplateId(sequence.templateId || "")
+
+        // Load template HTML if sequence has a templateId
+        if (sequence.templateId) {
+          loadTemplateHtml(sequence.templateId)
+        } else {
+          // If no templateId, use default template
+          setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+        }
       } else {
-        // Load default prompts for new sequences
+        // New sequence: use default template and load default prompts
+        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
         loadDefaultPrompts()
       }
       setPreviewData(null)
@@ -116,6 +124,22 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to fetch templates:", error)
+    }
+  }
+
+  const loadTemplateHtml = async (templateId: string) => {
+    try {
+      const response = await fetch(`/api/newsletter-templates/${templateId}`)
+      if (response.ok) {
+        const template = await response.json()
+        setCustomHtml(template.html || DEFAULT_NEWSLETTER_TEMPLATE)
+      } else {
+        console.error("Failed to load template, using default")
+        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+      }
+    } catch (error) {
+      console.error("Failed to load template:", error)
+      setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
     }
   }
 
