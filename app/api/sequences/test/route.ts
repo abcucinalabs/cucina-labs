@@ -8,6 +8,8 @@ import { prisma } from "@/lib/db"
 import { Resend } from "resend"
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 const testSchema = z.object({
   testEmail: z.string().email(),
   systemPrompt: z.string().optional(),

@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
 
+export const dynamic = 'force-dynamic'
+
 const defaultSystemPrompt = `You are the Editor of a daily technical briefing for Product Managers building AI-powered products.
 
 ━━━━━━━━━━━━━━━━━━━━

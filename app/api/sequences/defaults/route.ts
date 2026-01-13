@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
+export const dynamic = 'force-dynamic'
+
 const defaultSequenceSystemPrompt = `You are the Editor of a daily digest for Product Managers building AI-powered products. Your focus is on the most significant and timely developments from the past 24 hours.
 
 ━━━━━━━━━━━━━━━━━━━━

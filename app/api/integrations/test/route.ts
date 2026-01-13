@@ -8,6 +8,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
 import Airtable from "airtable"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

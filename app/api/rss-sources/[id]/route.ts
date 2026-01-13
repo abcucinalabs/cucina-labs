@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 const updateRssSourceSchema = z.object({
   enabled: z.boolean().optional(),
 })

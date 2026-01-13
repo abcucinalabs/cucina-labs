@@ -5,6 +5,8 @@ import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtabl
 import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
