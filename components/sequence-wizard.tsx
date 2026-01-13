@@ -457,6 +457,9 @@ export function SequenceWizard({
           {/* Step 2: Schedule */}
           {step === 2 && (
             <div className="space-y-6">
+              <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                <strong>Scheduling Info:</strong> Sequences are checked every hour on the hour. Your newsletter will be sent at the next matching hour based on your selected days and time.
+              </div>
               <div className="space-y-3">
                 <Label>Select Days</Label>
                 <DayPicker
@@ -473,7 +476,7 @@ export function SequenceWizard({
                       value={hour12.toString().padStart(2, "0")}
                       onValueChange={(h) => {
                         const newHour = ampm === "PM" && h !== "12" ? parseInt(h) + 12 : (ampm === "AM" && h === "12" ? 0 : parseInt(h))
-                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:${minutes}` })
+                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
                       }}
                     >
                       <SelectTrigger className="w-[70px]">
@@ -489,16 +492,14 @@ export function SequenceWizard({
                     </Select>
                     <span className="flex items-center text-muted-foreground">:</span>
                     <Select
-                      value={minutes}
-                      onValueChange={(m) => setFormData({ ...formData, time: `${hours}:${m}` })}
+                      value="00"
+                      disabled
                     >
                       <SelectTrigger className="w-[70px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {["00", "15", "30", "45"].map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
+                        <SelectItem value="00">00</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select
@@ -507,7 +508,7 @@ export function SequenceWizard({
                         let newHour = parseInt(hours)
                         if (ap === "PM" && newHour < 12) newHour += 12
                         if (ap === "AM" && newHour >= 12) newHour -= 12
-                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:${minutes}` })
+                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
                       }}
                     >
                       <SelectTrigger className="w-[70px]">
