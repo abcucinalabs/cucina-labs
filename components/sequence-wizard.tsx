@@ -66,40 +66,29 @@ export function SequenceWizard({
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [isSendingNow, setIsSendingNow] = useState(false)
   const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const [isPublishing, setIsPublishing] = useState(false)
-  const [isSavingDraft, setIsSavingDraft] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
     if (open) {
       fetchAudiences()
-      fetchTemplates().then((loadedTemplates) => {
-        if (sequence) {
-          // Load existing sequence data including custom HTML template
-          setFormData({
-            name: sequence.name || "",
-            audienceId: sequence.audienceId || "",
-            dayOfWeek: sequence.dayOfWeek || [],
-            time: sequence.time || "09:00",
-            timezone: sequence.timezone || "America/New_York",
-            systemPrompt: sequence.systemPrompt || "",
-            userPrompt: sequence.userPrompt || "",
-          })
-          // Load custom HTML template if exists, otherwise use default
-          setCustomHtml(sequence.htmlTemplate || DEFAULT_NEWSLETTER_TEMPLATE)
-        } else {
-          // New sequence: load default template from database if it exists
-          const defaultTemplate = loadedTemplates?.find((t: any) => t.isDefault)
-          if (defaultTemplate) {
-            setCustomHtml(defaultTemplate.html)
-            setSelectedTemplateId(defaultTemplate.id)
-          } else {
-            setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-            setSelectedTemplateId("")
-          }
-          loadDefaultPrompts()
-        }
-      })
+      fetchTemplates()
+      if (sequence) {
+        // Load existing sequence data including custom HTML template
+        setFormData({
+          name: sequence.name || "",
+          audienceId: sequence.audienceId || "",
+          dayOfWeek: sequence.dayOfWeek || [],
+          time: sequence.time || "09:00",
+          timezone: sequence.timezone || "America/New_York",
+          systemPrompt: sequence.systemPrompt || "",
+          userPrompt: sequence.userPrompt || "",
+        })
+        // Load custom HTML template if exists, otherwise use default
+        setCustomHtml(sequence.htmlTemplate || DEFAULT_NEWSLETTER_TEMPLATE)
+      } else {
+        // New sequence: use default template and load default prompts
+        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+        loadDefaultPrompts()
+      }
       setPreviewData(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,12 +112,9 @@ export function SequenceWizard({
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
-        return data
       }
-      return []
     } catch (error) {
       console.error("Failed to fetch templates:", error)
-      return []
     }
   }
 
@@ -249,8 +235,26 @@ export function SequenceWizard({
           if (hasPreviewData) {
             setPreviewData({ content: data.content, articles: data.articles })
           }
-          // Backend already rendered the template correctly with the customHtml we sent
-          setPreview(data.html)
+
+          const shouldAutoApplyTemplate = !sequence && customHtml.trim() && hasPreviewData
+
+          if (shouldAutoApplyTemplate) {
+            try {
+              const context = buildNewsletterTemplateContext({
+                content: data.content,
+                articles: data.articles,
+                origin: typeof window !== "undefined" ? window.location.origin : "",
+              })
+              const html = renderNewsletterTemplate(customHtml, context)
+              setPreview(html)
+            } catch (error) {
+              console.error("Failed to auto-render default HTML:", error)
+              setPreview(data.html)
+              setPreviewError("Failed to render the default HTML template. Check the template syntax.")
+            }
+          } else {
+            setPreview(data.html)
+          }
         }
       } else {
         setPreviewError(data.error || "Failed to generate preview")
@@ -320,9 +324,6 @@ export function SequenceWizard({
   }
 
   const handlePublish = async () => {
-    setIsPublishing(true)
-    setSaveStatus(null)
-
     try {
       const url = sequence ? `/api/sequences/${sequence.id}` : "/api/sequences"
       const method = sequence ? "PUT" : "POST"
@@ -331,22 +332,11 @@ export function SequenceWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "active" }),
       })
-
       if (response.ok) {
-        setSaveStatus({ type: "success", message: "Sequence published successfully!" })
-        // Close after a short delay to show success message
-        setTimeout(() => {
-          onClose()
-        }, 1500)
-      } else {
-        const data = await response.json()
-        setSaveStatus({ type: "error", message: data.error || "Failed to publish sequence" })
+        onClose()
       }
     } catch (error) {
       console.error("Failed to publish sequence:", error)
-      setSaveStatus({ type: "error", message: "Failed to publish sequence. Please try again." })
-    } finally {
-      setIsPublishing(false)
     }
   }
 
@@ -381,9 +371,6 @@ export function SequenceWizard({
   }
 
   const handleSaveDraft = async () => {
-    setIsSavingDraft(true)
-    setSaveStatus(null)
-
     try {
       const url = sequence ? `/api/sequences/${sequence.id}` : "/api/sequences"
       const method = sequence ? "PUT" : "POST"
@@ -392,22 +379,11 @@ export function SequenceWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, htmlTemplate: customHtml, status: "draft" }),
       })
-
       if (response.ok) {
-        setSaveStatus({ type: "success", message: "Draft saved successfully!" })
-        // Close after a short delay to show success message
-        setTimeout(() => {
-          onClose()
-        }, 1500)
-      } else {
-        const data = await response.json()
-        setSaveStatus({ type: "error", message: data.error || "Failed to save draft" })
+        onClose()
       }
     } catch (error) {
       console.error("Failed to save draft sequence:", error)
-      setSaveStatus({ type: "error", message: "Failed to save draft. Please try again." })
-    } finally {
-      setIsSavingDraft(false)
     }
   }
 
@@ -415,12 +391,7 @@ export function SequenceWizard({
   const [hours, minutes] = formData.time.split(":")
   const hour12 = parseInt(hours) % 12 || 12
   const ampm = parseInt(hours) >= 12 ? "PM" : "AM"
-  const canSave = Boolean(
-    formData.name &&
-    formData.audienceId &&
-    formData.userPrompt &&
-    formData.dayOfWeek.length > 0
-  )
+  const canSave = Boolean(formData.name && formData.audienceId && formData.userPrompt)
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -485,11 +456,6 @@ export function SequenceWizard({
                   value={formData.dayOfWeek}
                   onChange={(days) => setFormData({ ...formData, dayOfWeek: days })}
                 />
-                {formData.dayOfWeek.length === 0 && (
-                  <p className="text-sm text-amber-600">
-                    Please select at least one day to continue
-                  </p>
-                )}
               </div>
 
               <div className="grid grid-cols-3 gap-4">
@@ -640,13 +606,19 @@ export function SequenceWizard({
                   <Select
                     value={selectedTemplateId}
                     onValueChange={(value) => {
-                      handleLoadTemplate(value)
+                      if (value === "default") {
+                        setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+                        setSelectedTemplateId("")
+                      } else {
+                        handleLoadTemplate(value)
+                      }
                     }}
                   >
                     <SelectTrigger id="template-select">
                       <SelectValue placeholder="Select a template..." />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="default">Default Template</SelectItem>
                       {templates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name} {template.isDefault && "(Default)"}
@@ -848,35 +820,6 @@ export function SequenceWizard({
                 </CardContent>
               </Card>
 
-              {!testApproved && (
-                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-amber-700 font-medium">Test Email Required</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Go back to Step 5 to send a test email and approve it before publishing.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {saveStatus && (
-                <div className={`flex items-start gap-3 p-4 rounded-lg ${
-                  saveStatus.type === "success"
-                    ? "bg-green-500/10 border border-green-500/20"
-                    : "bg-red-500/10 border border-red-500/20"
-                }`}>
-                  <AlertCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
-                    saveStatus.type === "success" ? "text-green-600" : "text-red-600"
-                  }`} />
-                  <p className={`text-sm ${
-                    saveStatus.type === "success" ? "text-green-700" : "text-red-700"
-                  }`}>
-                    {saveStatus.message}
-                  </p>
-                </div>
-              )}
-
               {sequence?.id && (
                 <Card>
                   <CardHeader>
@@ -914,31 +857,16 @@ export function SequenceWizard({
             {step === 1 ? "Cancel" : "Back"}
           </Button>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={handleSaveDraft}
-              disabled={!canSave || isSavingDraft || isPublishing}
-              isLoading={isSavingDraft}
-            >
-              {isSavingDraft ? "Saving..." : "Save as Draft"}
+            <Button variant="outline" onClick={handleSaveDraft} disabled={!canSave}>
+              Save as Draft
             </Button>
             {step < 6 ? (
-              <Button
-                onClick={handleNext}
-                disabled={
-                  (step === 1 && !formData.name) ||
-                  (step === 2 && formData.dayOfWeek.length === 0)
-                }
-              >
+              <Button onClick={handleNext} disabled={step === 1 && !formData.name}>
                 Next
               </Button>
             ) : (
-              <Button
-                onClick={handlePublish}
-                disabled={!testApproved || !canSave || isPublishing || isSavingDraft}
-                isLoading={isPublishing}
-              >
-                {isPublishing ? "Publishing..." : "Publish Sequence"}
+              <Button onClick={handlePublish} disabled={!testApproved || !canSave}>
+                Publish Sequence
               </Button>
             )}
           </div>
