@@ -303,7 +303,7 @@ Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
   `.trim()
 }
 
-export async function runDistribution(sequenceId: string): Promise<void> {
+export async function runDistribution(sequenceId: string, options: { skipArticleCheck?: boolean } = {}): Promise<void> {
   const sequence = await prisma.sequence.findUnique({
     where: { id: sequenceId },
   })
@@ -338,7 +338,7 @@ export async function runDistribution(sequenceId: string): Promise<void> {
   // Get recent articles
   const articles = await getRecentArticles()
 
-  if (articles.length === 0) {
+  if (articles.length === 0 && !options.skipArticleCheck) {
     await logNewsActivity({
       event: "distribution_skipped",
       status: "warning",
