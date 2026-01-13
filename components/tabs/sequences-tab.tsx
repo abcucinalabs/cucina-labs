@@ -106,7 +106,11 @@ export function SequencesTab() {
             </TableHeader>
             <TableBody>
               {sequences.map((sequence) => (
-                <TableRow key={sequence.id}>
+                <TableRow
+                  key={sequence.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleEdit(sequence)}
+                >
                   <TableCell className="font-medium">{sequence.name}</TableCell>
                   <TableCell>
                     {audiences.find((audience) => audience.id === sequence.audienceId)?.name ||
@@ -128,7 +132,7 @@ export function SequencesTab() {
                       ? new Date(sequence.lastSent).toLocaleString()
                       : "Never"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
