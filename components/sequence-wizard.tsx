@@ -45,6 +45,7 @@ export function SequenceWizard({
     timezone: "America/New_York",
     systemPrompt: "",
     userPrompt: "",
+    templateId: "",
   })
   const [audiences, setAudiences] = useState<any[]>([])
   const [testEmail, setTestEmail] = useState("")
@@ -82,7 +83,9 @@ export function SequenceWizard({
           timezone: sequence.timezone || "America/New_York",
           systemPrompt: sequence.systemPrompt || "",
           userPrompt: sequence.userPrompt || "",
+          templateId: sequence.templateId || "",
         })
+        setSelectedTemplateId(sequence.templateId || "")
       } else {
         // Load default prompts for new sequences
         loadDefaultPrompts()
@@ -162,6 +165,7 @@ export function SequenceWizard({
     if (template) {
       setCustomHtml(template.html)
       setSelectedTemplateId(templateId)
+      setFormData({ ...formData, templateId })
     }
   }
 
@@ -612,6 +616,7 @@ export function SequenceWizard({
                       if (value === "default") {
                         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
                         setSelectedTemplateId("default")
+                        setFormData({ ...formData, templateId: "" })
                       } else {
                         handleLoadTemplate(value)
                       }

@@ -80,6 +80,7 @@ model Sequence {
   timezone      String   @default("UTC")
   systemPrompt  String?  @db.Text
   userPrompt    String   @db.Text
+  templateId    String?  // NewsletterTemplate ID (null = use default)
   status        String   @default("draft") // draft, active, paused
   lastSent      DateTime?
   createdAt     DateTime @default(now())

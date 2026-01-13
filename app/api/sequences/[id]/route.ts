@@ -12,6 +12,7 @@ const updateSequenceSchema = z.object({
   timezone: z.string().optional(),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1).optional(),
+  templateId: z.string().optional(),
   status: z.enum(["draft", "active", "paused"]).optional(),
   schedule: z.string().optional(),
 })

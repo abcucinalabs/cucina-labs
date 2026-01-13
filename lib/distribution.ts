@@ -370,8 +370,19 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     metadata: { sequenceId, sequenceName: sequence.name },
   })
 
+  // Fetch the template if specified
+  let template: string | undefined
+  if (sequence.templateId) {
+    const newsletterTemplate = await prisma.newsletterTemplate.findUnique({
+      where: { id: sequence.templateId },
+    })
+    if (newsletterTemplate) {
+      template = newsletterTemplate.html
+    }
+  }
+
   // Generate email HTML and plain text
-  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "" })
+  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "", template })
   const plainText = generatePlainText(content)
 
   // Get Resend API key
