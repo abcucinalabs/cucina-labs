@@ -92,7 +92,7 @@ export default function LoginPage() {
               <div className="rounded-[var(--radius-2xl)] border border-white/15 bg-[#0d0d0d]/56 p-6 sm:p-8 md:p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
                 <div className="mb-6 sm:mb-8">
                   <h1 className={`${instrumentSerif.className} text-3xl sm:text-4xl md:text-5xl font-normal text-white mb-4 leading-[1.15] tracking-[-0.03em]`}>
-                    Welcome back, chef
+                    Welcome back, chef.
                   </h1>
                   <p className="text-sm sm:text-base text-white/70">
                     Sign in to access cucina <span className="font-bold">labs</span>
