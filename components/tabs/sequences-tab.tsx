@@ -9,6 +9,14 @@ import { Plus, Edit, Pause, Trash2 } from "lucide-react"
 import { SequenceWizard } from "@/components/sequence-wizard"
 import { DayBlocks } from "@/components/ui/day-blocks"
 
+function formatTime12Hour(time24: string): string {
+  const [hours, minutes] = time24.split(':')
+  const hour = parseInt(hours)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
 export function SequencesTab() {
   const [sequences, setSequences] = useState<any[]>([])
   const [openWizard, setOpenWizard] = useState(false)
@@ -120,7 +128,7 @@ export function SequencesTab() {
                     <DayBlocks selectedDays={sequence.dayOfWeek || []} />
                   </TableCell>
                   <TableCell>
-                    {sequence.time} {sequence.timezone || 'UTC'}
+                    {formatTime12Hour(sequence.time)} {sequence.timezone || 'UTC'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={sequence.status === "active" ? "success" : "outline"}>
