@@ -36,13 +36,25 @@ CRITICAL OUTPUT RULES
       "headline": "Story headline",
       "why_read_it": "One sentence explaining value",
       "link": "URL from the article with this id"
+    },
+    {
+      "id": 3,
+      "headline": "Another story headline",
+      "why_read_it": "One sentence explaining value",
+      "link": "URL from the article with this id"
+    },
+    {
+      "id": 4,
+      "headline": "Third story headline",
+      "why_read_it": "One sentence explaining value",
+      "link": "URL from the article with this id"
     }
   ],
   "looking_ahead": "2-3 sentences about what to watch for tomorrow or next few days",
   "article_ids_selected": [1, 2, 3, 4]
 }
 
-⚠️ EVERY FIELD IS REQUIRED. Select 3-5 total articles (1 featured + 2-4 top stories).`
+⚠️ EVERY FIELD IS REQUIRED. You MUST select at least 4 total articles minimum (1 featured + 3 top stories), up to 6 articles maximum (1 featured + 5 top stories).`
 
 const defaultSequenceUserPrompt = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ARTICLES FROM PAST 24 HOURS
@@ -57,10 +69,11 @@ Total articles: {{ $json.total_articles }}
 YOUR TASK
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. SELECT 3-5 most strategically important articles for Product Managers from at least 2 different creators
+1. SELECT at least 4 articles minimum (up to 6 maximum) - the most strategically important articles for Product Managers from at least 2 different creators
 2. Pick ONE as the featured story (most impactful for today)
-3. Write compelling headlines and insights
-4. Output as JSON following the EXACT structure
+3. Include at least 3 additional articles in top_stories (minimum 3, maximum 5)
+4. Write compelling headlines and insights
+5. Output as JSON following the EXACT structure
 
 SELECTION CRITERIA:
 - Strategic impact for PMs/Consulting Leaders building AI products

@@ -34,13 +34,25 @@ CRITICAL OUTPUT RULES
       "headline": "Story headline",
       "why_read_it": "One sentence explaining value",
       "link": "URL from the article with this id"
+    },
+    {
+      "id": 3,
+      "headline": "Another story headline",
+      "why_read_it": "One sentence explaining value",
+      "link": "URL from the article with this id"
+    },
+    {
+      "id": 4,
+      "headline": "Third story headline",
+      "why_read_it": "One sentence explaining value",
+      "link": "URL from the article with this id"
     }
   ],
   "looking_ahead": "2-3 sentences about what to watch for tomorrow or next few days",
   "article_ids_selected": [1, 2, 3, 4]
 }
 
-⚠️ EVERY FIELD IS REQUIRED. Select 3-5 total articles (1 featured + 2-4 top stories).`
+⚠️ EVERY FIELD IS REQUIRED. You MUST select at least 4 total articles minimum (1 featured + 3 top stories), up to 6 articles maximum (1 featured + 5 top stories).`
 
 async function main() {
   console.log('🔍 Checking for sequences with old prompts...')
@@ -59,8 +71,13 @@ async function main() {
   let skipped = 0
 
   for (const sequence of sequences) {
-    // Check if prompt is missing "link" field requirement
-    if (sequence.systemPrompt && !sequence.systemPrompt.includes('"link": "URL from the article')) {
+    // Check if prompt needs updating (missing link field OR outdated article count requirement)
+    const needsUpdate = sequence.systemPrompt && (
+      !sequence.systemPrompt.includes('"link": "URL from the article') ||
+      !sequence.systemPrompt.includes('at least 4 total articles minimum')
+    )
+
+    if (needsUpdate) {
       console.log(`Updating sequence: ${sequence.name} (${sequence.id})`)
 
       await prisma.sequence.update({
@@ -72,7 +89,7 @@ async function main() {
 
       updated++
     } else {
-      console.log(`Skipping sequence: ${sequence.name} (already has link field)`)
+      console.log(`Skipping sequence: ${sequence.name} (already up to date)`)
       skipped++
     }
   }
