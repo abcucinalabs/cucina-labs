@@ -490,6 +490,14 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     if (newsletterTemplate) {
       template = newsletterTemplate.html
     }
+  } else {
+    const defaultTemplate = await prisma.newsletterTemplate.findFirst({
+      where: { isDefault: true },
+      orderBy: { updatedAt: "desc" },
+    })
+    if (defaultTemplate) {
+      template = defaultTemplate.html
+    }
   }
 
   // Generate email HTML and plain text

@@ -62,6 +62,7 @@ export function SequenceWizard({
   const htmlTextareaRef = useRef<HTMLTextAreaElement>(null)
   const [templates, setTemplates] = useState<any[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
+  const systemDefaultValue = "system-default"
   const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false)
   const [newTemplateName, setNewTemplateName] = useState("")
   const [saveAsDefault, setSaveAsDefault] = useState(false)
@@ -121,12 +122,27 @@ export function SequenceWizard({
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
-        if (!sequence && !selectedTemplateId) {
-          const defaultTemplate = data.find((template: any) => template.isDefault)
+        const defaultTemplate = data.find((template: any) => template.isDefault)
+        if (!selectedTemplateId) {
           if (defaultTemplate) {
             setSelectedTemplateId(defaultTemplate.id)
             setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
             setCustomHtml(defaultTemplate.html || DEFAULT_NEWSLETTER_TEMPLATE)
+          } else if (!sequence) {
+            setSelectedTemplateId(systemDefaultValue)
+            setFormData(prev => ({ ...prev, templateId: "" }))
+            setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+          }
+        }
+        if (sequence && !sequence.templateId && !selectedTemplateId) {
+          if (defaultTemplate) {
+            setSelectedTemplateId(defaultTemplate.id)
+            setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
+            setCustomHtml(defaultTemplate.html || DEFAULT_NEWSLETTER_TEMPLATE)
+          } else {
+            setSelectedTemplateId(systemDefaultValue)
+            setFormData(prev => ({ ...prev, templateId: "" }))
+            setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
           }
         }
       }
@@ -644,11 +660,11 @@ export function SequenceWizard({
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="template-select">Load Template</Label>
                   <Select
-                    value={selectedTemplateId || "default"}
+                    value={selectedTemplateId || systemDefaultValue}
                     onValueChange={(value) => {
-                      if (value === "default") {
+                      if (value === systemDefaultValue) {
                         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-                        setSelectedTemplateId("default")
+                        setSelectedTemplateId(systemDefaultValue)
                         setFormData({ ...formData, templateId: "" })
                       } else {
                         handleLoadTemplate(value)
@@ -659,7 +675,11 @@ export function SequenceWizard({
                       <SelectValue placeholder="Select a template..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Default Template</SelectItem>
+                      {templates.length === 0 && (
+                        <SelectItem value={systemDefaultValue}>
+                          System Default (built-in)
+                        </SelectItem>
+                      )}
                       {templates.map((template) => (
                         <SelectItem key={template.id} value={template.id}>
                           {template.name} {template.isDefault && "(Default)"}
