@@ -318,6 +318,11 @@ Handlebars.registerHelper('or', function(...args) {
 
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
   try {
+    if (template.includes("{{") && !template.includes("${")) {
+      const compiled = Handlebars.compile(template)
+      return compiled(context)
+    }
+
     // Extract all variables from context for template evaluation
     const {
       newsletter,
