@@ -210,7 +210,11 @@ export async function wrapNewsletterWithShortLinks(
     const articleId = content.featured_story?.id || content.featuredStory?.id
 
     if (originalLink) {
-      const shortLink = await createShortLink(originalLink, String(articleId), sequenceId)
+      const shortLink = await createShortLink(
+        originalLink,
+        articleId ? String(articleId) : null,
+        sequenceId || null
+      )
 
       if (content.featured_story) {
         content.featured_story.link = shortLink
@@ -226,7 +230,11 @@ export async function wrapNewsletterWithShortLinks(
   for (let i = 0; i < topStories.length; i++) {
     const story = topStories[i]
     if (story?.link) {
-      const shortLink = await createShortLink(story.link, String(story.id), sequenceId)
+      const shortLink = await createShortLink(
+        story.link,
+        story.id ? String(story.id) : null,
+        sequenceId || null
+      )
       story.link = shortLink
     }
   }
