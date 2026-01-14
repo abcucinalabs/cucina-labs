@@ -222,9 +222,58 @@ export const buildNewsletterTemplateContext = ({
       .replace(/\s+/g, " ")
       .trim()
 
+  const resolveArticleLink = (article: any) =>
+    article?.source_link || article?.sourceLink || article?.link || ""
+
+  const findArticleForStory = (story: any, storyIndex?: number) => {
+    if (!story) return null
+    if (typeof story === "string") {
+      return normalizedArticles.find(
+        (article) => article.id === story || article.source_link === story
+      )
+    }
+
+    const storyId = story.id
+    const storyLink = story.link || story.source_link
+    const storyTitle = story.headline || story.title
+    const normalizedStoryTitle = storyTitle ? normalizeTitle(storyTitle) : ""
+    const index =
+      typeof story.__index === "number"
+        ? story.__index
+        : typeof storyIndex === "number"
+        ? storyIndex
+        : null
+
+    return (
+      (storyId
+        ? normalizedArticles.find((article) => article.id === storyId)
+        : null) ||
+      (storyLink
+        ? normalizedArticles.find(
+            (article) =>
+              article.source_link === storyLink || article.link === storyLink
+          )
+        : null) ||
+      (storyTitle
+        ? normalizedArticles.find((article) => article.title === storyTitle)
+        : null) ||
+      (normalizedStoryTitle
+        ? normalizedArticles.find(
+            (article) =>
+              normalizeTitle(article.title || "") === normalizedStoryTitle
+          )
+        : null) ||
+      (index !== null ? normalizedArticles[index] : null) ||
+      null
+    )
+  }
+
   const featured = content?.featuredStory || content?.featured_story || {}
   const stories = content?.topStories || content?.top_stories || []
   const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
+  const featuredArticle = findArticleForStory(featured) || normalizedArticles[0] || {}
+  const featuredSource = resolveArticleLink(featuredArticle)
+  const featuredLink = featured?.link || featured?.source_link || featuredSource
 
   const newsletter = {
     subject: content?.subject || "cucina labs Briefing",
@@ -233,50 +282,34 @@ export const buildNewsletterTemplateContext = ({
       id: featured?.id,
       headline: featured?.title || featured?.headline || "",
       why_this_matters: featured?.summary || featured?.why_this_matters || "",
-      link: featured?.link && origin ? wrapRedirectUrl(featured.link, origin) : (featured?.link || ""),
+      link: featuredLink
+        ? wrapRedirectUrl(featuredLink, origin)
+        : "",
+      source_link: featuredSource
+        ? wrapRedirectUrl(featuredSource, origin)
+        : "",
     },
     top_stories: (stories || []).map((story: any, index: number) => ({
       __index: index,
+      ...(() => {
+        const matched = findArticleForStory(story, index)
+        const sourceLink = resolveArticleLink(matched)
+        const storyLink = story?.link || story?.source_link || sourceLink
+        return {
+          link: storyLink ? wrapRedirectUrl(storyLink, origin) : "",
+          source_link: sourceLink ? wrapRedirectUrl(sourceLink, origin) : "",
+          category: story?.category || matched?.category || "",
+          creator: story?.creator || matched?.creator || "",
+        }
+      })(),
       id: story?.id,
       headline: story?.title || story?.headline || "",
       why_read_it: story?.summary || story?.why_read_it || "",
-      link: story?.link && origin ? wrapRedirectUrl(story.link, origin) : (story?.link || ""),
-      category: story?.category || "",
-      creator: story?.creator || "",
     })),
     looking_ahead: content?.lookingAhead || content?.looking_ahead || "",
   }
 
-  const findArticle = (story: any) => {
-    if (!story) return null
-    if (typeof story === "string") {
-      return normalizedArticles.find((article) => article.id === story || article.source_link === story)
-    }
-    const storyId = story.id
-    const storyLink = story.link
-    const storyTitle = story.headline || story.title
-    const storyIndex = typeof story.__index === "number" ? story.__index : null
-    const normalizedStoryTitle = storyTitle ? normalizeTitle(storyTitle) : ""
-
-    return (
-      (storyId ? normalizedArticles.find((article) => article.id === storyId) : null) ||
-      (storyLink
-        ? normalizedArticles.find((article) => article.source_link === storyLink || article.link === storyLink)
-        : null) ||
-      (storyTitle
-        ? normalizedArticles.find((article) => article.title === storyTitle)
-        : null) ||
-      (normalizedStoryTitle
-        ? normalizedArticles.find(
-            (article) => normalizeTitle(article.title || "") === normalizedStoryTitle
-          )
-        : null) ||
-      (storyIndex !== null ? normalizedArticles[storyIndex] : null) ||
-      null
-    )
-  }
-
-  const featuredArticle = findArticle(newsletter.featured_story) || normalizedArticles[0] || {}
+  const findArticle = (story: any) => findArticleForStory(story)
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-US", {

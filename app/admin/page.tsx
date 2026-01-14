@@ -1,7 +1,7 @@
-import { DashboardPage } from "@/components/dashboard/dashboard-page"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
 export default function AdminPage() {
-  return <DashboardPage />
+  redirect("/admin/dashboard")
 }
