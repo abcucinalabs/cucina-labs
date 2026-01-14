@@ -283,10 +283,10 @@ export const buildNewsletterTemplateContext = ({
       headline: featured?.title || featured?.headline || "",
       why_this_matters: featured?.summary || featured?.why_this_matters || "",
       link: featuredLink
-        ? wrapRedirectUrl(featuredLink, origin)
+        ? wrapRedirectUrl(featuredLink, origin || "")
         : "",
       source_link: featuredSource
-        ? wrapRedirectUrl(featuredSource, origin)
+        ? wrapRedirectUrl(featuredSource, origin || "")
         : "",
     },
     top_stories: (stories || []).map((story: any, index: number) => ({
@@ -296,8 +296,8 @@ export const buildNewsletterTemplateContext = ({
         const sourceLink = resolveArticleLink(matched)
         const storyLink = story?.link || story?.source_link || sourceLink
         return {
-          link: storyLink ? wrapRedirectUrl(storyLink, origin) : "",
-          source_link: sourceLink ? wrapRedirectUrl(sourceLink, origin) : "",
+          link: storyLink ? wrapRedirectUrl(storyLink, origin || "") : "",
+          source_link: sourceLink ? wrapRedirectUrl(sourceLink, origin || "") : "",
           category: story?.category || matched?.category || "",
           creator: story?.creator || matched?.creator || "",
         }
