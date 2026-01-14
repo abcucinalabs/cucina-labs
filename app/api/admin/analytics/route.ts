@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { decrypt } from "@/lib/encryption"
 
 export const dynamic = "force-dynamic"
 
@@ -13,6 +14,67 @@ const PERIODS: Record<string, { label: string; days: number | null }> = {
 }
 
 const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+type ResendContact = {
+  id: string
+  email: string
+  created_at?: string
+  updated_at?: string
+  unsubscribed?: boolean
+}
+
+const fetchResendAudiences = async (apiKey: string) => {
+  const response = await fetch("https://api.resend.com/audiences", {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Failed to fetch audiences from Resend:", errorText)
+    return []
+  }
+
+  const data = await response.json()
+  return data?.data || []
+}
+
+const fetchResendContacts = async (apiKey: string, audienceId: string) => {
+  const contacts: ResendContact[] = []
+  let cursor: string | null = null
+  let hasMore = true
+
+  while (hasMore) {
+    const url = new URL(`https://api.resend.com/audiences/${audienceId}/contacts`)
+    url.searchParams.set("limit", "100")
+    if (cursor) {
+      url.searchParams.set("cursor", cursor)
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Failed to fetch contacts from Resend:", errorText)
+      break
+    }
+
+    const data = await response.json()
+    const page = (data?.data || []) as ResendContact[]
+    contacts.push(...page)
+
+    cursor =
+      data?.next ||
+      data?.cursor ||
+      data?.pagination?.next ||
+      data?.links?.next ||
+      null
+    hasMore = Boolean(cursor && page.length)
+  }
+
+  return contacts
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,10 +95,7 @@ export async function GET(request: NextRequest) {
         : startOfDay(new Date(now.getTime() - (offsetDays as number) * 24 * 60 * 60 * 1000))
 
     const [
-      activeSubscribers,
-      newSubscribers,
-      unsubscribed,
-      clickAggregate,
+      resendConfig,
       topLinks,
       emailEventCounts,
       recentNewsletters,
@@ -45,18 +104,12 @@ export async function GET(request: NextRequest) {
       integrations,
       activeSequences,
     ] = await Promise.all([
-      prisma.subscriber.count({ where: { status: "active" } }),
-      prisma.subscriber.count({ where: { createdAt: { gte: start } } }),
-      prisma.subscriber.count({
-        where: { status: "unsubscribed", updatedAt: { gte: start } },
-      }),
-      prisma.shortLink.aggregate({
-        where: { createdAt: { gte: start } },
-        _sum: { clicks: true },
-      }),
-      prisma.shortLink.findMany({
-        where: { createdAt: { gte: start } },
-        orderBy: { clicks: "desc" },
+      prisma.apiKey.findUnique({ where: { service: "resend" } }),
+      prisma.emailEvent.groupBy({
+        by: ["clickUrl"],
+        where: { eventType: "email.clicked", createdAt: { gte: start }, clickUrl: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { _all: "desc" } },
         take: 10,
       }),
       prisma.emailEvent.groupBy({
@@ -87,7 +140,68 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    const totalClicks = clickAggregate._sum.clicks || 0
+    let activeSubscribers = 0
+    let newSubscribers = 0
+    let unsubscribed = 0
+    const contactsByEmail = new Map<
+      string,
+      { createdAt: Date | null; updatedAt: Date | null; unsubscribed: boolean }
+    >()
+
+    if (resendConfig?.key) {
+      const apiKey = decrypt(resendConfig.key)
+      const audiences = await fetchResendAudiences(apiKey)
+      const allContacts = (
+        await Promise.all(
+          (audiences || []).map((audience: { id: string }) =>
+            fetchResendContacts(apiKey, audience.id)
+          )
+        )
+      ).flat()
+
+      allContacts.forEach((contact) => {
+        if (!contact?.email) return
+        const email = contact.email.toLowerCase()
+        const createdAt = contact.created_at ? new Date(contact.created_at) : null
+        const updatedAt = contact.updated_at ? new Date(contact.updated_at) : null
+        const isUnsubscribed = Boolean(contact.unsubscribed)
+        const existing = contactsByEmail.get(email)
+        if (!existing) {
+          contactsByEmail.set(email, { createdAt, updatedAt, unsubscribed: isUnsubscribed })
+          return
+        }
+
+        const mergedCreated =
+          existing.createdAt && createdAt
+            ? (createdAt < existing.createdAt ? createdAt : existing.createdAt)
+            : existing.createdAt || createdAt
+        const mergedUpdated =
+          existing.updatedAt && updatedAt
+            ? (updatedAt > existing.updatedAt ? updatedAt : existing.updatedAt)
+            : existing.updatedAt || updatedAt
+
+        contactsByEmail.set(email, {
+          createdAt: mergedCreated,
+          updatedAt: mergedUpdated,
+          unsubscribed: existing.unsubscribed || isUnsubscribed,
+        })
+      })
+
+      contactsByEmail.forEach((contact) => {
+        if (contact.unsubscribed) {
+          if (contact.updatedAt && contact.updatedAt >= start) {
+            unsubscribed += 1
+          }
+        } else {
+          activeSubscribers += 1
+        }
+
+        if (contact.createdAt && contact.createdAt >= start) {
+          newSubscribers += 1
+        }
+      })
+    }
+
     const eventCountMap = new Map<string, number>(
       emailEventCounts.map((item) => [item.eventType, item._count])
     )
@@ -107,30 +221,19 @@ export async function GET(request: NextRequest) {
           : "partial"
         : "unconfigured"
 
-    const articleIds = topLinks.map((link) => link.articleId).filter(Boolean) as string[]
-    const articles = articleIds.length
-      ? await prisma.article.findMany({
-          where: { id: { in: articleIds } },
-          select: { id: true, title: true, category: true, creator: true, sourceLink: true },
-        })
-      : []
-    const articleMap = new Map(articles.map((article) => [article.id, article]))
-
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      process.env.NEXTAUTH_URL ||
-      "https://cucinalabs.com"
+    const totalClicks = clickedCount
 
     const articleStats = topLinks.map((link) => {
-      const article = link.articleId ? articleMap.get(link.articleId) : null
+      const clickUrl = link.clickUrl || ""
+      const clickCount = link._count._all
       return {
-        id: link.id,
-        title: article?.title || link.targetUrl,
-        clicks: link.clicks,
-        clickShare: totalClicks ? (link.clicks / totalClicks) * 100 : 0,
-        url: `${baseUrl}/r/${link.shortCode}`,
-        category: article?.category || "",
-        creator: article?.creator || "",
+        id: link.clickUrl || "",
+        title: clickUrl,
+        clicks: clickCount,
+        clickShare: totalClicks ? (clickCount / totalClicks) * 100 : 0,
+        url: clickUrl,
+        category: "",
+        creator: "",
       }
     })
 
@@ -156,24 +259,23 @@ export async function GET(request: NextRequest) {
       const nextDate = new Date(date)
       nextDate.setDate(date.getDate() + 1)
 
-      const [newCount, unsubCount, dayEmailEvents] = await Promise.all([
-        prisma.subscriber.count({
-          where: { createdAt: { gte: date, lt: nextDate } },
-        }),
-        prisma.subscriber.count({
-          where: { status: "unsubscribed", updatedAt: { gte: date, lt: nextDate } },
-        }),
-        prisma.emailEvent.groupBy({
+      const dayNew = Array.from(contactsByEmail.values()).filter((contact) =>
+        contact.createdAt && contact.createdAt >= date && contact.createdAt < nextDate
+      ).length
+      const dayUnsub = Array.from(contactsByEmail.values()).filter((contact) =>
+        contact.unsubscribed && contact.updatedAt && contact.updatedAt >= date && contact.updatedAt < nextDate
+      ).length
+
+      const dayEmailEvents = await prisma.emailEvent.groupBy({
           by: ["eventType"],
           where: { createdAt: { gte: date, lt: nextDate } },
           _count: true,
-        }),
-      ])
+        })
 
       daily.push({
         date: date.toISOString().slice(0, 10),
-        new: newCount,
-        unsubscribed: unsubCount,
+        new: dayNew,
+        unsubscribed: dayUnsub,
       })
 
       // Build chart data
@@ -194,15 +296,17 @@ export async function GET(request: NextRequest) {
     // Calculate previous period for trend comparison
     const prevPeriodDays = period.days || 30
     const prevStart = startOfDay(new Date(start.getTime() - prevPeriodDays * 24 * 60 * 60 * 1000))
-    const [prevNewSubscribers, prevUnsubscribed, prevEmailEvents] = await Promise.all([
-      prisma.subscriber.count({ where: { createdAt: { gte: prevStart, lt: start } } }),
-      prisma.subscriber.count({ where: { status: "unsubscribed", updatedAt: { gte: prevStart, lt: start } } }),
-      prisma.emailEvent.groupBy({
+    const prevNewSubscribers = Array.from(contactsByEmail.values()).filter((contact) =>
+      contact.createdAt && contact.createdAt >= prevStart && contact.createdAt < start
+    ).length
+    const prevUnsubscribed = Array.from(contactsByEmail.values()).filter((contact) =>
+      contact.unsubscribed && contact.updatedAt && contact.updatedAt >= prevStart && contact.updatedAt < start
+    ).length
+    const prevEmailEvents = await prisma.emailEvent.groupBy({
         by: ["eventType"],
         where: { createdAt: { gte: prevStart, lt: start } },
         _count: true,
-      }),
-    ])
+      })
 
     const prevEventMap = new Map<string, number>(prevEmailEvents.map((e: { eventType: string; _count: number }) => [e.eventType, e._count]))
     const prevDelivered = prevEventMap.get("email.delivered") || 0
