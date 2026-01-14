@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { prisma } from "@/lib/db"
+import Parser from "rss-parser"
 
 // Allowlist of domains that are permitted for redirects
 // Add your RSS feed sources and trusted newsletter content domains here
@@ -28,9 +29,10 @@ const ALLOWED_DOMAINS = [
   // Add more domains as needed for your newsletter sources
 ]
 
-const CACHE_TTL_MS = 5 * 60 * 1000
+const CACHE_TTL_MS = 10 * 60 * 1000
 let cachedDomains: Set<string> | null = null
 let cachedAt = 0
+const rssParser = new Parser()
 
 function normalizeHostname(hostname: string): string {
   return hostname.trim().toLowerCase().replace(/^www\./, "")
@@ -63,14 +65,37 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
     select: { url: true },
   })
 
+  const rssFeedUrls: string[] = []
   for (const source of rssSources) {
     try {
       const hostname = new URL(source.url).hostname
       domains.add(normalizeHostname(hostname))
+      rssFeedUrls.push(source.url)
     } catch {
       // Ignore invalid URLs stored in DB
     }
   }
+
+  // Allow all domains referenced by RSS feed items (keeps allowlist up to date).
+  await Promise.allSettled(
+    rssFeedUrls.map(async (feedUrl) => {
+      try {
+        const feed = await rssParser.parseURL(feedUrl)
+        for (const item of feed.items || []) {
+          const candidate = (item as any).link || (item as any).guid || ""
+          if (!candidate) continue
+          try {
+            const hostname = new URL(candidate).hostname
+            domains.add(normalizeHostname(hostname))
+          } catch {
+            // Ignore invalid item URLs
+          }
+        }
+      } catch {
+        // Ignore feed fetch failures; keep existing domains.
+      }
+    })
+  )
 
   // Include recent article link domains (covers feeds that point to other domains).
   const recentArticles = await prisma.article.findMany({
