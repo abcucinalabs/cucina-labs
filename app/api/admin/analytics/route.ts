@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         by: ["clickUrl"],
         where: { eventType: "email.clicked", createdAt: { gte: start }, clickUrl: { not: null } },
         _count: { _all: true },
-        orderBy: { _count: { _all: "desc" } },
+        orderBy: { _count: { clickUrl: "desc" } },
         take: 10,
       }),
       prisma.emailEvent.groupBy({
