@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     ])
 
     const totalClicks = clickAggregate._sum.clicks || 0
-    const eventCountMap = new Map(
+    const eventCountMap = new Map<string, number>(
       emailEventCounts.map((item) => [item.eventType, item._count])
     )
     const sentCount = eventCountMap.get("email.sent") || 0
@@ -135,19 +135,20 @@ export async function GET(request: NextRequest) {
     })
 
     const recentNewsletterItems = recentNewsletters.map((item) => {
-      const metadata = (item.metadata || {}) as Record<string, any>
+      const metadata = (item.metadata || {}) as Record<string, unknown>
       return {
         id: item.id,
-        sequenceName: metadata.sequenceName || "Newsletter",
+        sequenceName: (metadata.sequenceName as string) || "Newsletter",
         status: item.status,
         sentAt: item.createdAt,
-        broadcastId: metadata.broadcastId || null,
+        broadcastId: (metadata.broadcastId as string) || null,
       }
     })
 
     const dailyRange = period.days === null ? 30 : period.days
     const dailyStart = startOfDay(new Date(now.getTime() - (dailyRange - 1) * 24 * 60 * 60 * 1000))
     const daily: Array<{ date: string; new: number; unsubscribed: number }> = []
+    const chartData: Array<{ date: string; emails: number; openRate: number; clickRate: number }> = []
 
     for (let dayIndex = 0; dayIndex < dailyRange; dayIndex += 1) {
       const date = new Date(dailyStart)
@@ -155,12 +156,17 @@ export async function GET(request: NextRequest) {
       const nextDate = new Date(date)
       nextDate.setDate(date.getDate() + 1)
 
-      const [newCount, unsubCount] = await Promise.all([
+      const [newCount, unsubCount, dayEmailEvents] = await Promise.all([
         prisma.subscriber.count({
           where: { createdAt: { gte: date, lt: nextDate } },
         }),
         prisma.subscriber.count({
           where: { status: "unsubscribed", updatedAt: { gte: date, lt: nextDate } },
+        }),
+        prisma.emailEvent.groupBy({
+          by: ["eventType"],
+          where: { createdAt: { gte: date, lt: nextDate } },
+          _count: true,
         }),
       ])
 
@@ -169,7 +175,64 @@ export async function GET(request: NextRequest) {
         new: newCount,
         unsubscribed: unsubCount,
       })
+
+      // Build chart data
+      const dayEventMap = new Map<string, number>(dayEmailEvents.map((e: { eventType: string; _count: number }) => [e.eventType, e._count]))
+      const daySent = dayEventMap.get("email.sent") || 0
+      const dayDelivered = dayEventMap.get("email.delivered") || daySent
+      const dayOpened = dayEventMap.get("email.opened") || 0
+      const dayClicked = dayEventMap.get("email.clicked") || 0
+
+      chartData.push({
+        date: date.toISOString().slice(0, 10),
+        emails: daySent,
+        openRate: dayDelivered ? (dayOpened / dayDelivered) * 100 : 0,
+        clickRate: dayDelivered ? (dayClicked / dayDelivered) * 100 : 0,
+      })
     }
+
+    // Calculate previous period for trend comparison
+    const prevPeriodDays = period.days || 30
+    const prevStart = startOfDay(new Date(start.getTime() - prevPeriodDays * 24 * 60 * 60 * 1000))
+    const [prevNewSubscribers, prevUnsubscribed, prevEmailEvents] = await Promise.all([
+      prisma.subscriber.count({ where: { createdAt: { gte: prevStart, lt: start } } }),
+      prisma.subscriber.count({ where: { status: "unsubscribed", updatedAt: { gte: prevStart, lt: start } } }),
+      prisma.emailEvent.groupBy({
+        by: ["eventType"],
+        where: { createdAt: { gte: prevStart, lt: start } },
+        _count: true,
+      }),
+    ])
+
+    const prevEventMap = new Map<string, number>(prevEmailEvents.map((e: { eventType: string; _count: number }) => [e.eventType, e._count]))
+    const prevDelivered = prevEventMap.get("email.delivered") || 0
+    const prevOpened = prevEventMap.get("email.opened") || 0
+    const prevClicked = prevEventMap.get("email.clicked") || 0
+    const prevOpenRate = prevDelivered ? (prevOpened / prevDelivered) * 100 : null
+    const prevClickRate = prevDelivered ? (prevClicked / prevDelivered) * 100 : null
+
+    // Calculate trends
+    const calcTrend = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0
+      return ((current - previous) / previous) * 100
+    }
+
+    const currentOpenRate = deliveredBase ? (openedCount / deliveredBase) * 100 : null
+    const currentClickRate = deliveredBase ? (clickedCount / deliveredBase) * 100 : null
+
+    // Additional metrics
+    const [totalArticles, topSequence] = await Promise.all([
+      prisma.article.count({ where: { ingestedAt: { gte: start } } }),
+      prisma.sequence.findFirst({
+        where: { status: "active" },
+        orderBy: { lastSent: "desc" },
+        select: { name: true },
+      }),
+    ])
+
+    const avgArticlesPerNewsletter = recentNewsletters.length > 0
+      ? totalArticles / recentNewsletters.length
+      : 0
 
     return NextResponse.json({
       period: {
@@ -181,8 +244,8 @@ export async function GET(request: NextRequest) {
         newslettersSent: recentNewsletters.length,
         totalClicks,
         deliveryRate: sentBase ? (deliveredBase / sentBase) * 100 : null,
-        openRate: deliveredBase ? (openedCount / deliveredBase) * 100 : null,
-        clickRate: deliveredBase ? (clickedCount / deliveredBase) * 100 : null,
+        openRate: currentOpenRate,
+        clickRate: currentClickRate,
         bounceRate: sentBase ? (bouncedCount / sentBase) * 100 : null,
         unsubscribeRate: deliveredBase ? (unsubscribed / deliveredBase) * 100 : null,
         trackingStatus,
@@ -193,6 +256,36 @@ export async function GET(request: NextRequest) {
         unsubscribed,
         netGrowth: newSubscribers - unsubscribed,
         daily,
+      },
+      // New: trends for top metrics
+      trends: {
+        newSubscribers: {
+          value: calcTrend(newSubscribers, prevNewSubscribers),
+          direction: newSubscribers >= prevNewSubscribers ? "up" : "down",
+        },
+        openRate: prevOpenRate !== null && currentOpenRate !== null ? {
+          value: currentOpenRate - prevOpenRate,
+          direction: currentOpenRate >= prevOpenRate ? "up" : "down",
+        } : null,
+        clickRate: prevClickRate !== null && currentClickRate !== null ? {
+          value: currentClickRate - prevClickRate,
+          direction: currentClickRate >= prevClickRate ? "up" : "down",
+        } : null,
+        unsubscribed: {
+          value: calcTrend(unsubscribed, prevUnsubscribed),
+          direction: unsubscribed <= prevUnsubscribed ? "up" : "down", // Less unsubscribes is good
+        },
+      },
+      // New: chart data for performance chart
+      chartData,
+      // New: additional metrics
+      additionalMetrics: {
+        deliveryRate: sentBase ? (deliveredBase / sentBase) * 100 : null,
+        bounceRate: sentBase ? (bouncedCount / sentBase) * 100 : null,
+        totalSubscribers: activeSubscribers,
+        avgArticlesPerNewsletter,
+        newslettersSent: recentNewsletters.length,
+        topSequence: topSequence?.name || null,
       },
       articleStats,
       recentNewsletters: recentNewsletterItems,

@@ -10,7 +10,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MetricCard } from "@/components/dashboard/metric-card"
+import { PerformanceChart, type ChartDataPoint, type MetricKey } from "@/components/dashboard/performance-chart"
+import { ToggleButton } from "@/components/dashboard/toggle-button"
 import { cn } from "@/lib/utils"
+
+type TrendData = {
+  value: number
+  direction: "up" | "down"
+} | null
 
 type DashboardData = {
   period: { label: string; start: string; end: string }
@@ -30,6 +37,21 @@ type DashboardData = {
     unsubscribed: number
     netGrowth: number
     daily: Array<{ date: string; new: number; unsubscribed: number }>
+  }
+  trends: {
+    newSubscribers: TrendData
+    openRate: TrendData
+    clickRate: TrendData
+    unsubscribed: TrendData
+  }
+  chartData: ChartDataPoint[]
+  additionalMetrics: {
+    deliveryRate: number | null
+    bounceRate: number | null
+    totalSubscribers: number
+    avgArticlesPerNewsletter: number
+    newslettersSent: number
+    topSequence: string | null
   }
   articleStats: Array<{
     id: string
@@ -69,11 +91,23 @@ const PERIOD_OPTIONS = [
   { value: "all", label: "All time" },
 ]
 
+const METRIC_COLORS: Record<MetricKey, string> = {
+  emails: "#3c35f2",
+  openRate: "#9bf2ca",
+  clickRate: "#f59e0b",
+}
+
 const formatNumber = (value: number) => value.toLocaleString()
 
 const formatPercent = (value: number | null) => {
   if (value === null || Number.isNaN(value)) return "—"
   return `${value.toFixed(1)}%`
+}
+
+const formatTrend = (trend: TrendData, isPercent = false) => {
+  if (!trend) return undefined
+  const sign = trend.value >= 0 ? "+" : ""
+  return isPercent ? `${sign}${trend.value.toFixed(1)}pp` : `${sign}${trend.value.toFixed(0)}%`
 }
 
 const formatDate = (value: string) => {
@@ -87,10 +121,19 @@ const formatDate = (value: string) => {
 }
 
 export function DashboardPage() {
-  const [period, setPeriod] = useState("30d")
+  const [period, setPeriod] = useState("7d")
   const [data, setData] = useState<DashboardData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(["emails", "openRate", "clickRate"])
+
+  const toggleMetric = (metric: MetricKey) => {
+    setSelectedMetrics((prev) =>
+      prev.includes(metric)
+        ? prev.filter((m) => m !== metric)
+        : [...prev, metric]
+    )
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -136,9 +179,10 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold text-foreground">Dashboard</h1>
+          <h1 className="text-3xl font-semibold" style={{ color: "#0d0d0d" }}>Dashboard</h1>
           <p className="text-[color:var(--text-secondary)] mt-2">
             Monitor performance, engagement, and system health at a glance.
           </p>
@@ -167,86 +211,179 @@ export function DashboardPage() {
         </Card>
       ) : null}
 
+      {/* TOP ROW - 4 KEY METRICS with trends */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Newsletters sent"
-          value={data ? formatNumber(data.emailMetrics.newslettersSent) : "—"}
+          label="New Subscribers"
+          value={data ? formatNumber(data.subscriberMetrics.newSubscribers) : "—"}
           helper={data ? data.period.label : "Loading"}
+          trend={formatTrend(data?.trends.newSubscribers ?? null)}
+          trendDirection={data?.trends.newSubscribers?.direction}
         />
         <MetricCard
-          label="Total clicks"
-          value={data ? formatNumber(data.emailMetrics.totalClicks) : "—"}
-          helper="Short link clicks"
-          accent="text-[color:var(--accent-primary-dark)]"
+          label="Open Rate"
+          value={data ? formatPercent(data.emailMetrics.openRate) : "—"}
+          helper={data ? data.period.label : "Loading"}
+          trend={formatTrend(data?.trends.openRate ?? null, true)}
+          trendDirection={data?.trends.openRate?.direction}
+          accent="text-[#3c35f2]"
         />
         <MetricCard
-          label="Active subscribers"
-          value={data ? formatNumber(data.subscriberMetrics.totalActive) : "—"}
-          helper="Currently subscribed"
+          label="Click Rate"
+          value={data ? formatPercent(data.emailMetrics.clickRate) : "—"}
+          helper={data ? data.period.label : "Loading"}
+          trend={formatTrend(data?.trends.clickRate ?? null, true)}
+          trendDirection={data?.trends.clickRate?.direction}
+          accent="text-[#3c35f2]"
         />
         <MetricCard
-          label="Net growth"
-          value={data ? formatNumber(data.subscriberMetrics.netGrowth) : "—"}
-          helper={`${data?.subscriberMetrics.newSubscribers ?? 0} new · ${data?.subscriberMetrics.unsubscribed ?? 0} lost`}
-          accent={data?.subscriberMetrics.netGrowth && data.subscriberMetrics.netGrowth < 0 ? "text-rose-500" : "text-emerald-600"}
+          label="Unsubscribes"
+          value={data ? formatNumber(data.subscriberMetrics.unsubscribed) : "—"}
+          helper={data ? data.period.label : "Loading"}
+          trend={formatTrend(data?.trends.unsubscribed ?? null)}
+          trendDirection={data?.trends.unsubscribed?.direction}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Email performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
-                  Delivery rate
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {formatPercent(data?.emailMetrics.deliveryRate ?? null)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
-                  Open rate
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {formatPercent(data?.emailMetrics.openRate ?? null)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
-                  Click-through rate
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {formatPercent(data?.emailMetrics.clickRate ?? null)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
-                  Unsubscribe rate
-                </p>
-                <p className="mt-2 text-xl font-semibold">
-                  {formatPercent(data?.emailMetrics.unsubscribeRate ?? null)}
-                </p>
-              </div>
+      {/* PERFORMANCE CHART */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <CardTitle>Performance</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <ToggleButton
+                active={selectedMetrics.includes("emails")}
+                onClick={() => toggleMetric("emails")}
+                color={METRIC_COLORS.emails}
+              >
+                Total Emails
+              </ToggleButton>
+              <ToggleButton
+                active={selectedMetrics.includes("openRate")}
+                onClick={() => toggleMetric("openRate")}
+                color={METRIC_COLORS.openRate}
+              >
+                Open Rate
+              </ToggleButton>
+              <ToggleButton
+                active={selectedMetrics.includes("clickRate")}
+                onClick={() => toggleMetric("clickRate")}
+                color={METRIC_COLORS.clickRate}
+              >
+                Click Rate
+              </ToggleButton>
             </div>
-            {data?.emailMetrics.trackingStatus !== "ready" ? (
-              <p className="mt-4 text-xs text-[color:var(--text-secondary)]">
-                Email delivery and open tracking is not configured yet. Metrics will populate once tracking events are stored.
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PerformanceChart
+            data={data?.chartData || []}
+            selectedMetrics={selectedMetrics}
+          />
+        </CardContent>
+      </Card>
+
+      {/* POPULAR ARTICLES */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Popular Articles</CardTitle>
+            <a href="#" className="text-sm font-semibold" style={{ color: "#3c35f2" }}>
+              See all
+            </a>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {(data?.articleStats || []).map((article, index) => (
+              <div
+                key={article.id}
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3 last:border-0 last:pb-0"
+              >
+                <div className="flex items-center gap-3 min-w-[220px]">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: "#9bf2ca", color: "#0d0d0d" }}>
+                    {index + 1}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{article.title}</p>
+                    <p className="text-xs text-[color:var(--text-secondary)]">
+                      {article.category || "Uncategorized"} · {article.creator || "Unknown"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-[color:var(--text-secondary)]">
+                  <span className="rounded-full px-3 py-1" style={{ backgroundColor: "rgba(60, 53, 242, 0.1)", color: "#3c35f2" }}>
+                    {formatNumber(article.clicks)} clicks
+                  </span>
+                  <span>{article.clickShare.toFixed(1)}%</span>
+                  {article.url ? (
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: "#3c35f2" }}
+                    >
+                      View
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+            {!data?.articleStats.length && !isLoading ? (
+              <p className="text-sm text-[color:var(--text-secondary)]">
+                No click activity yet.
               </p>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
+      {/* ADDITIONAL METRICS SECTION */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <MetricCard
+          label="Delivery Rate"
+          value={formatPercent(data?.additionalMetrics.deliveryRate ?? null)}
+          helper="Successful deliveries"
+          accent="text-emerald-600"
+        />
+        <MetricCard
+          label="Bounce Rate"
+          value={formatPercent(data?.additionalMetrics.bounceRate ?? null)}
+          helper="Failed deliveries"
+          accent={data?.additionalMetrics.bounceRate && data.additionalMetrics.bounceRate > 5 ? "text-rose-500" : "text-foreground"}
+        />
+        <MetricCard
+          label="Total Subscribers"
+          value={data ? formatNumber(data.additionalMetrics.totalSubscribers) : "—"}
+          helper="Active subscribers"
+        />
+        <MetricCard
+          label="Avg. Articles/Newsletter"
+          value={data ? data.additionalMetrics.avgArticlesPerNewsletter.toFixed(1) : "—"}
+          helper="This period"
+        />
+        <MetricCard
+          label="Newsletters Sent"
+          value={data ? formatNumber(data.additionalMetrics.newslettersSent) : "—"}
+          helper="This period"
+        />
+        <MetricCard
+          label="Top Sequence"
+          value={data?.additionalMetrics.topSequence || "—"}
+          helper="Most recently active"
+          accent="text-[#3c35f2]"
+        />
+      </div>
+
+      {/* SUBSCRIBER GROWTH */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Subscriber growth</CardTitle>
+            <CardTitle>Subscriber Growth</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {(data?.subscriberMetrics.daily || []).map((entry) => {
+              {(data?.subscriberMetrics.daily || []).slice(-10).map((entry) => {
                 const newWidth = Math.round((entry.new / growthMax) * 100)
                 const unsubWidth = Math.round((entry.unsubscribed / growthMax) * 100)
                 return (
@@ -260,8 +397,8 @@ export function DashboardPage() {
                     <div className="flex-1">
                       <div className="h-2 rounded-full bg-[var(--bg-muted)]">
                         <div
-                          className="h-2 rounded-full bg-emerald-400"
-                          style={{ width: `${newWidth}%` }}
+                          className="h-2 rounded-full"
+                          style={{ width: `${newWidth}%`, backgroundColor: "#9bf2ca" }}
                         />
                       </div>
                       <div className="mt-1 h-2 rounded-full bg-[var(--bg-muted)]">
@@ -285,56 +422,10 @@ export function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Most clicked articles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {(data?.articleStats || []).map((article) => (
-                <div
-                  key={article.id}
-                  className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3 last:border-0 last:pb-0"
-                >
-                  <div className="min-w-[220px]">
-                    <p className="text-sm font-semibold text-foreground">{article.title}</p>
-                    <p className="text-xs text-[color:var(--text-secondary)]">
-                      {article.category || "Uncategorized"} · {article.creator || "Unknown"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-[color:var(--text-secondary)]">
-                    <span className="rounded-full bg-[var(--bg-muted)] px-3 py-1 text-[color:var(--text-secondary)]">
-                      {formatNumber(article.clicks)} clicks
-                    </span>
-                    <span>{article.clickShare.toFixed(1)}%</span>
-                    {article.url ? (
-                      <a
-                        href={article.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[color:var(--accent-primary-dark)]"
-                      >
-                        View
-                      </a>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-              {!data?.articleStats.length && !isLoading ? (
-                <p className="text-sm text-[color:var(--text-secondary)]">
-                  No click activity yet.
-                </p>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent newsletters</CardTitle>
+            <CardTitle>Recent Newsletters</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {(data?.recentNewsletters || []).map((item) => (
@@ -354,9 +445,10 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      {/* SYSTEM HEALTH */}
       <Card>
         <CardHeader>
-          <CardTitle>System health</CardTitle>
+          <CardTitle>System Health</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-3">
