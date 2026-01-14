@@ -1,27 +1,31 @@
 import { NextRequest, NextResponse } from "next/server"
-import crypto from "crypto"
 import { prisma } from "@/lib/db"
+import { verifyResendSignature } from "@/lib/resend-webhook"
 
 export const dynamic = "force-dynamic"
-
-const getSignature = (request: NextRequest) =>
-  request.headers.get("resend-signature") ||
-  request.headers.get("x-resend-signature") ||
-  ""
 
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text()
-    const signature = getSignature(request)
+    const signature =
+      request.headers.get("resend-signature") ||
+      request.headers.get("x-resend-signature") ||
+      ""
+    const timestamp =
+      request.headers.get("resend-timestamp") ||
+      request.headers.get("x-resend-timestamp") ||
+      ""
     const secret = process.env.RESEND_WEBHOOK_SECRET
 
     if (secret) {
-      const expected = crypto
-        .createHmac("sha256", secret)
-        .update(rawBody)
-        .digest("hex")
+      const verification = verifyResendSignature({
+        rawBody,
+        signatureHeader: signature,
+        timestampHeader: timestamp,
+        secret,
+      })
 
-      if (!signature || signature !== expected) {
+      if (!verification.ok) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
       }
     }
@@ -37,19 +41,35 @@ export async function POST(request: NextRequest) {
     const clickUrl = data.url || data.link || null
     const createdAt = payload.created_at || data.created_at || null
 
-    await prisma.emailEvent.create({
-      data: {
-        eventId: eventId || undefined,
-        eventType: String(eventType),
-        emailId: emailId ? String(emailId) : undefined,
-        broadcastId: broadcastId ? String(broadcastId) : undefined,
-        recipient: to ? String(to) : undefined,
-        subject: subject ? String(subject) : undefined,
-        clickUrl: clickUrl ? String(clickUrl) : undefined,
-        payload,
-        createdAt: createdAt ? new Date(createdAt) : undefined,
-      },
-    })
+    const eventData = {
+      eventId: eventId || undefined,
+      eventType: String(eventType),
+      emailId: emailId ? String(emailId) : undefined,
+      broadcastId: broadcastId ? String(broadcastId) : undefined,
+      recipient: to ? String(to) : undefined,
+      subject: subject ? String(subject) : undefined,
+      clickUrl: clickUrl ? String(clickUrl) : undefined,
+      payload,
+      createdAt: createdAt ? new Date(createdAt) : undefined,
+    }
+
+    if (eventId) {
+      await prisma.emailEvent.upsert({
+        where: { eventId: String(eventId) },
+        update: {
+          eventType: eventData.eventType,
+          emailId: eventData.emailId,
+          broadcastId: eventData.broadcastId,
+          recipient: eventData.recipient,
+          subject: eventData.subject,
+          clickUrl: eventData.clickUrl,
+          payload: eventData.payload,
+        },
+        create: eventData,
+      })
+    } else {
+      await prisma.emailEvent.create({ data: eventData })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
