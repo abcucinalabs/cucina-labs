@@ -241,6 +241,8 @@ export async function generateNewsletterContent(
 
     const parsed = JSON.parse(jsonMatch[0])
     console.log("Parsed Gemini response keys:", Object.keys(parsed))
+    console.log("Featured story link:", parsed.featured_story?.link || parsed.featuredStory?.link || "MISSING")
+    console.log("Top stories links:", (parsed.top_stories || parsed.topStories || []).map((s: any) => s.link || "MISSING"))
     return parsed
   } catch (error) {
     console.error("Gemini API error:", error)
