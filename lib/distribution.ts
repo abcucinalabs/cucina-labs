@@ -15,6 +15,7 @@ import { createShortLink } from "./short-links"
 interface NewsletterContent {
   // camelCase format
   featuredStory?: {
+    id?: number | string
     title?: string
     headline?: string
     summary?: string
@@ -26,11 +27,13 @@ interface NewsletterContent {
   }
   // snake_case format (from prompts)
   featured_story?: {
-    id?: number
+    id?: number | string
     headline?: string
     why_this_matters?: string
+    link?: string
   }
   topStories?: Array<{
+    id?: number | string
     title?: string
     headline?: string
     summary?: string
@@ -39,9 +42,10 @@ interface NewsletterContent {
     category?: string
   }>
   top_stories?: Array<{
-    id?: number
+    id?: number | string
     headline?: string
     why_read_it?: string
+    link?: string
   }>
   intro?: string
   lookingAhead?: string
@@ -195,7 +199,7 @@ async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | nu
   }
 }
 
-async function wrapNewsletterWithShortLinks(
+export async function wrapNewsletterWithShortLinks(
   content: NewsletterContent,
   articles: any[],
   sequenceId?: string
@@ -395,7 +399,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   })
 
   // Generate newsletter content
-  const content = await generateNewsletterContent(
+  let content = await generateNewsletterContent(
     articles,
     sequence.systemPrompt || "",
     sequence.userPrompt
@@ -407,6 +411,9 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     message: `Newsletter content generated for sequence: ${sequence.name}`,
     metadata: { sequenceId, sequenceName: sequence.name },
   })
+
+  // Wrap URLs with branded short links
+  content = await wrapNewsletterWithShortLinks(content, articles, sequenceId)
 
   // Fetch the template if specified
   let template: string | undefined
