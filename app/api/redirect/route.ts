@@ -97,15 +97,14 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
     })
   )
 
-  // Include recent article link domains (covers feeds that point to other domains).
-  const recentArticles = await prisma.article.findMany({
+  // Include ALL article link domains (covers feeds that point to other domains).
+  // Since all articles come from trusted RSS sources, we trust their domains.
+  const allArticles = await prisma.article.findMany({
     select: { sourceLink: true, imageLink: true },
     where: { sourceLink: { not: "" } },
-    orderBy: { ingestedAt: "desc" },
-    take: 2000,
   })
 
-  for (const article of recentArticles) {
+  for (const article of allArticles) {
     const candidates = [article.sourceLink, article.imageLink].filter(Boolean) as string[]
     for (const candidate of candidates) {
       try {
@@ -114,6 +113,20 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
       } catch {
         // Ignore invalid URLs stored in DB
       }
+    }
+  }
+
+  // Include short link target domains (all short links are for trusted content).
+  const shortLinks = await prisma.shortLink.findMany({
+    select: { targetUrl: true },
+  })
+
+  for (const link of shortLinks) {
+    try {
+      const hostname = new URL(link.targetUrl).hostname
+      domains.add(normalizeHostname(hostname))
+    } catch {
+      // Ignore invalid URLs
     }
   }
 
@@ -159,6 +172,8 @@ export async function GET(request: NextRequest) {
     // Security check: Verify domain is in allowlist (static + dynamic)
     if (!isAllowedDomain(urlObj.hostname, dynamicDomains)) {
       console.warn(`Blocked redirect to unauthorized domain: ${urlObj.hostname}`)
+      console.warn(`Dynamic domains count: ${dynamicDomains.size}`)
+      console.warn(`Attempted URL: ${decodedUrl}`)
       return NextResponse.json({
         error: "Redirect to this domain is not permitted for security reasons"
       }, { status: 403 })
