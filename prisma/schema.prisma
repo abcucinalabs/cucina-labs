@@ -148,3 +148,21 @@ model ShortLink {
   @@index([articleId])
   @@index([sequenceId])
 }
+
+model EmailEvent {
+  id          String   @id @default(cuid())
+  eventId     String?  @unique
+  eventType   String
+  emailId     String?
+  broadcastId String?
+  recipient   String?
+  subject     String?
+  clickUrl    String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([eventType])
+  @@index([emailId])
+  @@index([broadcastId])
+  @@index([createdAt])
+}

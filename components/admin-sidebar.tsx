@@ -3,13 +3,18 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { Newspaper, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Newspaper, Users, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   {
-    name: "News",
+    name: "Dashboard",
     href: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "News",
+    href: "/admin/news",
     icon: Newspaper,
   },
   {

@@ -58,6 +58,46 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                   <td style="padding: 36px 40px 40px;">
                     \${newsletter.intro ? '<p style="margin: 0 0 24px; font-size: 15px; color: rgba(13, 13, 13, 0.7); line-height: 1.7;">' + newsletter.intro + '</p>' : ""}
                     \${(() => {
+                      const trimText = (value, max = 120) => {
+                        if (!value) return "";
+                        return value.length > max ? value.slice(0, max).trimEnd() + "..." : value;
+                      };
+                      const highlights = [];
+                      const featuredHeadline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
+                      const featuredLink = newsletter.featured_story?.link || featured.source_link || "";
+                      const featuredSummary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";
+                      if (featuredHeadline) {
+                        highlights.push({
+                          headline: featuredHeadline,
+                          link: featuredLink,
+                          summary: trimText(featuredSummary),
+                        });
+                      }
+                      (newsletter.top_stories || []).slice(0, 3).forEach((story) => {
+                        const headline = story.headline || "";
+                        if (!headline) return;
+                        highlights.push({
+                          headline,
+                          link: story.link || "",
+                          summary: trimText(story.why_read_it || ""),
+                        });
+                      });
+                      if (!highlights.length) return "";
+                      return '<div style="margin: 0 0 28px; padding: 16px 18px; border-radius: 14px; background: rgba(155, 242, 202, 0.18); border: 1px solid rgba(155, 242, 202, 0.5);">' +
+                        '<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4a51d9; margin-bottom: 10px;">Today\\'s Highlights</div>' +
+                        '<ul style="margin: 0; padding-left: 18px; color: rgba(13, 13, 13, 0.75); font-size: 14px; line-height: 1.6;">' +
+                        highlights.map((item) => {
+                          const headline = item.link
+                            ? '<a href="' + item.link + '" style="color: #0d0d0d; text-decoration: none; font-weight: 600;">' + item.headline + '</a>'
+                            : '<span style="font-weight: 600;">' + item.headline + '</span>';
+                          return '<li style="margin-bottom: 8px;">' + headline +
+                            (item.summary ? '<span style="color: rgba(13, 13, 13, 0.6);"> — ' + item.summary + '</span>' : '') +
+                          '</li>';
+                        }).join("") +
+                        '</ul>' +
+                      '</div>';
+                    })()}
+                    \${(() => {
                       const headline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
                       if (!headline) return "";
                       const summary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";

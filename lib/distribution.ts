@@ -204,17 +204,60 @@ export async function wrapNewsletterWithShortLinks(
   articles: any[],
   sequenceId?: string
 ): Promise<NewsletterContent> {
+  const resolveArticleLink = (article?: any) =>
+    article?.source_link || article?.sourceLink || article?.link || ""
+
+  const normalizeTitle = (value?: string) =>
+    value ? value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim() : ""
+
+  const findArticleById = (id?: number | string) => {
+    if (!id) return null
+    const idValue = String(id)
+    return (articles || []).find((article) => String(article?.id) === idValue) || null
+  }
+
+  const findArticleByTitle = (title?: string) => {
+    const normalized = normalizeTitle(title)
+    if (!normalized) return null
+    return (
+      (articles || []).find(
+        (article) => normalizeTitle(article?.title) === normalized
+      ) || null
+    )
+  }
+
+  const isShortLink = (value?: string) => {
+    if (!value) return false
+    try {
+      const parsed = new URL(value)
+      return parsed.pathname.startsWith("/r/")
+    } catch {
+      return value.startsWith("/r/")
+    }
+  }
+
+  const resolveStoryLink = (story?: any) => {
+    if (!story) return ""
+    if (story.link) return story.link
+    if (story.source_link) return story.source_link
+    const article = findArticleById(story.id) || findArticleByTitle(story.headline || story.title)
+    return resolveArticleLink(article)
+  }
+
   // Create short link for featured story
-  if (content.featured_story?.link || content.featuredStory?.link) {
-    const originalLink = content.featured_story?.link || content.featuredStory?.link
+  if (content.featured_story || content.featuredStory) {
+    const featuredStory = content.featured_story || content.featuredStory
+    const originalLink = resolveStoryLink(featuredStory)
     const articleId = content.featured_story?.id || content.featuredStory?.id
 
     if (originalLink) {
-      const shortLink = await createShortLink(
-        originalLink,
-        articleId ? String(articleId) : null,
-        sequenceId || null
-      )
+      const shortLink = isShortLink(originalLink)
+        ? originalLink
+        : await createShortLink(
+            originalLink,
+            articleId ? String(articleId) : null,
+            sequenceId || null
+          )
 
       if (content.featured_story) {
         content.featured_story.link = shortLink
@@ -229,12 +272,16 @@ export async function wrapNewsletterWithShortLinks(
   const topStories = content.top_stories || content.topStories || []
   for (let i = 0; i < topStories.length; i++) {
     const story = topStories[i]
-    if (story?.link) {
-      const shortLink = await createShortLink(
-        story.link,
-        story.id ? String(story.id) : null,
-        sequenceId || null
-      )
+    if (!story) continue
+    const originalLink = resolveStoryLink(story)
+    if (originalLink) {
+      const shortLink = isShortLink(originalLink)
+        ? originalLink
+        : await createShortLink(
+            originalLink,
+            story.id ? String(story.id) : null,
+            sequenceId || null
+          )
       story.link = shortLink
     }
   }
@@ -322,11 +369,22 @@ export function generatePlainText(content: NewsletterContent): string {
   const featuredTitle = featured.title || featured.headline || ""
   const featuredSummary = featured.summary || featured.why_this_matters || ""
   const featuredLink = featured.link || ""
+  const highlightItems = [
+    featuredTitle ? `- ${featuredTitle}${featuredSummary ? ` — ${featuredSummary}` : ""}` : "",
+    ...stories.slice(0, 3).map((story: any) => {
+      const storyTitle = story.title || story.headline || ""
+      const storySummary = story.summary || story.why_read_it || ""
+      return storyTitle ? `- ${storyTitle}${storySummary ? ` — ${storySummary}` : ""}` : ""
+    }),
+  ].filter(Boolean)
   
   return `
 CUCINA LABS - AI Product Newsletter
 
 ${intro}
+
+${highlightItems.length ? `HIGHLIGHTS
+${highlightItems.join("\n")}` : ""}
 
 ${featuredTitle ? `FEATURED STORY
 ${featuredCategory ? featuredCategory.toUpperCase() + "\n" : ""}${featuredTitle}
