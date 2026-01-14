@@ -9,6 +9,7 @@ import {
   renderNewsletterTemplate,
 } from "./newsletter-template"
 import { logNewsActivity } from "./news-activity"
+import { createShortLink } from "./short-links"
 
 // Flexible interface to handle different Gemini response structures
 interface NewsletterContent {
@@ -192,6 +193,41 @@ async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | nu
     apiKey: decrypt(config.key),
     model: config.geminiModel || "gemini-1.5-flash",
   }
+}
+
+async function wrapNewsletterWithShortLinks(
+  content: NewsletterContent,
+  articles: any[],
+  sequenceId?: string
+): Promise<NewsletterContent> {
+  // Create short link for featured story
+  if (content.featured_story?.link || content.featuredStory?.link) {
+    const originalLink = content.featured_story?.link || content.featuredStory?.link
+    const articleId = content.featured_story?.id || content.featuredStory?.id
+
+    if (originalLink) {
+      const shortLink = await createShortLink(originalLink, String(articleId), sequenceId)
+
+      if (content.featured_story) {
+        content.featured_story.link = shortLink
+      }
+      if (content.featuredStory) {
+        content.featuredStory.link = shortLink
+      }
+    }
+  }
+
+  // Create short links for top stories
+  const topStories = content.top_stories || content.topStories || []
+  for (let i = 0; i < topStories.length; i++) {
+    const story = topStories[i]
+    if (story?.link) {
+      const shortLink = await createShortLink(story.link, String(story.id), sequenceId)
+      story.link = shortLink
+    }
+  }
+
+  return content
 }
 
 export async function generateNewsletterContent(
