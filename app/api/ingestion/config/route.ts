@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 const configSchema = z.object({
   schedule: z.array(z.string()),
   time: z.string(),

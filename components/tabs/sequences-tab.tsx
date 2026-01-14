@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Pause, Trash2 } from "lucide-react"
 import { SequenceWizard } from "@/components/sequence-wizard"
+import { DayBlocks } from "@/components/ui/day-blocks"
 
 export function SequencesTab() {
   const [sequences, setSequences] = useState<any[]>([])
@@ -97,6 +98,7 @@ export function SequencesTab() {
                 <TableHead>Name</TableHead>
                 <TableHead>Audience</TableHead>
                 <TableHead>Schedule</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Sent</TableHead>
                 <TableHead>Actions</TableHead>
@@ -104,14 +106,21 @@ export function SequencesTab() {
             </TableHeader>
             <TableBody>
               {sequences.map((sequence) => (
-                <TableRow key={sequence.id}>
+                <TableRow
+                  key={sequence.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleEdit(sequence)}
+                >
                   <TableCell className="font-medium">{sequence.name}</TableCell>
                   <TableCell>
                     {audiences.find((audience) => audience.id === sequence.audienceId)?.name ||
                       sequence.audienceId}
                   </TableCell>
                   <TableCell>
-                    {sequence.dayOfWeek?.join(", ")} at {sequence.time}
+                    <DayBlocks selectedDays={sequence.dayOfWeek || []} />
+                  </TableCell>
+                  <TableCell>
+                    {sequence.time} {sequence.timezone || 'UTC'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={sequence.status === "active" ? "success" : "outline"}>
@@ -123,7 +132,7 @@ export function SequencesTab() {
                       ? new Date(sequence.lastSent).toLocaleString()
                       : "Never"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"

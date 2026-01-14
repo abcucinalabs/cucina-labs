@@ -74,7 +74,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                         '</div>' : "") +
                         '<h2 style="margin: 6px 0 12px; color: #0d0d0d; font-size: 20px; font-weight: 600; line-height: 1.3;">' + headline + '</h2>' +
                         (summary ? '<p style="margin: 0 0 16px; color: rgba(13, 13, 13, 0.7); font-size: 15px; line-height: 1.7;">' + summary + '</p>' : "") +
-                        (link ? '<a href="' + link + '" style="color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 14px;">Read full article -></a>' : "") +
+                        (link ? '<a href="' + link + '" style="color: #4a51d9; text-decoration: none; font-weight: 600; font-size: 14px;">Read full article -></a>' : "") +
                         '</div>';
                     })()}
                     \${(newsletter.top_stories || []).length ? '<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4a51d9; margin: 24px 0 16px;">Top Stories</div>' : ""}
@@ -93,7 +93,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                         '</div>' : "") +
                         '<h3 style="margin: 6px 0 10px; color: #0d0d0d; font-size: 18px; font-weight: 600; line-height: 1.4;">' + headline + '</h3>' +
                         (summary ? '<p style="margin: 0 0 12px; color: rgba(13, 13, 13, 0.7); font-size: 15px; line-height: 1.7;">' + summary + '</p>' : "") +
-                        (link ? '<a href="' + link + '" style="color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 14px;">Read more -></a>' : "") +
+                        (link ? '<a href="' + link + '" style="color: #4a51d9; text-decoration: none; font-weight: 600; font-size: 14px;">Read more -></a>' : "") +
                         '</div>';
                     }).join("")}
                     \${newsletter.looking_ahead ? '<div style="margin-top: 28px; padding: 18px 20px; background: linear-gradient(135deg, rgba(155, 242, 202, 0.45) 0%, rgba(155, 242, 202, 0.12) 100%); border-left: 3px solid #9bf2ca; border-radius: 0 12px 12px 0;">' +

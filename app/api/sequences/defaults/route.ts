@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
+export const dynamic = 'force-dynamic'
+
 const defaultSequenceSystemPrompt = `You are the Editor of a daily digest for Product Managers building AI-powered products. Your focus is on the most significant and timely developments from the past 24 hours.
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -25,13 +27,15 @@ CRITICAL OUTPUT RULES
   "featured_story": {
     "id": 1,
     "headline": "Compelling headline",
-    "why_this_matters": "2-3 sentences explaining strategic impact"
+    "why_this_matters": "2-3 sentences explaining strategic impact",
+    "link": "URL from the article with this id"
   },
   "top_stories": [
     {
       "id": 2,
       "headline": "Story headline",
-      "why_read_it": "One sentence explaining value"
+      "why_read_it": "One sentence explaining value",
+      "link": "URL from the article with this id"
     }
   ],
   "looking_ahead": "2-3 sentences about what to watch for tomorrow or next few days",

@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { runIngestion } from "@/lib/ingestion"
 import { logNewsActivity } from "@/lib/news-activity"
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -6,6 +6,8 @@ import { encrypt, decrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
+export const dynamic = 'force-dynamic'
+
 const saveIntegrationSchema = z.object({
   service: z.enum(["gemini", "airtable", "resend"]),
   key: z.string().optional(),
