@@ -129,6 +129,7 @@ model NewsActivity {
 model NewsletterTemplate {
   id          String   @id @default(cuid())
   name        String
+  description String?  @db.Text
   html        String   @db.Text
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())

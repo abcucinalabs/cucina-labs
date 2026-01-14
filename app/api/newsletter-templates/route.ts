@@ -20,7 +20,32 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    return NextResponse.json(templates)
+    const usage = await prisma.sequence.groupBy({
+      by: ["templateId"],
+      _count: { _all: true },
+      _max: { lastSent: true },
+      where: { templateId: { not: null } }
+    })
+
+    const usageMap = new Map(
+      usage
+        .filter((item) => item.templateId)
+        .map((item) => [
+          item.templateId as string,
+          { count: item._count._all, lastSent: item._max.lastSent }
+        ])
+    )
+
+    const templatesWithUsage = templates.map((template) => {
+      const usageInfo = usageMap.get(template.id)
+      return {
+        ...template,
+        usageCount: usageInfo?.count ?? 0,
+        lastUsedAt: usageInfo?.lastSent ?? null,
+      }
+    })
+
+    return NextResponse.json(templatesWithUsage)
   } catch (error: any) {
     console.error("Failed to fetch templates:", error)
     return NextResponse.json(
@@ -40,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, html, isDefault } = body
+    const { name, description, html, isDefault } = body
 
     console.log("Creating template:", { name, htmlLength: html?.length, isDefault })
 
@@ -64,6 +89,7 @@ export async function POST(request: NextRequest) {
     const template = await prisma.newsletterTemplate.create({
       data: {
         name,
+        description: description?.trim() || null,
         html,
         isDefault: isDefault || false
       }

@@ -121,6 +121,14 @@ export function SequenceWizard({
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
+        if (!sequence && !selectedTemplateId) {
+          const defaultTemplate = data.find((template: any) => template.isDefault)
+          if (defaultTemplate) {
+            setSelectedTemplateId(defaultTemplate.id)
+            setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
+            setCustomHtml(defaultTemplate.html || DEFAULT_NEWSLETTER_TEMPLATE)
+          }
+        }
       }
     } catch (error) {
       console.error("Failed to fetch templates:", error)

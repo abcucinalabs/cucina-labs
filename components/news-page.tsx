@@ -6,6 +6,7 @@ import { IngestionTab } from "@/components/tabs/ingestion-tab"
 import { LogTab } from "@/components/tabs/log-tab"
 import { SequencesTab } from "@/components/tabs/sequences-tab"
 import { SettingsTab } from "@/components/tabs/settings-tab"
+import { TemplatesTab } from "@/components/tabs/templates-tab"
 
 export function NewsPage() {
   return (
@@ -22,6 +23,7 @@ export function NewsPage() {
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="ingestion">Ingestion</TabsTrigger>
           <TabsTrigger value="sequences">Sequences</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="settings">Subscription Settings</TabsTrigger>
           <TabsTrigger value="log">Log</TabsTrigger>
         </TabsList>
@@ -36,6 +38,10 @@ export function NewsPage() {
 
         <TabsContent value="sequences">
           <SequencesTab />
+        </TabsContent>
+
+        <TabsContent value="templates">
+          <TemplatesTab />
         </TabsContent>
 
         <TabsContent value="settings">
