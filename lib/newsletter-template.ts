@@ -1,5 +1,152 @@
-import { wrapRedirectUrl } from "./url-utils"
 import Handlebars from "handlebars"
+import { wrapRedirectUrl } from "./url-utils"
+
+const redirectorDomains = new Set([
+  "t.co",
+  "bit.ly",
+  "lnkd.in",
+  "trib.al",
+  "tinyurl.com",
+  "goo.gl",
+  "news.google.com",
+  "link.medium.com",
+  "mailchi.mp",
+  "r.mailchimp.com",
+  "l.facebook.com",
+  "www.google.com",
+  "google.com",
+])
+
+const normalizeUrl = (value?: string): string => {
+  if (!value) return ""
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+const hostnameFromUrl = (value?: string): string => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return ""
+  try {
+    const host = new URL(normalized).hostname.toLowerCase()
+    return host.startsWith("www.") ? host.slice(4) : host
+  } catch {
+    return ""
+  }
+}
+
+const unwrapRedirectUrl = (value?: string): string => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return ""
+  try {
+    const urlObj = new URL(normalized)
+    const host = urlObj.hostname.toLowerCase()
+    const params = urlObj.searchParams
+    let candidate = ""
+
+    if ((host === "www.google.com" || host === "google.com") && urlObj.pathname === "/url") {
+      candidate = params.get("q") || params.get("url") || ""
+    } else if (host === "l.facebook.com" && urlObj.pathname === "/l.php") {
+      candidate = params.get("u") || ""
+    } else {
+      candidate =
+        params.get("url") ||
+        params.get("u") ||
+        params.get("target") ||
+        params.get("dest") ||
+        ""
+    }
+
+    const normalizedCandidate = normalizeUrl(candidate)
+    if (normalizedCandidate && hostnameFromUrl(normalizedCandidate)) {
+      return normalizedCandidate
+    }
+    return normalized
+  } catch {
+    return normalized
+  }
+}
+
+const isRedirectorHost = (host: string) => redirectorDomains.has(host)
+
+const buildAllowlist = (articles: any[]): Set<string> => {
+  const allowlist = new Set<string>()
+  for (const article of articles || []) {
+    const candidates = [
+      article?.source_link,
+      article?.link,
+      article?.url,
+      article?.guid,
+    ]
+
+    for (const candidate of candidates) {
+      const unwrapped = unwrapRedirectUrl(candidate)
+      const host = hostnameFromUrl(unwrapped)
+      if (!host || isRedirectorHost(host)) continue
+      allowlist.add(host)
+      break
+    }
+  }
+  return allowlist
+}
+
+const safeLink = (
+  candidates: Array<string | undefined | null>,
+  allowlist: Set<string>,
+  debug?: boolean
+): string => {
+  for (const candidate of candidates) {
+    const normalized = normalizeUrl(candidate || "")
+    if (!normalized) {
+      if (debug) {
+        console.log("safeLink skip: empty candidate")
+      }
+      continue
+    }
+
+    const unwrapped = unwrapRedirectUrl(normalized)
+    const host = hostnameFromUrl(unwrapped)
+    if (!host) {
+      if (debug) {
+        console.log("safeLink skip: invalid hostname", { candidate: normalized })
+      }
+      continue
+    }
+
+    if (isRedirectorHost(host)) {
+      if (debug) {
+        console.log("safeLink skip: redirector host", { candidate: normalized, host })
+      }
+      continue
+    }
+
+    if (!allowlist.has(host)) {
+      if (debug) {
+        console.log("safeLink skip: not in allowlist", { candidate: normalized, host })
+      }
+      continue
+    }
+
+    if (debug) {
+      console.log("safeLink accepted", { candidate: normalized, resolved: unwrapped, host })
+    }
+    return unwrapped
+  }
+
+  if (debug) {
+    console.log("safeLink failed: no candidates accepted", { candidates })
+  }
+  return ""
+}
 
 export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <html>
@@ -64,7 +211,12 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       };
                       const highlights = [];
                       const featuredHeadline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
-                      const featuredLink = newsletter.featured_story?.link || featured.source_link || "";
+                      const featuredLink = safeLink([
+                        newsletter.featured_story?.link,
+                        newsletter.featured_story?.source_link,
+                        featured.source_link,
+                        featured.link
+                      ]);
                       const featuredSummary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";
                       if (featuredHeadline) {
                         highlights.push({
@@ -78,7 +230,7 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                         if (!headline) return;
                         highlights.push({
                           headline,
-                          link: story.link || "",
+                          link: safeLink([story.link, story.source_link]),
                           summary: trimText(story.why_read_it || ""),
                         });
                       });
@@ -101,7 +253,12 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       const headline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
                       if (!headline) return "";
                       const summary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";
-                      const link = featured.source_link || newsletter.featured_story?.link || "";
+                      const link = safeLink([
+                        featured.source_link,
+                        featured.link,
+                        newsletter.featured_story?.link,
+                        newsletter.featured_story?.source_link
+                      ]);
                       const image = featured.image_link || "";
                       const category = featured.category || "";
                       const creator = featured.creator || "";
@@ -123,7 +280,12 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       const isLast = idx === newsletter.top_stories.length - 1;
                       const summary = story.why_read_it || story.summary || article.why_it_matters || article.summary || "";
                       const headline = story.headline || story.title || article.title || "";
-                      const link = story.link || article.source_link || article.link || "";
+                      const link = safeLink([
+                        story.link,
+                        story.source_link,
+                        article.source_link,
+                        article.link
+                      ]);
                       const category = article.category || story.category || "";
                       const creator = article.creator || story.creator || "";
                       return '<div style="padding-bottom: ' + (isLast ? "0" : "24px") + '; margin-bottom: ' + (isLast ? "0" : "24px") + '; border-bottom: ' + (isLast ? "none" : "1px solid rgba(0, 0, 0, 0.06)") + ';">' +
@@ -205,6 +367,17 @@ export const normalizeNewsletterArticles = (articles: any[], origin?: string) =>
     }
   })
 
+const isLikelyUrl = (value?: string): boolean => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return false
+  try {
+    const urlObj = new URL(normalized)
+    return Boolean(urlObj.hostname && urlObj.hostname.includes("."))
+  } catch {
+    return false
+  }
+}
+
 export const buildNewsletterTemplateContext = ({
   content,
   articles,
@@ -271,6 +444,15 @@ export const buildNewsletterTemplateContext = ({
   const featured = content?.featuredStory || content?.featured_story || {}
   const stories = content?.topStories || content?.top_stories || []
   const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
+  const allowlist = buildAllowlist(
+    (articles || []).map((article) => ({
+      source_link: article?.source_link,
+      link: article?.link,
+      url: article?.url,
+      guid: isLikelyUrl(article?.guid) ? article?.guid : undefined,
+    }))
+  )
+  const linkDebug = process.env.NEWSLETTER_LINK_DEBUG === "true"
   const featuredArticle = findArticleForStory(featured) || normalizedArticles[0] || {}
   const featuredSource = resolveArticleLink(featuredArticle)
   const featuredLink = featured?.link || featured?.source_link || featuredSource
@@ -319,7 +501,7 @@ export const buildNewsletterTemplateContext = ({
     })
 
   const baseUrl = origin || ""
-  const unsubscribeUrl = `${baseUrl}/unsubscribe`
+  const unsubscribeUrl = baseUrl ? normalizeUrl(`${baseUrl}/unsubscribe`) : "/unsubscribe"
   const bannerUrl = `${baseUrl}/video-background-2-still.png`
 
   return {
@@ -330,6 +512,8 @@ export const buildNewsletterTemplateContext = ({
     findArticle,
     unsubscribeUrl,
     bannerUrl,
+    safeLink: (candidates: Array<string | undefined | null>) =>
+      safeLink(candidates, allowlist, linkDebug),
     currentDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
   }
 }
@@ -366,6 +550,7 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       unsubscribeUrl,
       bannerUrl,
       currentDate,
+      safeLink,
     } = context
 
     // Use Function constructor to safely evaluate the template literal
@@ -379,6 +564,7 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       'unsubscribeUrl',
       'bannerUrl',
       'currentDate',
+      'safeLink',
       `return \`${template}\`;`
     )
 
@@ -390,7 +576,8 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       findArticle,
       unsubscribeUrl,
       bannerUrl,
-      currentDate
+      currentDate,
+      safeLink
     )
   } catch (error) {
     console.error('Template rendering error:', error)
