@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Select,
@@ -13,6 +13,8 @@ import { MetricCard } from "@/components/dashboard/metric-card"
 import { PerformanceChart, type ChartDataPoint, type MetricKey } from "@/components/dashboard/performance-chart"
 import { ToggleButton } from "@/components/dashboard/toggle-button"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { RefreshCw } from "lucide-react"
 
 type TrendData = {
   value: number
@@ -138,6 +140,32 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(["emails", "openRate", "clickRate"])
+  const isMountedRef = useRef(true)
+
+  const loadData = useCallback(async (selectedPeriod: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/admin/analytics?period=${selectedPeriod}`, {
+        cache: "no-store",
+      })
+      if (!response.ok) {
+        throw new Error("Failed to load dashboard data")
+      }
+      const payload = (await response.json()) as DashboardData
+      if (isMountedRef.current) {
+        setData(payload)
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError(err instanceof Error ? err.message : "Failed to load dashboard data")
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false)
+      }
+    }
+  }, [])
 
   const toggleMetric = (metric: MetricKey) => {
     setSelectedMetrics((prev) =>
@@ -148,36 +176,12 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    let isMounted = true
-    const loadData = async () => {
-      setIsLoading(true)
-      setError(null)
-      try {
-        const response = await fetch(`/api/admin/analytics?period=${period}`, {
-          cache: "no-store",
-        })
-        if (!response.ok) {
-          throw new Error("Failed to load dashboard data")
-        }
-        const payload = (await response.json()) as DashboardData
-        if (isMounted) {
-          setData(payload)
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load dashboard data")
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-    loadData()
+    isMountedRef.current = true
+    loadData(period)
     return () => {
-      isMounted = false
+      isMountedRef.current = false
     }
-  }, [period])
+  }, [loadData, period])
 
   const growthMax = useMemo(() => {
     if (!data?.subscriberMetrics.daily.length) return 1
@@ -199,7 +203,7 @@ export function DashboardPage() {
             Monitor performance, engagement, and system health at a glance.
           </p>
         </div>
-        <div className="min-w-[200px]">
+        <div className="flex items-center gap-2">
           <Select value={period} onValueChange={setPeriod}>
             <SelectTrigger>
               <SelectValue placeholder="Select period" />
@@ -212,6 +216,16 @@ export function DashboardPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => loadData(period)}
+            disabled={isLoading}
+            aria-label="Refresh dashboard"
+            title="Refresh dashboard"
+          >
+            <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+          </Button>
         </div>
       </div>
 
