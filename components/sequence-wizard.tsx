@@ -68,6 +68,8 @@ export function SequenceWizard({
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [isSendingNow, setIsSendingNow] = useState(false)
   const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const normalizeAudienceId = (audienceId?: string) =>
+    audienceId === "local_all" ? "resend_all" : audienceId || ""
 
   useEffect(() => {
     if (open) {
@@ -77,7 +79,7 @@ export function SequenceWizard({
         // Load existing sequence data
         setFormData({
           name: sequence.name || "",
-          audienceId: sequence.audienceId || "",
+          audienceId: normalizeAudienceId(sequence.audienceId),
           dayOfWeek: sequence.dayOfWeek || [],
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",

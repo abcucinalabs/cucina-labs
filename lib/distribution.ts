@@ -70,6 +70,92 @@ async function getResendConfig(): Promise<{
   }
 }
 
+type ResendContact = {
+  email?: string
+  unsubscribed?: boolean
+}
+
+async function fetchResendAudiences(apiKey: string) {
+  const response = await fetch("https://api.resend.com/audiences", {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Failed to fetch audiences from Resend:", errorText)
+    return []
+  }
+
+  const data = await response.json()
+  return data?.data || []
+}
+
+async function fetchResendContacts(apiKey: string, audienceId: string) {
+  const contacts: ResendContact[] = []
+  let cursor: string | null = null
+  let hasMore = true
+
+  while (hasMore) {
+    const url = new URL(`https://api.resend.com/audiences/${audienceId}/contacts`)
+    url.searchParams.set("limit", "100")
+    if (cursor) {
+      url.searchParams.set("cursor", cursor)
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Failed to fetch contacts from Resend:", errorText)
+      break
+    }
+
+    const data = await response.json()
+    const page = (data?.data || []) as ResendContact[]
+    contacts.push(...page)
+
+    cursor =
+      data?.next ||
+      data?.cursor ||
+      data?.pagination?.next ||
+      data?.links?.next ||
+      null
+    hasMore = Boolean(cursor && page.length)
+  }
+
+  return contacts
+}
+
+async function fetchResendAllContacts(apiKey: string) {
+  const audiences = await fetchResendAudiences(apiKey)
+  const allContacts = (
+    await Promise.all(
+      (audiences || []).map((audience: { id: string }) =>
+        fetchResendContacts(apiKey, audience.id)
+      )
+    )
+  ).flat()
+
+  const contactsByEmail = new Map<string, ResendContact>()
+  allContacts.forEach((contact) => {
+    if (!contact?.email) return
+    const email = contact.email.toLowerCase()
+    const existing = contactsByEmail.get(email)
+    if (!existing) {
+      contactsByEmail.set(email, contact)
+      return
+    }
+    contactsByEmail.set(email, {
+      email,
+      unsubscribed: Boolean(existing.unsubscribed || contact.unsubscribed),
+    })
+  })
+
+  return Array.from(contactsByEmail.values())
+}
+
 async function getAirtableConfig(): Promise<{
   apiKey: string
   baseId: string
@@ -538,30 +624,27 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     },
   })
 
-  // Handle local subscribers vs Resend audience
-  if (sequence.audienceId === "local_all") {
-    // Fetch active local subscribers
-    const subscribers = await prisma.subscriber.findMany({
-      where: { status: "active" },
-      select: { email: true },
-    })
+  // Handle all Resend subscribers vs a specific Resend audience
+  if (sequence.audienceId === "resend_all" || sequence.audienceId === "local_all") {
+    const contacts = await fetchResendAllContacts(resendConfig.apiKey)
+    const activeContacts = contacts.filter((contact) => contact.email && !contact.unsubscribed)
 
-    if (subscribers.length === 0) {
+    if (activeContacts.length === 0) {
       await logNewsActivity({
         event: "distribution_skipped",
         status: "warning",
-        message: `No active local subscribers for sequence: ${sequence.name}`,
+        message: `No active Resend subscribers for sequence: ${sequence.name}`,
         metadata: { sequenceId, sequenceName: sequence.name },
       })
-      console.log("No active local subscribers to send to")
+      console.log("No active Resend subscribers to send to")
       return
     }
 
     await logNewsActivity({
       event: "distribution_sending_batch",
       status: "info",
-      message: `Sending to ${subscribers.length} local subscribers for sequence: ${sequence.name}`,
-      metadata: { sequenceId, sequenceName: sequence.name, subscriberCount: subscribers.length },
+      message: `Sending to ${activeContacts.length} Resend subscribers for sequence: ${sequence.name}`,
+      metadata: { sequenceId, sequenceName: sequence.name, subscriberCount: activeContacts.length },
     })
 
     // Send batch emails using Resend batch API (max 100 per batch)
@@ -569,11 +652,11 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     let totalSent = 0
     let totalFailed = 0
 
-    for (let i = 0; i < subscribers.length; i += batchSize) {
-      const batch = subscribers.slice(i, i + batchSize)
-      const emails = batch.map((sub) => ({
+    for (let i = 0; i < activeContacts.length; i += batchSize) {
+      const batch = activeContacts.slice(i, i + batchSize)
+      const emails = batch.map((contact) => ({
         from,
-        to: sub.email,
+        to: contact.email as string,
         subject: content.subject || sequence.name,
         html,
         text: plainText,
@@ -602,7 +685,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         sequenceName: sequence.name,
         totalSent,
         totalFailed,
-        totalSubscribers: subscribers.length,
+        totalSubscribers: activeContacts.length,
       },
     })
   } else {

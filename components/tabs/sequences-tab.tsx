@@ -22,6 +22,8 @@ export function SequencesTab() {
   const [openWizard, setOpenWizard] = useState(false)
   const [editingSequence, setEditingSequence] = useState<any>(null)
   const [audiences, setAudiences] = useState<any[]>([])
+  const normalizeAudienceId = (audienceId?: string) =>
+    audienceId === "local_all" ? "resend_all" : audienceId || ""
 
   useEffect(() => {
     fetchSequences()
@@ -121,8 +123,8 @@ export function SequencesTab() {
                 >
                   <TableCell className="font-medium">{sequence.name}</TableCell>
                   <TableCell>
-                    {audiences.find((audience) => audience.id === sequence.audienceId)?.name ||
-                      sequence.audienceId}
+                    {audiences.find((audience) => audience.id === normalizeAudienceId(sequence.audienceId))?.name ||
+                      (sequence.audienceId === "local_all" ? "All Subscribers (Resend)" : sequence.audienceId)}
                   </TableCell>
                   <TableCell>
                     <DayBlocks selectedDays={sequence.dayOfWeek || []} />
