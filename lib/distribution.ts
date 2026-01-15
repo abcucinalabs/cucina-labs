@@ -525,6 +525,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   }
 
   const resend = new Resend(resendConfig.apiKey)
+  const from = `${resendConfig.fromName} <${resendConfig.fromEmail}>`
 
   await logNewsActivity({
     event: "distribution_sending",
@@ -537,67 +538,135 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     },
   })
 
-  // Create and send broadcast
-  const from = `${resendConfig.fromName} <${resendConfig.fromEmail}>`
-  const broadcastResponse = await resend.broadcasts.create({
-    name: `${sequence.name} - ${new Date().toISOString()}`,
-    audienceId: sequence.audienceId,
-    from,
-    subject: sequence.name,
-    html,
-    text: plainText,
-    previewText: content.intro || undefined,
-  })
+  // Handle local subscribers vs Resend audience
+  if (sequence.audienceId === "local_all") {
+    // Fetch active local subscribers
+    const subscribers = await prisma.subscriber.findMany({
+      where: { status: "active" },
+      select: { email: true },
+    })
 
-  if (broadcastResponse.error || !broadcastResponse.data?.id) {
+    if (subscribers.length === 0) {
+      await logNewsActivity({
+        event: "distribution_skipped",
+        status: "warning",
+        message: `No active local subscribers for sequence: ${sequence.name}`,
+        metadata: { sequenceId, sequenceName: sequence.name },
+      })
+      console.log("No active local subscribers to send to")
+      return
+    }
+
     await logNewsActivity({
-      event: "distribution_failed",
-      status: "error",
-      message: `Failed to create broadcast for sequence: ${sequence.name}`,
+      event: "distribution_sending_batch",
+      status: "info",
+      message: `Sending to ${subscribers.length} local subscribers for sequence: ${sequence.name}`,
+      metadata: { sequenceId, sequenceName: sequence.name, subscriberCount: subscribers.length },
+    })
+
+    // Send batch emails using Resend batch API (max 100 per batch)
+    const batchSize = 100
+    let totalSent = 0
+    let totalFailed = 0
+
+    for (let i = 0; i < subscribers.length; i += batchSize) {
+      const batch = subscribers.slice(i, i + batchSize)
+      const emails = batch.map((sub) => ({
+        from,
+        to: sub.email,
+        subject: content.subject || sequence.name,
+        html,
+        text: plainText,
+      }))
+
+      try {
+        const batchResponse = await resend.batch.send(emails)
+        if (batchResponse.error) {
+          console.error("Batch send error:", batchResponse.error)
+          totalFailed += batch.length
+        } else {
+          totalSent += batch.length
+        }
+      } catch (error) {
+        console.error("Batch send exception:", error)
+        totalFailed += batch.length
+      }
+    }
+
+    await logNewsActivity({
+      event: "distribution_completed",
+      status: totalFailed === 0 ? "success" : "warning",
+      message: `Batch emails sent for sequence: ${sequence.name} (${totalSent} sent, ${totalFailed} failed)`,
       metadata: {
         sequenceId,
         sequenceName: sequence.name,
-        audienceId: sequence.audienceId,
-        error: broadcastResponse.error?.message || JSON.stringify(broadcastResponse.error),
+        totalSent,
+        totalFailed,
+        totalSubscribers: subscribers.length,
       },
     })
-    throw new Error(
-      `Failed to create Resend broadcast: ${broadcastResponse.error?.message || "unknown error"}`
-    )
-  }
+  } else {
+    // Use Resend broadcast for Resend audiences
+    const broadcastResponse = await resend.broadcasts.create({
+      name: `${sequence.name} - ${new Date().toISOString()}`,
+      audienceId: sequence.audienceId,
+      from,
+      subject: content.subject || sequence.name,
+      html,
+      text: plainText,
+      previewText: content.intro || undefined,
+    })
 
-  const broadcastId = broadcastResponse.data.id
+    if (broadcastResponse.error || !broadcastResponse.data?.id) {
+      await logNewsActivity({
+        event: "distribution_failed",
+        status: "error",
+        message: `Failed to create broadcast for sequence: ${sequence.name}`,
+        metadata: {
+          sequenceId,
+          sequenceName: sequence.name,
+          audienceId: sequence.audienceId,
+          error: broadcastResponse.error?.message || JSON.stringify(broadcastResponse.error),
+        },
+      })
+      throw new Error(
+        `Failed to create Resend broadcast: ${broadcastResponse.error?.message || "unknown error"}`
+      )
+    }
 
-  const sendResponse = await resend.broadcasts.send(broadcastId)
-  if (sendResponse.error) {
+    const broadcastId = broadcastResponse.data.id
+
+    const sendResponse = await resend.broadcasts.send(broadcastId)
+    if (sendResponse.error) {
+      await logNewsActivity({
+        event: "distribution_failed",
+        status: "error",
+        message: `Failed to send broadcast for sequence: ${sequence.name}`,
+        metadata: {
+          sequenceId,
+          sequenceName: sequence.name,
+          audienceId: sequence.audienceId,
+          broadcastId,
+          error: sendResponse.error?.message || JSON.stringify(sendResponse.error),
+        },
+      })
+      throw new Error(
+        `Failed to send Resend broadcast: ${sendResponse.error?.message || "unknown error"}`
+      )
+    }
+
     await logNewsActivity({
-      event: "distribution_failed",
-      status: "error",
-      message: `Failed to send broadcast for sequence: ${sequence.name}`,
+      event: "distribution_completed",
+      status: "success",
+      message: `Broadcast sent for sequence: ${sequence.name}`,
       metadata: {
         sequenceId,
         sequenceName: sequence.name,
         audienceId: sequence.audienceId,
         broadcastId,
-        error: sendResponse.error?.message || JSON.stringify(sendResponse.error),
       },
     })
-    throw new Error(
-      `Failed to send Resend broadcast: ${sendResponse.error?.message || "unknown error"}`
-    )
   }
-
-  await logNewsActivity({
-    event: "distribution_completed",
-    status: "success",
-    message: `Broadcast sent for sequence: ${sequence.name}`,
-    metadata: {
-      sequenceId,
-      sequenceName: sequence.name,
-      audienceId: sequence.audienceId,
-      broadcastId,
-    },
-  })
 
   // Update sequence last sent time
   await prisma.sequence.update({
