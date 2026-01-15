@@ -90,6 +90,15 @@ async function fetchResendAudiences(apiKey: string) {
   return data?.data || []
 }
 
+async function fetchResendAllContactsAudienceId(apiKey: string) {
+  const audiences = await fetchResendAudiences(apiKey)
+  const allContactsAudience = (audiences || []).find(
+    (audience: { name?: string }) =>
+      audience.name?.toLowerCase() === "all contacts"
+  )
+  return allContactsAudience?.id || null
+}
+
 async function fetchResendContacts(apiKey: string, audienceId: string) {
   const contacts: ResendContact[] = []
   let cursor: string | null = null
@@ -128,7 +137,50 @@ async function fetchResendContacts(apiKey: string, audienceId: string) {
   return contacts
 }
 
+async function fetchResendAllContactsFromContactsApi(apiKey: string) {
+  const contacts: ResendContact[] = []
+  let cursor: string | null = null
+  let hasMore = true
+
+  while (hasMore) {
+    const url = new URL("https://api.resend.com/contacts")
+    url.searchParams.set("limit", "100")
+    if (cursor) {
+      url.searchParams.set("cursor", cursor)
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Failed to fetch contacts from Resend:", errorText)
+      break
+    }
+
+    const data = await response.json()
+    const page = (data?.data || []) as ResendContact[]
+    contacts.push(...page)
+
+    cursor =
+      data?.next ||
+      data?.cursor ||
+      data?.pagination?.next ||
+      data?.links?.next ||
+      null
+    hasMore = Boolean(cursor && page.length)
+  }
+
+  return contacts
+}
+
 async function fetchResendAllContacts(apiKey: string) {
+  const contacts = await fetchResendAllContactsFromContactsApi(apiKey)
+  if (contacts.length > 0) {
+    return contacts
+  }
+
   const audiences = await fetchResendAudiences(apiKey)
   const allContacts = (
     await Promise.all(
@@ -155,6 +207,8 @@ async function fetchResendAllContacts(apiKey: string) {
 
   return Array.from(contactsByEmail.values())
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function getAirtableConfig(): Promise<{
   apiKey: string
@@ -624,8 +678,14 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     },
   })
 
+  const useAllSubscribers =
+    sequence.audienceId === "resend_all" || sequence.audienceId === "local_all"
+  const allContactsAudienceId = useAllSubscribers
+    ? await fetchResendAllContactsAudienceId(resendConfig.apiKey)
+    : null
+
   // Handle all Resend subscribers vs a specific Resend audience
-  if (sequence.audienceId === "resend_all" || sequence.audienceId === "local_all") {
+  if (useAllSubscribers && !allContactsAudienceId) {
     const contacts = await fetchResendAllContacts(resendConfig.apiKey)
     const activeContacts = contacts.filter((contact) => contact.email && !contact.unsubscribed)
 
@@ -662,18 +722,35 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         text: plainText,
       }))
 
-      try {
-        const batchResponse = await resend.batch.send(emails)
-        if (batchResponse.error) {
-          console.error("Batch send error:", batchResponse.error)
-          totalFailed += batch.length
-        } else {
-          totalSent += batch.length
+      let attempts = 0
+      let sent = false
+      while (attempts < 3 && !sent) {
+        attempts += 1
+        try {
+          const batchResponse = await resend.batch.send(emails)
+          if (batchResponse.error) {
+            console.error("Batch send error:", batchResponse.error)
+            if (batchResponse.error?.name === "rate_limit_exceeded") {
+              await sleep(1000 * attempts)
+              continue
+            }
+            totalFailed += batch.length
+            break
+          } else {
+            totalSent += batch.length
+            sent = true
+          }
+        } catch (error) {
+          console.error("Batch send exception:", error)
+          await sleep(1000 * attempts)
         }
-      } catch (error) {
-        console.error("Batch send exception:", error)
+      }
+
+      if (!sent && attempts >= 3) {
         totalFailed += batch.length
       }
+
+      await sleep(600)
     }
 
     await logNewsActivity({
@@ -689,10 +766,11 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
       },
     })
   } else {
+    const audienceId = useAllSubscribers ? allContactsAudienceId : sequence.audienceId
     // Use Resend broadcast for Resend audiences
     const broadcastResponse = await resend.broadcasts.create({
       name: `${sequence.name} - ${new Date().toISOString()}`,
-      audienceId: sequence.audienceId,
+      audienceId: audienceId as string,
       from,
       subject: content.subject || sequence.name,
       html,
@@ -708,7 +786,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         metadata: {
           sequenceId,
           sequenceName: sequence.name,
-          audienceId: sequence.audienceId,
+          audienceId,
           error: broadcastResponse.error?.message || JSON.stringify(broadcastResponse.error),
         },
       })
@@ -728,7 +806,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         metadata: {
           sequenceId,
           sequenceName: sequence.name,
-          audienceId: sequence.audienceId,
+          audienceId,
           broadcastId,
           error: sendResponse.error?.message || JSON.stringify(sendResponse.error),
         },
@@ -745,7 +823,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
       metadata: {
         sequenceId,
         sequenceName: sequence.name,
-        audienceId: sequence.audienceId,
+        audienceId,
         broadcastId,
       },
     })
