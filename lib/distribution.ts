@@ -54,12 +54,20 @@ interface NewsletterContent {
   article_ids_selected?: number[]
 }
 
-async function getResendApiKey(): Promise<string | null> {
+async function getResendConfig(): Promise<{
+  apiKey: string
+  fromName: string
+  fromEmail: string
+} | null> {
   const apiKey = await prisma.apiKey.findUnique({
     where: { service: "resend" },
   })
   if (!apiKey || !apiKey.key) return null
-  return decrypt(apiKey.key)
+  return {
+    apiKey: decrypt(apiKey.key),
+    fromName: apiKey.resendFromName || "cucina labs",
+    fromEmail: apiKey.resendFromEmail || "newsletter@cucinalabs.com",
+  }
 }
 
 async function getAirtableConfig(): Promise<{
@@ -505,8 +513,8 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   const plainText = generatePlainText(content)
 
   // Get Resend API key
-  const resendApiKey = await getResendApiKey()
-  if (!resendApiKey) {
+  const resendConfig = await getResendConfig()
+  if (!resendConfig) {
     await logNewsActivity({
       event: "distribution_failed",
       status: "error",
@@ -516,7 +524,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     throw new Error("Resend API key not configured")
   }
 
-  const resend = new Resend(resendApiKey)
+  const resend = new Resend(resendConfig.apiKey)
 
   await logNewsActivity({
     event: "distribution_sending",
@@ -530,7 +538,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   })
 
   // Create and send broadcast
-  const from = "cucina labs <newsletter@cucinalabs.com>"
+  const from = `${resendConfig.fromName} <${resendConfig.fromEmail}>`
   const broadcastResponse = await resend.broadcasts.create({
     name: `${sequence.name} - ${new Date().toISOString()}`,
     audienceId: sequence.audienceId,
@@ -550,10 +558,12 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         sequenceId,
         sequenceName: sequence.name,
         audienceId: sequence.audienceId,
-        error: broadcastResponse.error?.message,
+        error: broadcastResponse.error?.message || JSON.stringify(broadcastResponse.error),
       },
     })
-    throw new Error("Failed to create Resend broadcast")
+    throw new Error(
+      `Failed to create Resend broadcast: ${broadcastResponse.error?.message || "unknown error"}`
+    )
   }
 
   const broadcastId = broadcastResponse.data.id
@@ -569,10 +579,12 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
         sequenceName: sequence.name,
         audienceId: sequence.audienceId,
         broadcastId,
-        error: sendResponse.error?.message,
+        error: sendResponse.error?.message || JSON.stringify(sendResponse.error),
       },
     })
-    throw new Error("Failed to send Resend broadcast")
+    throw new Error(
+      `Failed to send Resend broadcast: ${sendResponse.error?.message || "unknown error"}`
+    )
   }
 
   await logNewsActivity({
