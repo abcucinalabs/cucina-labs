@@ -81,6 +81,18 @@ type DashboardData = {
       timezone: string
       dayOfWeek: string[]
     }>
+    scheduleChecks: Array<{
+      id: string
+      createdAt: string
+      message: string | null
+      metadata: {
+        sequenceName?: string
+        localTime?: string
+        shouldRun?: boolean
+        schedule?: string
+        timezone?: string
+      }
+    }>
   }
 }
 
@@ -521,6 +533,32 @@ export function DashboardPage() {
               {!data?.systemHealth.integrations.length && !isLoading ? (
                 <p className="text-sm text-[color:var(--text-secondary)]">
                   No integrations configured.
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-[var(--border-default)] pt-5">
+            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--text-muted)]">
+              Schedule checks
+            </p>
+            <div className="mt-3 space-y-2 text-xs text-[color:var(--text-secondary)]">
+              {(data?.systemHealth.scheduleChecks || []).map((check) => (
+                <div key={check.id} className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-foreground">
+                    {check.metadata.sequenceName || "Unknown sequence"}
+                  </span>
+                  <span>·</span>
+                  <span>{check.metadata.localTime || "Unknown time"}</span>
+                  <span>·</span>
+                  <span>{check.metadata.shouldRun ? "scheduled" : "not scheduled"}</span>
+                  <span>·</span>
+                  <span>{formatDate(check.createdAt)}</span>
+                </div>
+              ))}
+              {!data?.systemHealth.scheduleChecks.length && !isLoading ? (
+                <p className="text-sm text-[color:var(--text-secondary)]">
+                  No schedule checks logged yet.
                 </p>
               ) : null}
             </div>

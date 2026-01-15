@@ -23,6 +23,44 @@ type ResendContact = {
   unsubscribed?: boolean
 }
 
+const fetchResendContactsFromContactsApi = async (apiKey: string) => {
+  const contacts: ResendContact[] = []
+  let cursor: string | null = null
+  let hasMore = true
+
+  while (hasMore) {
+    const url = new URL("https://api.resend.com/contacts")
+    url.searchParams.set("limit", "100")
+    if (cursor) {
+      url.searchParams.set("cursor", cursor)
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("Failed to fetch contacts from Resend:", errorText)
+      break
+    }
+
+    const data = await response.json()
+    const page = (data?.data || []) as ResendContact[]
+    contacts.push(...page)
+
+    cursor =
+      data?.next ||
+      data?.cursor ||
+      data?.pagination?.next ||
+      data?.links?.next ||
+      null
+    hasMore = Boolean(cursor && page.length)
+  }
+
+  return contacts
+}
+
 const fetchResendAudiences = async (apiKey: string) => {
   const response = await fetch("https://api.resend.com/audiences", {
     headers: { Authorization: `Bearer ${apiKey}` },
@@ -103,6 +141,8 @@ export async function GET(request: NextRequest) {
       lastDistribution,
       integrations,
       activeSequences,
+      scheduleChecks,
+      topShortLinks,
     ] = await Promise.all([
       prisma.apiKey.findUnique({ where: { service: "resend" } }),
       prisma.emailEvent.groupBy({
@@ -138,6 +178,17 @@ export async function GET(request: NextRequest) {
         orderBy: { updatedAt: "desc" },
         select: { id: true, name: true, schedule: true, time: true, timezone: true, dayOfWeek: true },
       }),
+      prisma.newsActivity.findMany({
+        where: { event: "distribution_cron_schedule_check" },
+        orderBy: { createdAt: "desc" },
+        take: 8,
+      }),
+      prisma.shortLink.findMany({
+        where: { clicks: { gt: 0 } },
+        orderBy: { clicks: "desc" },
+        take: 10,
+        select: { id: true, targetUrl: true, clicks: true, articleId: true },
+      }),
     ])
 
     let activeSubscribers = 0
@@ -150,14 +201,17 @@ export async function GET(request: NextRequest) {
 
     if (resendConfig?.key) {
       const apiKey = decrypt(resendConfig.key)
-      const audiences = await fetchResendAudiences(apiKey)
-      const allContacts = (
-        await Promise.all(
-          (audiences || []).map((audience: { id: string }) =>
-            fetchResendContacts(apiKey, audience.id)
+      let allContacts = await fetchResendContactsFromContactsApi(apiKey)
+      if (!allContacts.length) {
+        const audiences = await fetchResendAudiences(apiKey)
+        allContacts = (
+          await Promise.all(
+            (audiences || []).map((audience: { id: string }) =>
+              fetchResendContacts(apiKey, audience.id)
+            )
           )
-        )
-      ).flat()
+        ).flat()
+      }
 
       allContacts.forEach((contact) => {
         if (!contact?.email) return
@@ -223,7 +277,7 @@ export async function GET(request: NextRequest) {
 
     const totalClicks = clickedCount
 
-    const articleStats = topLinks.map((link) => {
+    let articleStats = topLinks.map((link) => {
       const clickUrl = link.clickUrl || ""
       const clickCount = link._count._all
       return {
@@ -236,6 +290,33 @@ export async function GET(request: NextRequest) {
         creator: "",
       }
     })
+
+    if (!articleStats.length && topShortLinks.length) {
+      const articleIds = topShortLinks
+        .map((link) => link.articleId)
+        .filter(Boolean) as string[]
+      const articles = articleIds.length
+        ? await prisma.article.findMany({
+            where: { id: { in: articleIds } },
+            select: { id: true, title: true, category: true, creator: true },
+          })
+        : []
+      const articleMap = new Map(articles.map((article) => [article.id, article]))
+      const shortLinkTotalClicks = topShortLinks.reduce((sum, link) => sum + link.clicks, 0)
+
+      articleStats = topShortLinks.map((link) => {
+        const article = link.articleId ? articleMap.get(link.articleId) : null
+        return {
+          id: link.id,
+          title: article?.title || link.targetUrl,
+          clicks: link.clicks,
+          clickShare: shortLinkTotalClicks ? (link.clicks / shortLinkTotalClicks) * 100 : 0,
+          url: link.targetUrl,
+          category: article?.category || "",
+          creator: article?.creator || "",
+        }
+      })
+    }
 
     const recentNewsletterItems = recentNewsletters.map((item) => {
       const metadata = (item.metadata || {}) as Record<string, unknown>
@@ -416,6 +497,12 @@ export async function GET(request: NextRequest) {
           updatedAt: integration.updatedAt,
         })),
         activeSequences,
+        scheduleChecks: scheduleChecks.map((check) => ({
+          id: check.id,
+          createdAt: check.createdAt,
+          message: check.message,
+          metadata: check.metadata || {},
+        })),
       },
     })
   } catch (error) {

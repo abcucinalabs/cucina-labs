@@ -38,8 +38,22 @@ export async function GET(request: NextRequest) {
     for (const sequence of sequences) {
       try {
         // Check if sequence should run now based on schedule
-        const shouldRun = checkSchedule(sequence)
-        if (shouldRun) {
+        const scheduleCheck = checkSchedule(sequence)
+        await logNewsActivity({
+          event: "distribution_cron_schedule_check",
+          status: "info",
+          message: `Schedule check for "${sequence.name}"`,
+          metadata: {
+            sequenceId: sequence.id,
+            sequenceName: sequence.name,
+            schedule: sequence.time,
+            timezone: sequence.timezone || "UTC",
+            dayOfWeek: sequence.dayOfWeek,
+            localTime: scheduleCheck.localTime,
+            shouldRun: scheduleCheck.shouldRun,
+          },
+        })
+        if (scheduleCheck.shouldRun) {
           await logNewsActivity({
             event: "distribution_cron_sequence_scheduled",
             status: "info",
@@ -89,19 +103,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function checkSchedule(sequence: any): boolean {
+function checkSchedule(sequence: any): { shouldRun: boolean; localTime: string } {
   const now = new Date()
+  const timeZone = sequence.timezone || "UTC"
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "long",
+    hour12: false,
+  })
+  const parts = formatter.formatToParts(now)
+  const hourPart = parts.find((part) => part.type === "hour")?.value
+  const minutePart = parts.find((part) => part.type === "minute")?.value
+  const weekdayPart = parts.find((part) => part.type === "weekday")?.value
+  if (!hourPart || !minutePart || !weekdayPart) {
+    return { shouldRun: false, localTime: "invalid" }
+  }
+
   const [hours, minutes] = sequence.time.split(":")
-  const currentDay = now.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase()
+  const currentDay = weekdayPart.toLowerCase()
+  const localTime = `${currentDay} ${hourPart}:${minutePart} ${timeZone}`
 
   // Check if today is in the schedule
   if (!sequence.dayOfWeek.includes(currentDay)) {
-    return false
+    return { shouldRun: false, localTime }
   }
 
   // Check if current time matches (within 5 minutes)
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
+  const currentHour = parseInt(hourPart, 10)
+  const currentMinute = parseInt(minutePart, 10)
   const scheduleHour = parseInt(hours)
   const scheduleMinute = parseInt(minutes)
 
@@ -109,6 +140,5 @@ function checkSchedule(sequence: any): boolean {
     currentHour * 60 + currentMinute - (scheduleHour * 60 + scheduleMinute)
   )
 
-  return timeDiff <= 5 // Allow 5 minute window
+  return { shouldRun: timeDiff <= 5, localTime } // Allow 5 minute window
 }
-
