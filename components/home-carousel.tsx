@@ -53,10 +53,12 @@ export function HomeCarousel() {
       ),
       content: (
         <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/75 leading-relaxed">
-          <span className="bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-tertiary)] bg-clip-text text-transparent">
+          <span className="text-white">
             cucina <span className="font-bold">labs</span>
           </span>{" "}
-          is an AI test kitchen for builders. We experiment with emerging AI technologies, push them into real-world workflows, and document what actually works.
+          is a test kitchen for AI builders. We experiment with AI tools and explore emerging trends. Daily insights are on the menu with recipes coming soon.
+          <br /><br />
+          <span className="text-white/90 font-medium">Let&apos;s cook.</span>
         </p>
       ),
     },
