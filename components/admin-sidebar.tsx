@@ -3,13 +3,18 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { Newspaper, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Newspaper, Users, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
   {
+    name: "Dashboard",
+    href: "/admin/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
     name: "News",
-    href: "/admin",
+    href: "/admin/news",
     icon: Newspaper,
   },
   {
@@ -35,8 +40,9 @@ export function AdminSidebar() {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== "/admin" && pathname.startsWith(item.href))
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
             
             return (
               <Link

@@ -9,11 +9,21 @@ import { Plus, Edit, Pause, Trash2 } from "lucide-react"
 import { SequenceWizard } from "@/components/sequence-wizard"
 import { DayBlocks } from "@/components/ui/day-blocks"
 
+function formatTime12Hour(time24: string): string {
+  const [hours, minutes] = time24.split(':')
+  const hour = parseInt(hours)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const hour12 = hour % 12 || 12
+  return `${hour12}:${minutes} ${ampm}`
+}
+
 export function SequencesTab() {
   const [sequences, setSequences] = useState<any[]>([])
   const [openWizard, setOpenWizard] = useState(false)
   const [editingSequence, setEditingSequence] = useState<any>(null)
   const [audiences, setAudiences] = useState<any[]>([])
+  const normalizeAudienceId = (audienceId?: string) =>
+    audienceId === "local_all" ? "resend_all" : audienceId || ""
 
   useEffect(() => {
     fetchSequences()
@@ -113,14 +123,14 @@ export function SequencesTab() {
                 >
                   <TableCell className="font-medium">{sequence.name}</TableCell>
                   <TableCell>
-                    {audiences.find((audience) => audience.id === sequence.audienceId)?.name ||
-                      sequence.audienceId}
+                    {audiences.find((audience) => audience.id === normalizeAudienceId(sequence.audienceId))?.name ||
+                      (sequence.audienceId === "local_all" ? "All Subscribers (Resend)" : sequence.audienceId)}
                   </TableCell>
                   <TableCell>
                     <DayBlocks selectedDays={sequence.dayOfWeek || []} />
                   </TableCell>
                   <TableCell>
-                    {sequence.time} {sequence.timezone || 'UTC'}
+                    {formatTime12Hour(sequence.time)} {sequence.timezone || 'UTC'}
                   </TableCell>
                   <TableCell>
                     <Badge variant={sequence.status === "active" ? "success" : "outline"}>

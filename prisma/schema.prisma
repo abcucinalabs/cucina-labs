@@ -129,8 +129,41 @@ model NewsActivity {
 model NewsletterTemplate {
   id          String   @id @default(cuid())
   name        String
+  description String?  @db.Text
   html        String   @db.Text
   isDefault   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+model ShortLink {
+  id         String   @id @default(cuid())
+  shortCode  String   @unique
+  targetUrl  String
+  articleId  String?
+  sequenceId String?
+  clicks     Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([shortCode])
+  @@index([articleId])
+  @@index([sequenceId])
+}
+
+model EmailEvent {
+  id          String   @id @default(cuid())
+  eventId     String?  @unique
+  eventType   String
+  emailId     String?
+  broadcastId String?
+  recipient   String?
+  subject     String?
+  clickUrl    String?
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([eventType])
+  @@index([emailId])
+  @@index([broadcastId])
+  @@index([createdAt])
 }

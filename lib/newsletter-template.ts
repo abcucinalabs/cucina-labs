@@ -1,5 +1,152 @@
-import { wrapRedirectUrl } from "./url-utils"
 import Handlebars from "handlebars"
+import { wrapRedirectUrl } from "./url-utils"
+
+const redirectorDomains = new Set([
+  "t.co",
+  "bit.ly",
+  "lnkd.in",
+  "trib.al",
+  "tinyurl.com",
+  "goo.gl",
+  "news.google.com",
+  "link.medium.com",
+  "mailchi.mp",
+  "r.mailchimp.com",
+  "l.facebook.com",
+  "www.google.com",
+  "google.com",
+])
+
+const normalizeUrl = (value?: string): string => {
+  if (!value) return ""
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
+    return trimmed
+  }
+  return `https://${trimmed}`
+}
+
+const hostnameFromUrl = (value?: string): string => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return ""
+  try {
+    const host = new URL(normalized).hostname.toLowerCase()
+    return host.startsWith("www.") ? host.slice(4) : host
+  } catch {
+    return ""
+  }
+}
+
+const unwrapRedirectUrl = (value?: string): string => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return ""
+  try {
+    const urlObj = new URL(normalized)
+    const host = urlObj.hostname.toLowerCase()
+    const params = urlObj.searchParams
+    let candidate = ""
+
+    if ((host === "www.google.com" || host === "google.com") && urlObj.pathname === "/url") {
+      candidate = params.get("q") || params.get("url") || ""
+    } else if (host === "l.facebook.com" && urlObj.pathname === "/l.php") {
+      candidate = params.get("u") || ""
+    } else {
+      candidate =
+        params.get("url") ||
+        params.get("u") ||
+        params.get("target") ||
+        params.get("dest") ||
+        ""
+    }
+
+    const normalizedCandidate = normalizeUrl(candidate)
+    if (normalizedCandidate && hostnameFromUrl(normalizedCandidate)) {
+      return normalizedCandidate
+    }
+    return normalized
+  } catch {
+    return normalized
+  }
+}
+
+const isRedirectorHost = (host: string) => redirectorDomains.has(host)
+
+const buildAllowlist = (articles: any[]): Set<string> => {
+  const allowlist = new Set<string>()
+  for (const article of articles || []) {
+    const candidates = [
+      article?.source_link,
+      article?.link,
+      article?.url,
+      article?.guid,
+    ]
+
+    for (const candidate of candidates) {
+      const unwrapped = unwrapRedirectUrl(candidate)
+      const host = hostnameFromUrl(unwrapped)
+      if (!host || isRedirectorHost(host)) continue
+      allowlist.add(host)
+      break
+    }
+  }
+  return allowlist
+}
+
+const safeLink = (
+  candidates: Array<string | undefined | null>,
+  allowlist: Set<string>,
+  debug?: boolean
+): string => {
+  for (const candidate of candidates) {
+    const normalized = normalizeUrl(candidate || "")
+    if (!normalized) {
+      if (debug) {
+        console.log("safeLink skip: empty candidate")
+      }
+      continue
+    }
+
+    const unwrapped = unwrapRedirectUrl(normalized)
+    const host = hostnameFromUrl(unwrapped)
+    if (!host) {
+      if (debug) {
+        console.log("safeLink skip: invalid hostname", { candidate: normalized })
+      }
+      continue
+    }
+
+    if (isRedirectorHost(host)) {
+      if (debug) {
+        console.log("safeLink skip: redirector host", { candidate: normalized, host })
+      }
+      continue
+    }
+
+    if (!allowlist.has(host)) {
+      if (debug) {
+        console.log("safeLink skip: not in allowlist", { candidate: normalized, host })
+      }
+      continue
+    }
+
+    if (debug) {
+      console.log("safeLink accepted", { candidate: normalized, resolved: unwrapped, host })
+    }
+    return unwrapped
+  }
+
+  if (debug) {
+    console.log("safeLink failed: no candidates accepted", { candidates })
+  }
+  return ""
+}
 
 export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <html>
@@ -58,10 +205,60 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                   <td style="padding: 36px 40px 40px;">
                     \${newsletter.intro ? '<p style="margin: 0 0 24px; font-size: 15px; color: rgba(13, 13, 13, 0.7); line-height: 1.7;">' + newsletter.intro + '</p>' : ""}
                     \${(() => {
+                      const trimText = (value, max = 120) => {
+                        if (!value) return "";
+                        return value.length > max ? value.slice(0, max).trimEnd() + "..." : value;
+                      };
+                      const highlights = [];
+                      const featuredHeadline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
+                      const featuredLink = safeLink([
+                        newsletter.featured_story?.link,
+                        newsletter.featured_story?.source_link,
+                        featured.source_link,
+                        featured.link
+                      ]);
+                      const featuredSummary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";
+                      if (featuredHeadline) {
+                        highlights.push({
+                          headline: featuredHeadline,
+                          link: featuredLink,
+                          summary: trimText(featuredSummary),
+                        });
+                      }
+                      (newsletter.top_stories || []).slice(0, 3).forEach((story) => {
+                        const headline = story.headline || "";
+                        if (!headline) return;
+                        highlights.push({
+                          headline,
+                          link: safeLink([story.link, story.source_link]),
+                          summary: trimText(story.why_read_it || ""),
+                        });
+                      });
+                      if (!highlights.length) return "";
+                      return '<div style="margin: 0 0 28px; padding: 16px 18px; border-radius: 14px; background: rgba(155, 242, 202, 0.18); border: 1px solid rgba(155, 242, 202, 0.5);">' +
+                        '<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4a51d9; margin-bottom: 10px;">Today\\'s Highlights</div>' +
+                        '<ul style="margin: 0; padding-left: 18px; color: rgba(13, 13, 13, 0.75); font-size: 14px; line-height: 1.6;">' +
+                        highlights.map((item) => {
+                          const headline = item.link
+                            ? '<a href="' + item.link + '" style="color: #0d0d0d; text-decoration: none; font-weight: 600;">' + item.headline + '</a>'
+                            : '<span style="font-weight: 600;">' + item.headline + '</span>';
+                          return '<li style="margin-bottom: 8px;">' + headline +
+                            (item.summary ? '<span style="color: rgba(13, 13, 13, 0.6);"> — ' + item.summary + '</span>' : '') +
+                          '</li>';
+                        }).join("") +
+                        '</ul>' +
+                      '</div>';
+                    })()}
+                    \${(() => {
                       const headline = newsletter.featured_story?.headline || featured.title || featured.headline || "";
                       if (!headline) return "";
                       const summary = newsletter.featured_story?.why_this_matters || featured.summary || featured.why_it_matters || "";
-                      const link = featured.source_link || newsletter.featured_story?.link || "";
+                      const link = safeLink([
+                        featured.source_link,
+                        featured.link,
+                        newsletter.featured_story?.link,
+                        newsletter.featured_story?.source_link
+                      ]);
                       const image = featured.image_link || "";
                       const category = featured.category || "";
                       const creator = featured.creator || "";
@@ -83,7 +280,12 @@ export const DEFAULT_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       const isLast = idx === newsletter.top_stories.length - 1;
                       const summary = story.why_read_it || story.summary || article.why_it_matters || article.summary || "";
                       const headline = story.headline || story.title || article.title || "";
-                      const link = story.link || article.source_link || article.link || "";
+                      const link = safeLink([
+                        story.link,
+                        story.source_link,
+                        article.source_link,
+                        article.link
+                      ]);
                       const category = article.category || story.category || "";
                       const creator = article.creator || story.creator || "";
                       return '<div style="padding-bottom: ' + (isLast ? "0" : "24px") + '; margin-bottom: ' + (isLast ? "0" : "24px") + '; border-bottom: ' + (isLast ? "none" : "1px solid rgba(0, 0, 0, 0.06)") + ';">' +
@@ -165,6 +367,17 @@ export const normalizeNewsletterArticles = (articles: any[], origin?: string) =>
     }
   })
 
+const isLikelyUrl = (value?: string): boolean => {
+  const normalized = normalizeUrl(value)
+  if (!normalized) return false
+  try {
+    const urlObj = new URL(normalized)
+    return Boolean(urlObj.hostname && urlObj.hostname.includes("."))
+  } catch {
+    return false
+  }
+}
+
 export const buildNewsletterTemplateContext = ({
   content,
   articles,
@@ -182,9 +395,67 @@ export const buildNewsletterTemplateContext = ({
       .replace(/\s+/g, " ")
       .trim()
 
+  const resolveArticleLink = (article: any) =>
+    article?.source_link || article?.sourceLink || article?.link || ""
+
+  const findArticleForStory = (story: any, storyIndex?: number) => {
+    if (!story) return null
+    if (typeof story === "string") {
+      return normalizedArticles.find(
+        (article) => article.id === story || article.source_link === story
+      )
+    }
+
+    const storyId = story.id
+    const storyLink = story.link || story.source_link
+    const storyTitle = story.headline || story.title
+    const normalizedStoryTitle = storyTitle ? normalizeTitle(storyTitle) : ""
+    const index =
+      typeof story.__index === "number"
+        ? story.__index
+        : typeof storyIndex === "number"
+        ? storyIndex
+        : null
+
+    return (
+      (storyId
+        ? normalizedArticles.find((article) => article.id === storyId)
+        : null) ||
+      (storyLink
+        ? normalizedArticles.find(
+            (article) =>
+              article.source_link === storyLink || article.link === storyLink
+          )
+        : null) ||
+      (storyTitle
+        ? normalizedArticles.find((article) => article.title === storyTitle)
+        : null) ||
+      (normalizedStoryTitle
+        ? normalizedArticles.find(
+            (article) =>
+              normalizeTitle(article.title || "") === normalizedStoryTitle
+          )
+        : null) ||
+      (index !== null ? normalizedArticles[index] : null) ||
+      null
+    )
+  }
+
   const featured = content?.featuredStory || content?.featured_story || {}
   const stories = content?.topStories || content?.top_stories || []
   const normalizedArticles = normalizeNewsletterArticles(articles || [], origin)
+  const allowlist = buildAllowlist(
+    (articles || []).map((article) => ({
+      source_link: article?.source_link,
+      link: article?.link,
+      url: article?.url,
+      guid: isLikelyUrl(article?.guid) ? article?.guid : undefined,
+    }))
+  )
+  const linkDebug = process.env.NEWSLETTER_LINK_DEBUG === "true"
+  const featuredArticle = findArticleForStory(featured) || normalizedArticles[0] || {}
+  const featuredSource = resolveArticleLink(featuredArticle)
+  const featuredLink = featured?.link || featured?.source_link || featuredSource
 
   const newsletter = {
     subject: content?.subject || "cucina labs Briefing",
@@ -193,50 +464,34 @@ export const buildNewsletterTemplateContext = ({
       id: featured?.id,
       headline: featured?.title || featured?.headline || "",
       why_this_matters: featured?.summary || featured?.why_this_matters || "",
-      link: featured?.link && origin ? wrapRedirectUrl(featured.link, origin) : (featured?.link || ""),
+      link: featuredLink
+        ? wrapRedirectUrl(featuredLink, origin || "")
+        : "",
+      source_link: featuredSource
+        ? wrapRedirectUrl(featuredSource, origin || "")
+        : "",
     },
     top_stories: (stories || []).map((story: any, index: number) => ({
       __index: index,
+      ...(() => {
+        const matched = findArticleForStory(story, index)
+        const sourceLink = resolveArticleLink(matched)
+        const storyLink = story?.link || story?.source_link || sourceLink
+        return {
+          link: storyLink ? wrapRedirectUrl(storyLink, origin || "") : "",
+          source_link: sourceLink ? wrapRedirectUrl(sourceLink, origin || "") : "",
+          category: story?.category || matched?.category || "",
+          creator: story?.creator || matched?.creator || "",
+        }
+      })(),
       id: story?.id,
       headline: story?.title || story?.headline || "",
       why_read_it: story?.summary || story?.why_read_it || "",
-      link: story?.link && origin ? wrapRedirectUrl(story.link, origin) : (story?.link || ""),
-      category: story?.category || "",
-      creator: story?.creator || "",
     })),
     looking_ahead: content?.lookingAhead || content?.looking_ahead || "",
   }
 
-  const findArticle = (story: any) => {
-    if (!story) return null
-    if (typeof story === "string") {
-      return normalizedArticles.find((article) => article.id === story || article.source_link === story)
-    }
-    const storyId = story.id
-    const storyLink = story.link
-    const storyTitle = story.headline || story.title
-    const storyIndex = typeof story.__index === "number" ? story.__index : null
-    const normalizedStoryTitle = storyTitle ? normalizeTitle(storyTitle) : ""
-
-    return (
-      (storyId ? normalizedArticles.find((article) => article.id === storyId) : null) ||
-      (storyLink
-        ? normalizedArticles.find((article) => article.source_link === storyLink || article.link === storyLink)
-        : null) ||
-      (storyTitle
-        ? normalizedArticles.find((article) => article.title === storyTitle)
-        : null) ||
-      (normalizedStoryTitle
-        ? normalizedArticles.find(
-            (article) => normalizeTitle(article.title || "") === normalizedStoryTitle
-          )
-        : null) ||
-      (storyIndex !== null ? normalizedArticles[storyIndex] : null) ||
-      null
-    )
-  }
-
-  const featuredArticle = findArticle(newsletter.featured_story) || normalizedArticles[0] || {}
+  const findArticle = (story: any) => findArticleForStory(story)
 
   const formatDate = (date: Date) =>
     date.toLocaleDateString("en-US", {
@@ -246,7 +501,7 @@ export const buildNewsletterTemplateContext = ({
     })
 
   const baseUrl = origin || ""
-  const unsubscribeUrl = `${baseUrl}/unsubscribe`
+  const unsubscribeUrl = baseUrl ? normalizeUrl(`${baseUrl}/unsubscribe`) : "/unsubscribe"
   const bannerUrl = `${baseUrl}/video-background-2-still.png`
 
   return {
@@ -257,6 +512,8 @@ export const buildNewsletterTemplateContext = ({
     findArticle,
     unsubscribeUrl,
     bannerUrl,
+    safeLink: (candidates: Array<string | undefined | null>) =>
+      safeLink(candidates, allowlist, linkDebug),
     currentDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
   }
 }
@@ -278,6 +535,11 @@ Handlebars.registerHelper('or', function(...args) {
 
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
   try {
+    if (template.includes("{{") && !template.includes("${")) {
+      const compiled = Handlebars.compile(template)
+      return compiled(context)
+    }
+
     // Extract all variables from context for template evaluation
     const {
       newsletter,
@@ -288,6 +550,7 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       unsubscribeUrl,
       bannerUrl,
       currentDate,
+      safeLink,
     } = context
 
     // Use Function constructor to safely evaluate the template literal
@@ -301,6 +564,7 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       'unsubscribeUrl',
       'bannerUrl',
       'currentDate',
+      'safeLink',
       `return \`${template}\`;`
     )
 
@@ -312,7 +576,8 @@ export const renderNewsletterTemplate = (template: string, context: Record<strin
       findArticle,
       unsubscribeUrl,
       bannerUrl,
-      currentDate
+      currentDate,
+      safeLink
     )
   } catch (error) {
     console.error('Template rendering error:', error)

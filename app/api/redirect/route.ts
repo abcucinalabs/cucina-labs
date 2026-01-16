@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { prisma } from "@/lib/db"
+import Parser from "rss-parser"
 
 // Allowlist of domains that are permitted for redirects
 // Add your RSS feed sources and trusted newsletter content domains here
@@ -28,9 +29,10 @@ const ALLOWED_DOMAINS = [
   // Add more domains as needed for your newsletter sources
 ]
 
-const CACHE_TTL_MS = 5 * 60 * 1000
+const CACHE_TTL_MS = 10 * 60 * 1000
 let cachedDomains: Set<string> | null = null
 let cachedAt = 0
+const rssParser = new Parser()
 
 function normalizeHostname(hostname: string): string {
   return hostname.trim().toLowerCase().replace(/^www\./, "")
@@ -63,24 +65,46 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
     select: { url: true },
   })
 
+  const rssFeedUrls: string[] = []
   for (const source of rssSources) {
     try {
       const hostname = new URL(source.url).hostname
       domains.add(normalizeHostname(hostname))
+      rssFeedUrls.push(source.url)
     } catch {
       // Ignore invalid URLs stored in DB
     }
   }
 
-  // Include recent article link domains (covers feeds that point to other domains).
-  const recentArticles = await prisma.article.findMany({
+  // Allow all domains referenced by RSS feed items (keeps allowlist up to date).
+  await Promise.allSettled(
+    rssFeedUrls.map(async (feedUrl) => {
+      try {
+        const feed = await rssParser.parseURL(feedUrl)
+        for (const item of feed.items || []) {
+          const candidate = (item as any).link || (item as any).guid || ""
+          if (!candidate) continue
+          try {
+            const hostname = new URL(candidate).hostname
+            domains.add(normalizeHostname(hostname))
+          } catch {
+            // Ignore invalid item URLs
+          }
+        }
+      } catch {
+        // Ignore feed fetch failures; keep existing domains.
+      }
+    })
+  )
+
+  // Include ALL article link domains (covers feeds that point to other domains).
+  // Since all articles come from trusted RSS sources, we trust their domains.
+  const allArticles = await prisma.article.findMany({
     select: { sourceLink: true, imageLink: true },
     where: { sourceLink: { not: "" } },
-    orderBy: { ingestedAt: "desc" },
-    take: 2000,
   })
 
-  for (const article of recentArticles) {
+  for (const article of allArticles) {
     const candidates = [article.sourceLink, article.imageLink].filter(Boolean) as string[]
     for (const candidate of candidates) {
       try {
@@ -89,6 +113,20 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
       } catch {
         // Ignore invalid URLs stored in DB
       }
+    }
+  }
+
+  // Include short link target domains (all short links are for trusted content).
+  const shortLinks = await prisma.shortLink.findMany({
+    select: { targetUrl: true },
+  })
+
+  for (const link of shortLinks) {
+    try {
+      const hostname = new URL(link.targetUrl).hostname
+      domains.add(normalizeHostname(hostname))
+    } catch {
+      // Ignore invalid URLs
     }
   }
 
@@ -134,6 +172,8 @@ export async function GET(request: NextRequest) {
     // Security check: Verify domain is in allowlist (static + dynamic)
     if (!isAllowedDomain(urlObj.hostname, dynamicDomains)) {
       console.warn(`Blocked redirect to unauthorized domain: ${urlObj.hostname}`)
+      console.warn(`Dynamic domains count: ${dynamicDomains.size}`)
+      console.warn(`Attempted URL: ${decodedUrl}`)
       return NextResponse.json({
         error: "Redirect to this domain is not permitted for security reasons"
       }, { status: 403 })

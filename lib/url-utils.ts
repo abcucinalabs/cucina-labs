@@ -14,7 +14,16 @@ export function wrapRedirectUrl(url: string, origin: string): string {
     const urlObj = new URL(url)
     const originObj = new URL(origin)
 
-    if (urlObj.hostname === originObj.hostname && urlObj.pathname.startsWith('/api/redirect')) {
+    if (urlObj.hostname === originObj.hostname) {
+      if (urlObj.pathname.startsWith("/api/redirect")) {
+        return url
+      }
+      if (urlObj.pathname.startsWith("/r/")) {
+        return url
+      }
+    }
+
+    if (urlObj.hostname === originObj.hostname && urlObj.pathname.startsWith("/api/redirect")) {
       // Already wrapped, return as-is
       return url
     }

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         console.error("Response status:", response.status)
         // Return a default option if the API fails
         return NextResponse.json([
-          { id: "local_all", name: "All Subscribers (local database)" },
+          { id: "resend_all", name: "All Subscribers (Resend)" },
         ])
       }
 
@@ -52,15 +52,25 @@ export async function GET(request: NextRequest) {
 
       console.log(`Found ${audiences.length} audiences from Resend`)
 
-      // Add "All Subscribers" option for local subscribers
+      const allContactsAudience = audiences.find(
+        (audience: { name?: string }) =>
+          audience.name?.toLowerCase() === "all contacts"
+      )
+      const otherAudiences = allContactsAudience
+        ? audiences.filter((audience: { id: string }) => audience.id !== allContactsAudience.id)
+        : audiences
+
+      // Add "All Subscribers" option for Resend contacts (prefer actual All Contacts audience)
       return NextResponse.json([
-        { id: "local_all", name: "All Subscribers (local database)" },
-        ...audiences,
+        allContactsAudience
+          ? { ...allContactsAudience, name: "All Subscribers (Resend)" }
+          : { id: "resend_all", name: "All Subscribers (Resend)" },
+        ...otherAudiences,
       ])
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
       return NextResponse.json([
-        { id: "local_all", name: "All Subscribers (local database)" },
+        { id: "resend_all", name: "All Subscribers (Resend)" },
       ])
     }
   } catch (error) {

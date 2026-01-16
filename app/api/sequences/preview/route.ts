@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
+import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles, wrapNewsletterWithShortLinks } from "@/lib/distribution"
 import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
 
@@ -98,11 +98,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate newsletter content
-    const content = await generateNewsletterContent(
+    let content = await generateNewsletterContent(
       articles,
       systemPrompt || "",
       userPrompt || ""
     )
+
+    // Wrap URLs with branded short links (using undefined for preview - no sequenceId)
+    content = await wrapNewsletterWithShortLinks(content, articles, undefined)
 
     const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXTAUTH_URL || ""
 
