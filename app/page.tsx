@@ -4,20 +4,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <div className="relative min-h-screen overflow-hidden">
-        {/* Background Video */}
-        <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            poster="/video-background-2-still.png"
-            className="absolute inset-0 w-full h-full object-cover grayscale"
-          >
-            <source src="/Video-Background-2.mp4" type="video/mp4" />
-          </video>
-        </div>
+        {/* Background Still */}
+        <div
+          className="absolute inset-0 bg-cover bg-center grayscale"
+          style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+        />
 
         {/* Content */}
         <div className="relative z-10 min-h-screen flex flex-col">
