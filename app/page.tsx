@@ -11,6 +11,8 @@ export default function Home() {
             loop
             muted
             playsInline
+            preload="auto"
+            poster="/video-background-2-still.png"
             className="absolute inset-0 w-full h-full object-cover grayscale"
           >
             <source src="/Video-Background-2.mp4" type="video/mp4" />
