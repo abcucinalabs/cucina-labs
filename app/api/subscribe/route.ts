@@ -75,7 +75,19 @@ export async function POST(request: NextRequest) {
       }
 
       await sleep(REQUEST_SPACING_MS)
-      await resend.contacts.create({ email, audienceId })
+      const contactResult = await resend.contacts.create({ email, audienceId })
+
+      // Check if contact creation failed (but not for "already exists" which is OK)
+      if (contactResult.error) {
+        const errorMessage = contactResult.error.message?.toLowerCase() || ""
+        // If contact already exists, that's fine - continue to welcome email
+        if (!errorMessage.includes("already") && !errorMessage.includes("exists") && !errorMessage.includes("duplicate")) {
+          console.error("Failed to create contact:", contactResult.error)
+          throw new Error(contactResult.error.message || "Failed to add contact")
+        }
+        // Contact already exists - this is OK, user might just want another welcome email
+        console.log("Contact already exists:", email)
+      }
 
       const welcomeTemplate = await prisma.emailTemplate.findUnique({
         where: { type: "welcome" },
