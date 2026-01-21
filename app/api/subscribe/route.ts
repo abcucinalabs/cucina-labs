@@ -55,27 +55,9 @@ export async function POST(request: NextRequest) {
     let welcomeEmailError: string | null = null
 
     try {
-      const audienceName = "Website Subscribers"
-      const audiences = await resend.audiences.list()
-      if (audiences.error || !audiences.data?.data) {
-        throw new Error("Failed to fetch audiences from Resend")
-      }
-
-      let audienceId =
-        audiences.data.data.find((audience) => audience.name === audienceName)?.id ||
-        audiences.data.data[0]?.id
-
-      if (!audienceId) {
-        await sleep(REQUEST_SPACING_MS)
-        const createdAudience = await resend.audiences.create({ name: audienceName })
-        if (createdAudience.error || !createdAudience.data?.id) {
-          throw new Error("Failed to create Resend audience")
-        }
-        audienceId = createdAudience.data.id
-      }
-
-      await sleep(REQUEST_SPACING_MS)
-      const contactResult = await resend.contacts.create({ email, audienceId })
+      // Create contact in Resend without adding to a specific segment
+      // Resend's new contacts API (2024) allows creating contacts without an audienceId
+      const contactResult = await resend.contacts.create({ email })
 
       // Check if contact creation failed (but not for "already exists" which is OK)
       if (contactResult.error) {
