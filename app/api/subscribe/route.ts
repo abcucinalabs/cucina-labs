@@ -6,6 +6,14 @@ import { decrypt } from "@/lib/encryption"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { appendEmailFooter } from "@/lib/email-footer"
 
+// Handle GET requests (e.g., from prefetch, crawlers) with proper error
+export async function GET() {
+  return NextResponse.json(
+    { error: "Method not allowed. Use POST to subscribe." },
+    { status: 405 }
+  )
+}
+
 const REQUEST_SPACING_MS = 650
 const WELCOME_EMAIL_RETRY_DELAY_MS = 1200
 
@@ -134,7 +142,11 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.error("Failed to add to Resend:", resendError)
+      console.error("Failed to add to Resend:", {
+        error: resendError,
+        message,
+        email,
+      })
       return NextResponse.json(
         {
           error: "We couldn't add you right now. Please try again in a minute.",
