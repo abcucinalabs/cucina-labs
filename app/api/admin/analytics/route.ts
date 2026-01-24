@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 
 export const dynamic = "force-dynamic"
 
@@ -200,7 +200,14 @@ export async function GET(request: NextRequest) {
     >()
 
     if (resendConfig?.key) {
-      const apiKey = decrypt(resendConfig.key)
+      const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+      if (needsRotation) {
+        await prisma.apiKey.update({
+          where: { id: resendConfig.id },
+          data: { key: encrypt(plaintext) },
+        })
+      }
+      const apiKey = plaintext
       let allContacts = await fetchResendContactsFromContactsApi(apiKey)
       if (!allContacts.length) {
         const audiences = await fetchResendAudiences(apiKey)

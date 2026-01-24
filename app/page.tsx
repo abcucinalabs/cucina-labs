@@ -41,12 +41,9 @@ export default function Home() {
               <p className="text-white/60 text-xs sm:text-sm">
                 © {new Date().getFullYear()} cucina <span className="font-bold">labs</span>
               </p>
-              <a
-                href="/login"
-                className="text-white/60 hover:text-[color:var(--accent-primary)] text-xs sm:text-sm transition-colors"
-              >
-                Admin
-              </a>
+              <span className="text-white/60 text-xs sm:text-sm">
+                All rights reserved
+              </span>
             </div>
           </footer>
         </div>

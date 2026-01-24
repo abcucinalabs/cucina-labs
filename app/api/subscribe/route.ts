@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { Resend } from "resend"
 import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { appendEmailFooter } from "@/lib/email-footer"
 
@@ -44,7 +44,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const resend = new Resend(decrypt(resendConfig.key))
+    const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+    if (needsRotation) {
+      await prisma.apiKey.update({
+        where: { id: resendConfig.id },
+        data: { key: encrypt(plaintext) },
+      })
+    }
+    const resend = new Resend(plaintext)
     const body = await request.json()
     const subscribeSchema = z.object({
       email: z.string().trim().email(),

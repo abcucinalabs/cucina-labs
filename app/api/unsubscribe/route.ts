@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { Resend } from "resend"
 import crypto from "crypto"
 import { z } from "zod"
@@ -75,7 +75,14 @@ export async function POST(request: NextRequest) {
 
     if (resendConfig && resendConfig.key) {
       try {
-        const resendApiKey = decrypt(resendConfig.key)
+        const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+        if (needsRotation) {
+          await prisma.apiKey.update({
+            where: { id: resendConfig.id },
+            data: { key: encrypt(plaintext) },
+          })
+        }
+        const resendApiKey = plaintext
         const resend = new Resend(resendApiKey)
 
         // Get all audiences to find the contact

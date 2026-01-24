@@ -175,14 +175,14 @@ export function IngestionTab() {
       {/* RSS Sources Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle>RSS Sources</CardTitle>
               <CardDescription>Manage your RSS feed sources for article ingestion</CardDescription>
             </div>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Add RSS Source
                 </Button>
@@ -244,48 +244,50 @@ export function IngestionTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rssSources.map((source) => (
-                <TableRow key={source.id}>
-                  <TableCell className="font-medium">
-                    {source.name}
-                    {source.isDefault && (
-                      <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{source.category || "Uncategorized"}</Badge>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-muted-foreground">{source.url}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={source.enabled}
-                      onCheckedChange={(checked) => handleToggle(source.id, checked)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(source.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>URL</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rssSources.map((source) => (
+                  <TableRow key={source.id}>
+                    <TableCell className="font-medium">
+                      {source.name}
+                      {source.isDefault && (
+                        <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{source.category || "Uncategorized"}</Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground">{source.url}</TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={source.enabled}
+                        onCheckedChange={(checked) => handleToggle(source.id, checked)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(source.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -304,10 +306,10 @@ export function IngestionTab() {
             />
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Time</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Select
                   value={hour12.toString().padStart(2, "0")}
                   onValueChange={(h) => {
@@ -366,7 +368,7 @@ export function IngestionTab() {
                 value={config.timezone}
                 onValueChange={(tz) => setConfig({ ...config, timezone: tz })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -383,7 +385,7 @@ export function IngestionTab() {
                 value={config.timeFrame.toString()} 
                 onValueChange={(v) => setConfig({ ...config, timeFrame: parseInt(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -400,7 +402,7 @@ export function IngestionTab() {
       {/* Prompt Configuration */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle>Prompt Configuration</CardTitle>
               <CardDescription>Configure AI prompts for article selection and curation</CardDescription>
@@ -449,12 +451,12 @@ export function IngestionTab() {
           <CardTitle>Test & Save</CardTitle>
           <CardDescription>Test the ingestion workflow or save your configuration</CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4">
-          <Button onClick={handleTestIngestion} variant="outline" disabled={isTesting} isLoading={isTesting}>
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          <Button onClick={handleTestIngestion} variant="outline" disabled={isTesting} isLoading={isTesting} className="w-full sm:w-auto">
             <Play className="mr-2 h-4 w-4" />
             Run Test Ingestion
           </Button>
-          <Button onClick={handleSaveConfig} disabled={isLoading} isLoading={isLoading}>
+          <Button onClick={handleSaveConfig} disabled={isLoading} isLoading={isLoading} className="w-full sm:w-auto">
             Save Configuration
           </Button>
         </CardContent>

@@ -28,7 +28,7 @@ export function AdminSidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 border-r border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)]">
+    <div className="hidden lg:block fixed left-0 top-0 h-screen w-64 border-r border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)]">
       <div className="flex h-full flex-col">
         {/* Logo area */}
         <div className="flex h-16 items-center border-b border-[var(--border-default)] px-6">

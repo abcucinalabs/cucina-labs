@@ -19,9 +19,14 @@ export default async function AdminLayout({
     <div className="min-h-screen text-foreground" style={{ fontFamily: 'Arial, sans-serif' }}>
       <div className="relative z-10 flex">
         <AdminSidebar />
-        <main className="flex-1 ml-64">
+        <main className="flex-1 ml-0 lg:ml-64">
           <AdminHeader email={session.user.email} />
-          <div className="p-8">{children}</div>
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className="mb-4 rounded-[var(--radius-lg)] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 lg:hidden">
+              Read-only mode is enabled on mobile. Use a desktop browser to make changes.
+            </div>
+            {children}
+          </div>
         </main>
       </div>
     </div>

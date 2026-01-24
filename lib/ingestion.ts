@@ -1,5 +1,5 @@
 import { prisma } from "./db"
-import { decrypt } from "./encryption"
+import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Parser from "rss-parser"
 import Airtable from "airtable"
@@ -208,8 +208,15 @@ async function getAirtableConfig(): Promise<{
     where: { service: "airtable" },
   })
   if (!apiKey || !apiKey.key) return null
+  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
+  if (needsRotation) {
+    await prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { key: encrypt(plaintext) },
+    })
+  }
   return {
-    apiKey: decrypt(apiKey.key),
+    apiKey: plaintext,
     baseId: apiKey.airtableBaseId,
     tableId: apiKey.airtableTableId,
     tableName: apiKey.airtableTableName,
@@ -221,8 +228,15 @@ async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | nu
     where: { service: "gemini" },
   })
   if (!config || !config.key) return null
+  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
+  if (needsRotation) {
+    await prisma.apiKey.update({
+      where: { id: config.id },
+      data: { key: encrypt(plaintext) },
+    })
+  }
   return {
-    apiKey: decrypt(config.key),
+    apiKey: plaintext,
     model: config.geminiModel || "gemini-1.5-flash",
   }
 }

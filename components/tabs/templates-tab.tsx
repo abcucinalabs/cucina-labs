@@ -89,15 +89,15 @@ const sampleContent = {
 }
 
 const variableHints = [
-  "${newsletter.subject}",
-  "${newsletter.intro}",
-  "${newsletter.top_stories}",
-  "${newsletter.featured_story}",
-  "${featured}",
-  "${articles}",
-  "${currentDate}",
-  "${unsubscribeUrl}",
-  "${bannerUrl}",
+  "{{newsletter.subject}}",
+  "{{newsletter.intro}}",
+  "{{newsletter.top_stories}}",
+  "{{newsletter.featured_story}}",
+  "{{featured}}",
+  "{{articles}}",
+  "{{currentDate}}",
+  "{{unsubscribeUrl}}",
+  "{{bannerUrl}}",
 ]
 
 export function TemplatesTab() {
@@ -271,14 +271,14 @@ export function TemplatesTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">Email Templates</h2>
           <p className="text-muted-foreground mt-1">
             Create, edit, and manage newsletter templates
           </p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Create Template
         </Button>
@@ -349,7 +349,7 @@ export function TemplatesTab() {
       </Card>
 
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-6xl">
+        <DialogContent className="max-w-6xl w-[95vw] md:w-auto">
           <DialogHeader>
             <DialogTitle>{formState.id ? "Edit Template" : "Create Template"}</DialogTitle>
             <DialogDescription>
@@ -387,7 +387,7 @@ export function TemplatesTab() {
                   value={formState.html}
                   onChange={(event) => setFormState({ ...formState, html: event.target.value })}
                   placeholder="Paste your template HTML here"
-                  className="min-h-[320px] font-mono text-xs"
+                  className="min-h-[320px] font-mono text-xs md:min-h-[420px]"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -415,7 +415,7 @@ export function TemplatesTab() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold">Live Preview</h3>
                   <p className="text-xs text-[color:var(--text-secondary)]">
@@ -446,7 +446,7 @@ export function TemplatesTab() {
                   <div className={`mx-auto ${previewWidth}`}>
                     <iframe
                       title="Template preview"
-                      className="h-[520px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white"
+                      className="h-[520px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white md:h-[560px]"
                       srcDoc={editorPreview.html}
                     />
                   </div>
@@ -455,11 +455,11 @@ export function TemplatesTab() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditorOpen(false)}>
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={() => setEditorOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} className="w-full sm:w-auto">
               Save Template
             </Button>
           </DialogFooter>
@@ -467,12 +467,12 @@ export function TemplatesTab() {
       </Dialog>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-w-5xl w-[95vw] md:w-auto">
           <DialogHeader>
             <DialogTitle>{previewTemplate?.name || "Template Preview"}</DialogTitle>
             <DialogDescription>Preview with sample newsletter data.</DialogDescription>
           </DialogHeader>
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               variant={previewMode === "desktop" ? "default" : "outline"}
               size="sm"
@@ -495,7 +495,7 @@ export function TemplatesTab() {
               <div className={`mx-auto ${previewWidth}`}>
                 <iframe
                   title="Template preview modal"
-                  className="h-[560px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white"
+                  className="h-[560px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white md:h-[600px]"
                   srcDoc={modalPreview.html}
                 />
               </div>

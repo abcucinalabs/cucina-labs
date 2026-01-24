@@ -535,50 +535,12 @@ Handlebars.registerHelper('or', function(...args) {
 
 export const renderNewsletterTemplate = (template: string, context: Record<string, any>) => {
   try {
-    if (template.includes("{{") && !template.includes("${")) {
-      const compiled = Handlebars.compile(template)
-      return compiled(context)
+    if (template.includes("${")) {
+      throw new Error("Template literals are not allowed in newsletter templates")
     }
 
-    // Extract all variables from context for template evaluation
-    const {
-      newsletter,
-      articles,
-      featured,
-      formatDate,
-      findArticle,
-      unsubscribeUrl,
-      bannerUrl,
-      currentDate,
-      safeLink,
-    } = context
-
-    // Use Function constructor to safely evaluate the template literal
-    // This allows us to use ES6 template literals with all JavaScript features
-    const templateFunction = new Function(
-      'newsletter',
-      'articles',
-      'featured',
-      'formatDate',
-      'findArticle',
-      'unsubscribeUrl',
-      'bannerUrl',
-      'currentDate',
-      'safeLink',
-      `return \`${template}\`;`
-    )
-
-    return templateFunction(
-      newsletter,
-      articles,
-      featured,
-      formatDate,
-      findArticle,
-      unsubscribeUrl,
-      bannerUrl,
-      currentDate,
-      safeLink
-    )
+    const compiled = Handlebars.compile(template)
+    return compiled(context)
   } catch (error) {
     console.error('Template rendering error:', error)
     throw new Error('Failed to render newsletter template')

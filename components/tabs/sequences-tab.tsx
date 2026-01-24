@@ -84,7 +84,7 @@ export function SequencesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold">Newsletter Sequences</h2>
           <p className="text-muted-foreground mt-1">
@@ -94,7 +94,7 @@ export function SequencesTab() {
         <Button onClick={() => {
           setEditingSequence(null)
           setOpenWizard(true)
-        }}>
+        }} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Create New Sequence
         </Button>
@@ -102,77 +102,79 @@ export function SequencesTab() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Audience</TableHead>
-                <TableHead>Schedule</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Sent</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sequences.map((sequence) => (
-                <TableRow
-                  key={sequence.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleEdit(sequence)}
-                >
-                  <TableCell className="font-medium">{sequence.name}</TableCell>
-                  <TableCell>
-                    {audiences.find((audience) => audience.id === normalizeAudienceId(sequence.audienceId))?.name ||
-                      (sequence.audienceId === "local_all" ? "All Subscribers (Resend)" : sequence.audienceId)}
-                  </TableCell>
-                  <TableCell>
-                    <DayBlocks selectedDays={sequence.dayOfWeek || []} />
-                  </TableCell>
-                  <TableCell>
-                    {formatTime12Hour(sequence.time)} {sequence.timezone || 'UTC'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={sequence.status === "active" ? "success" : "outline"}>
-                      {sequence.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {sequence.lastSent
-                      ? new Date(sequence.lastSent).toLocaleString()
-                      : "Never"}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(sequence)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      {sequence.status === "active" && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Audience</TableHead>
+                  <TableHead>Schedule</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Sent</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sequences.map((sequence) => (
+                  <TableRow
+                    key={sequence.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleEdit(sequence)}
+                  >
+                    <TableCell className="font-medium">{sequence.name}</TableCell>
+                    <TableCell>
+                      {audiences.find((audience) => audience.id === normalizeAudienceId(sequence.audienceId))?.name ||
+                        (sequence.audienceId === "local_all" ? "All Subscribers (Resend)" : sequence.audienceId)}
+                    </TableCell>
+                    <TableCell>
+                      <DayBlocks selectedDays={sequence.dayOfWeek || []} />
+                    </TableCell>
+                    <TableCell>
+                      {formatTime12Hour(sequence.time)} {sequence.timezone || 'UTC'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={sequence.status === "active" ? "success" : "outline"}>
+                        {sequence.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {sequence.lastSent
+                        ? new Date(sequence.lastSent).toLocaleString()
+                        : "Never"}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handlePause(sequence.id)}
+                          onClick={() => handleEdit(sequence)}
                         >
-                          <Pause className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(sequence.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        {sequence.status === "active" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePause(sequence.id)}
+                          >
+                            <Pause className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(sequence.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

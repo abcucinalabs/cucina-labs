@@ -162,8 +162,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Security check: Only allow HTTPS (no HTTP, javascript:, data:, etc.)
-    if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
-      console.warn(`Blocked redirect to non-HTTP(S) protocol: ${urlObj.protocol}`)
+    if (urlObj.protocol !== 'https:') {
+      console.warn(`Blocked redirect to non-HTTPS protocol: ${urlObj.protocol}`)
       return NextResponse.json({ error: "Invalid URL protocol" }, { status: 400 })
     }
 

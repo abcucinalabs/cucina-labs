@@ -452,7 +452,7 @@ export function SequenceWizard({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl w-[95vw] md:w-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {sequence ? "Edit Sequence" : "Create New Sequence"} - Step {step} of 6
@@ -518,10 +518,10 @@ export function SequenceWizard({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Time</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Select
                       value={hour12.toString().padStart(2, "0")}
                       onValueChange={(h) => {
@@ -572,7 +572,7 @@ export function SequenceWizard({
                   </div>
                 </div>
 
-                <div className="space-y-2 col-span-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label>Timezone</Label>
                   <Select
                     value={formData.timezone}
@@ -597,7 +597,7 @@ export function SequenceWizard({
           {/* Step 3: Prompts */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <Label className="text-base">AI Prompts Configuration</Label>
                 <Button 
                   variant="ghost" 
@@ -645,7 +645,7 @@ export function SequenceWizard({
           {/* Step 4: Preview */}
           {step === 4 && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={handleGeneratePreview} disabled={isLoadingPreview} isLoading={isLoadingPreview}>
                   Generate Preview
                 </Button>
@@ -658,7 +658,7 @@ export function SequenceWizard({
               </div>
 
               {/* Template Management */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-end">
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="template-select">Load Template</Label>
                   <Select
@@ -690,11 +690,12 @@ export function SequenceWizard({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="pt-8">
+                <div className="md:pt-8">
                   <Button
                     variant="outline"
                     onClick={() => setSaveTemplateDialogOpen(true)}
                     disabled={!customHtml.trim()}
+                    className="w-full md:w-auto"
                   >
                     Save as Template
                   </Button>
@@ -728,7 +729,7 @@ export function SequenceWizard({
               )}
 
               <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen}>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-3xl w-[95vw] md:w-auto">
                   <DialogHeader>
                     <DialogTitle>Customize HTML</DialogTitle>
                     <DialogDescription>Edit the generated HTML and apply it to the preview.</DialogDescription>
@@ -753,7 +754,7 @@ export function SequenceWizard({
 
               {/* Save Template Dialog */}
               <Dialog open={saveTemplateDialogOpen} onOpenChange={setSaveTemplateDialogOpen}>
-                <DialogContent>
+                <DialogContent className="w-[95vw] md:w-auto">
                   <DialogHeader>
                     <DialogTitle>Save Template</DialogTitle>
                     <DialogDescription>Save the current HTML as a reusable template.</DialogDescription>
@@ -818,7 +819,7 @@ export function SequenceWizard({
                   placeholder="test@example.com"
                 />
               </div>
-              <Button onClick={handleSendTest} disabled={!testEmail || isSendingTest} isLoading={isSendingTest}>
+              <Button onClick={handleSendTest} disabled={!testEmail || isSendingTest} isLoading={isSendingTest} className="w-full sm:w-auto">
                 Send Test Email
               </Button>
               
@@ -915,20 +916,20 @@ export function SequenceWizard({
           )}
         </div>
 
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={step === 1 ? onClose : handleBack}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+          <Button variant="outline" onClick={step === 1 ? onClose : handleBack} className="w-full sm:w-auto">
             {step === 1 ? "Cancel" : "Back"}
           </Button>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSaveDraft} disabled={!canSave}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button variant="outline" onClick={handleSaveDraft} disabled={!canSave} className="w-full sm:w-auto">
               Save as Draft
             </Button>
             {step < 6 ? (
-              <Button onClick={handleNext} disabled={step === 1 && !formData.name}>
+              <Button onClick={handleNext} disabled={step === 1 && !formData.name} className="w-full sm:w-auto">
                 Next
               </Button>
             ) : (
-              <Button onClick={handlePublish} disabled={!testApproved || !canSave}>
+              <Button onClick={handlePublish} disabled={!testApproved || !canSave} className="w-full sm:w-auto">
                 Publish Sequence
               </Button>
             )}

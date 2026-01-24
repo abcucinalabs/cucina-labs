@@ -14,7 +14,7 @@ import { PerformanceChart, type ChartDataPoint, type MetricKey } from "@/compone
 import { ToggleButton } from "@/components/dashboard/toggle-button"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { RefreshCw } from "lucide-react"
+import { Bell, RefreshCw } from "lucide-react"
 
 type TrendData = {
   value: number
@@ -140,7 +140,9 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedMetrics, setSelectedMetrics] = useState<MetricKey[]>(["emails", "openRate", "clickRate"])
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("unsupported")
   const isMountedRef = useRef(true)
+  const lastIngestionSeenRef = useRef<string | null>(null)
 
   const loadData = useCallback(async (selectedPeriod: string) => {
     setIsLoading(true)
@@ -177,11 +179,87 @@ export function DashboardPage() {
 
   useEffect(() => {
     isMountedRef.current = true
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission)
+    }
     loadData(period)
     return () => {
       isMountedRef.current = false
     }
   }, [loadData, period])
+
+  useEffect(() => {
+    const lastIngestion = data?.systemHealth.lastIngestion
+    if (!lastIngestion) return
+    if (notificationPermission !== "granted") {
+      lastIngestionSeenRef.current = lastIngestion.createdAt
+      return
+    }
+
+    if (!lastIngestionSeenRef.current) {
+      lastIngestionSeenRef.current = lastIngestion.createdAt
+      return
+    }
+
+    if (lastIngestionSeenRef.current === lastIngestion.createdAt) {
+      return
+    }
+
+    lastIngestionSeenRef.current = lastIngestion.createdAt
+    if (lastIngestion.status === "success") {
+      new Notification("Ingestion complete", {
+        body: lastIngestion.message || "New articles are ready for review.",
+      })
+    }
+  }, [data?.systemHealth.lastIngestion, notificationPermission])
+
+  const handleEnableNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotificationPermission("unsupported")
+      return
+    }
+
+    const permission = await Notification.requestPermission()
+    setNotificationPermission(permission)
+    if (permission !== "granted") return
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      return
+    }
+
+    const response = await fetch("/api/notifications/public-key")
+    if (!response.ok) {
+      return
+    }
+    const { key } = await response.json()
+    if (!key) return
+
+    const toUint8Array = (base64String: string) => {
+      const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+      const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/")
+      const rawData = atob(base64)
+      const outputArray = new Uint8Array(rawData.length)
+      for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i)
+      }
+      return outputArray
+    }
+
+    const registration = await navigator.serviceWorker.ready
+    const existingSubscription = await registration.pushManager.getSubscription()
+    const subscription =
+      existingSubscription ||
+      (await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: toUint8Array(key),
+      }))
+
+    await fetch("/api/notifications/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(subscription),
+    })
+  }
 
   const growthMax = useMemo(() => {
     if (!data?.subscriberMetrics.daily.length) return 1
@@ -205,7 +283,7 @@ export function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger>
+            <SelectTrigger className="w-40 sm:w-52">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
@@ -226,6 +304,12 @@ export function DashboardPage() {
           >
             <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
           </Button>
+          {notificationPermission !== "granted" && notificationPermission !== "unsupported" ? (
+            <Button variant="outline" onClick={handleEnableNotifications}>
+              <Bell className="mr-2 h-4 w-4" />
+              Enable alerts
+            </Button>
+          ) : null}
         </div>
       </div>
 

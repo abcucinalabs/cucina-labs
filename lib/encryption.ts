@@ -52,7 +52,10 @@ export function encrypt(text: string): string {
   return `${salt.toString("hex")}:${iv.toString("hex")}:${tag.toString("hex")}:${encrypted}`
 }
 
-export function decrypt(encryptedText: string): string {
+export function decryptWithMetadata(encryptedText: string): {
+  plaintext: string
+  needsRotation: boolean
+} {
   const masterKey = process.env.ENCRYPTION_KEY
   if (!masterKey) {
     throw new Error("ENCRYPTION_KEY environment variable is not set")
@@ -76,7 +79,7 @@ export function decrypt(encryptedText: string): string {
     let decrypted = decipher.update(encrypted, "hex", "utf8")
     decrypted += decipher.final("utf8")
 
-    return decrypted
+    return { plaintext: decrypted, needsRotation: false }
   } else if (parts.length === 3) {
     // Old format without salt (for backward compatibility during migration)
     const iv = Buffer.from(parts[0], "hex")
@@ -85,7 +88,7 @@ export function decrypt(encryptedText: string): string {
 
     // Use old key derivation method for legacy data
     const legacySalt = "salt"
-    const key = crypto.scryptSync(masterKey, legacySalt, KEY_LENGTH)
+    const key = crypto.scryptSync(masterKey, legacySalt, KEY_LENGTH, SCRYPT_OPTIONS)
 
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
     decipher.setAuthTag(tag)
@@ -93,9 +96,12 @@ export function decrypt(encryptedText: string): string {
     let decrypted = decipher.update(encrypted, "hex", "utf8")
     decrypted += decipher.final("utf8")
 
-    return decrypted
+    return { plaintext: decrypted, needsRotation: true }
   } else {
     throw new Error("Invalid encrypted text format")
   }
 }
 
+export function decrypt(encryptedText: string): string {
+  return decryptWithMetadata(encryptedText).plaintext
+}

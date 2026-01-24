@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, generatePlainText, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
 import { buildNewsletterTemplateContext, renderNewsletterTemplate } from "@/lib/newsletter-template"
-import { decrypt } from "@/lib/encryption"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { prisma } from "@/lib/db"
 import { Resend } from "resend"
 import { z } from "zod"
@@ -92,8 +92,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const decryptedKey = decrypt(resendConfig.key)
-    const resend = new Resend(decryptedKey)
+    const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+    if (needsRotation) {
+      await prisma.apiKey.update({
+        where: { id: resendConfig.id },
+        data: { key: encrypt(plaintext) },
+      })
+    }
+    const resend = new Resend(plaintext)
 
     // Build from address
     const fromName = resendConfig.resendFromName || "cucina labs"

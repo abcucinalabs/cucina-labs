@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { runIngestion } from "@/lib/ingestion"
 import { logNewsActivity } from "@/lib/news-activity"
+import { sendPushNotificationToAll } from "@/lib/push-notifications"
 
 export async function GET(request: NextRequest) {
   // Verify cron secret (for Vercel Cron)
@@ -17,6 +18,13 @@ export async function GET(request: NextRequest) {
       message: `Cron ingestion completed. Processed ${result.processed}, selected ${result.selected}, stored ${result.stored}.`,
       metadata: { processed: result.processed, selected: result.selected, stored: result.stored },
     })
+
+    await sendPushNotificationToAll({
+      title: "Ingestion complete",
+      body: `Processed ${result.processed} articles, selected ${result.selected}.`,
+      url: "/admin/news",
+    })
+
     return NextResponse.json({
       success: true,
       processed: result.processed,

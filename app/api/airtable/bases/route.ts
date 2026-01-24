@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const { apiKey } = await request.json()
 
     let keyToUse = apiKey
@@ -14,7 +21,14 @@ export async function POST(request: Request) {
       if (!stored?.key) {
         return NextResponse.json({ error: "No stored API key found" }, { status: 400 })
       }
-      keyToUse = decrypt(stored.key)
+      const { plaintext, needsRotation } = decryptWithMetadata(stored.key)
+      if (needsRotation) {
+        await prisma.apiKey.update({
+          where: { id: stored.id },
+          data: { key: encrypt(plaintext) },
+        })
+      }
+      keyToUse = plaintext
     }
 
     if (!keyToUse) {
@@ -53,4 +67,3 @@ export async function POST(request: Request) {
     )
   }
 }
-

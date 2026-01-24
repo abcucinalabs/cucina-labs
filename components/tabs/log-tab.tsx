@@ -71,12 +71,12 @@ export function LogTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle>News Activity Log</CardTitle>
               <CardDescription>Track ingestion, integrations, and RSS changes.</CardDescription>
             </div>
-            <Button variant="outline" onClick={() => fetchLogs()} disabled={isLoading} isLoading={isLoading}>
+            <Button variant="outline" onClick={() => fetchLogs()} disabled={isLoading} isLoading={isLoading} className="w-full sm:w-auto">
               <RefreshCcw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
@@ -88,52 +88,54 @@ export function LogTab() {
           ) : logs.length === 0 ? (
             <p className="text-sm text-muted-foreground">No activity yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Message</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={statusStyles[log.status] || statusStyles.info}>
-                        {log.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{log.event}</TableCell>
-                    <TableCell className="text-[color:var(--text-secondary)]">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>{log.message}</span>
-                        {log.metadata ? (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">Details</Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Log Details</DialogTitle>
-                                <DialogDescription>{log.event}</DialogDescription>
-                              </DialogHeader>
-                              <pre className="whitespace-pre-wrap text-xs text-muted-foreground bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-3">
-                                {JSON.stringify(log.metadata, null, 2)}
-                              </pre>
-                            </DialogContent>
-                          </Dialog>
-                        ) : null}
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Message</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={statusStyles[log.status] || statusStyles.info}>
+                          {log.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{log.event}</TableCell>
+                      <TableCell className="text-[color:var(--text-secondary)]">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <span>{log.message}</span>
+                          {log.metadata ? (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm">Details</Button>
+                              </DialogTrigger>
+                              <DialogContent className="w-[95vw] md:w-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Log Details</DialogTitle>
+                                  <DialogDescription>{log.event}</DialogDescription>
+                                </DialogHeader>
+                                <pre className="whitespace-pre-wrap text-xs text-muted-foreground bg-[var(--bg-subtle)] border border-[var(--border-default)] rounded-lg p-3">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </DialogContent>
+                            </Dialog>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

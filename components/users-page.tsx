@@ -94,7 +94,7 @@ export function UsersPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-semibold text-foreground">Users</h1>
           <p className="text-muted-foreground mt-2">
@@ -109,7 +109,7 @@ export function UsersPage() {
           }
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Admin User
             </Button>
@@ -181,7 +181,8 @@ export function UsersPage() {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
@@ -219,7 +220,8 @@ export function UsersPage() {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -73,7 +73,7 @@ export function SettingsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="welcome-email">Enable Welcome Email</Label>
               <p className="text-sm text-muted-foreground">
@@ -120,10 +120,10 @@ export function SettingsTab() {
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button variant="outline" onClick={handlePreview} type="button">
+            <Button variant="outline" onClick={handlePreview} type="button" className="w-full sm:w-auto">
               {showPreview ? "Hide Preview" : "Preview"}
             </Button>
-            <Button onClick={handleSave} disabled={isLoading} isLoading={isLoading}>
+            <Button onClick={handleSave} disabled={isLoading} isLoading={isLoading} className="w-full sm:w-auto">
               Save Changes
             </Button>
           </div>
@@ -133,7 +133,7 @@ export function SettingsTab() {
               {welcomeEmailContent.trim() ? (
                 <iframe
                   title="Welcome email preview"
-                  className="w-full min-h-[520px] border-0"
+                  className="w-full min-h-[520px] border-0 md:min-h-[620px]"
                   sandbox=""
                   srcDoc={welcomeEmailContent}
                 />

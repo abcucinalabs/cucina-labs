@@ -304,7 +304,7 @@ export function IntegrationsTab() {
           <AccordionContent className="pt-6 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="gemini-key">API Key</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   id="gemini-key"
                   type="password"
@@ -317,6 +317,7 @@ export function IntegrationsTab() {
                   onClick={() => handleTestConnection("gemini")}
                   disabled={isTesting === "gemini"}
                   isLoading={isTesting === "gemini"}
+                  className="w-full sm:w-auto"
                 >
                   Test Connection
                 </Button>
@@ -338,7 +339,7 @@ export function IntegrationsTab() {
               </RadioGroup>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-default)]">
+            <div className="flex flex-col-reverse gap-3 pt-4 border-t border-[var(--border-default)] sm:flex-row sm:justify-end">
               <Button variant="ghost" onClick={() => setExpandedItem("")}>
                 Cancel
               </Button>
@@ -371,7 +372,7 @@ export function IntegrationsTab() {
           <AccordionContent className="pt-6 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="airtable-key">API Key</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   id="airtable-key"
                   type="password"
@@ -384,6 +385,7 @@ export function IntegrationsTab() {
                   onClick={() => handleTestConnection("airtable")}
                   disabled={isTesting === "airtable"}
                   isLoading={isTesting === "airtable"}
+                  className="w-full sm:w-auto"
                 >
                   Test Connection
                 </Button>
@@ -391,7 +393,7 @@ export function IntegrationsTab() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Base Selection</Label>
                 <Button 
                   variant="ghost" 
@@ -447,7 +449,7 @@ export function IntegrationsTab() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Table Selection</Label>
                 {selectedBase && (
                   <Button 
@@ -500,7 +502,7 @@ export function IntegrationsTab() {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-default)]">
+            <div className="flex flex-col-reverse gap-3 pt-4 border-t border-[var(--border-default)] sm:flex-row sm:justify-end">
               <Button variant="ghost" onClick={() => setExpandedItem("")}>
                 Cancel
               </Button>
@@ -533,7 +535,7 @@ export function IntegrationsTab() {
           <AccordionContent className="pt-6 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="resend-key">API Key</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   id="resend-key"
                   type="password"
@@ -546,6 +548,7 @@ export function IntegrationsTab() {
                   onClick={() => handleTestConnection("resend")}
                   disabled={isTesting === "resend"}
                   isLoading={isTesting === "resend"}
+                  className="w-full sm:w-auto"
                 >
                   Test Connection
                 </Button>
@@ -573,7 +576,7 @@ export function IntegrationsTab() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-[var(--border-default)]">
+            <div className="flex flex-col-reverse gap-3 pt-4 border-t border-[var(--border-default)] sm:flex-row sm:justify-end">
               <Button variant="ghost" onClick={() => setExpandedItem("")}>
                 Cancel
               </Button>

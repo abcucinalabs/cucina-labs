@@ -1,5 +1,5 @@
 import { prisma } from "./db"
-import { decrypt } from "./encryption"
+import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
 import Airtable from "airtable"
@@ -63,8 +63,15 @@ async function getResendConfig(): Promise<{
     where: { service: "resend" },
   })
   if (!apiKey || !apiKey.key) return null
+  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
+  if (needsRotation) {
+    await prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { key: encrypt(plaintext) },
+    })
+  }
   return {
-    apiKey: decrypt(apiKey.key),
+    apiKey: plaintext,
     fromName: apiKey.resendFromName || "cucina labs",
     fromEmail: apiKey.resendFromEmail || "newsletter@cucinalabs.com",
   }
@@ -228,8 +235,15 @@ async function getAirtableConfig(): Promise<{
   if (!config || !config.key || !baseId || !tableIdOrName) {
     return null
   }
+  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
+  if (needsRotation) {
+    await prisma.apiKey.update({
+      where: { id: config.id },
+      data: { key: encrypt(plaintext) },
+    })
+  }
   return {
-    apiKey: decrypt(config.key),
+    apiKey: plaintext,
     baseId,
     tableIdOrName,
   }
@@ -341,8 +355,15 @@ async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | nu
     where: { service: "gemini" },
   })
   if (!config || !config.key) return null
+  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
+  if (needsRotation) {
+    await prisma.apiKey.update({
+      where: { id: config.id },
+      data: { key: encrypt(plaintext) },
+    })
+  }
   return {
-    apiKey: decrypt(config.key),
+    apiKey: plaintext,
     model: config.geminiModel || "gemini-1.5-flash",
   }
 }
