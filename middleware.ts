@@ -1,5 +1,5 @@
 import { withAuth } from "next-auth/middleware"
-import { NextRequest, NextResponse } from "next/server"
+import { NextFetchEvent, NextRequest, NextResponse } from "next/server"
 
 const authMiddleware = withAuth({
   pages: {
@@ -25,7 +25,7 @@ const isMobileUserAgent = (userAgent: string | null) => {
   return /iphone|ipad|ipod|android|mobile/i.test(userAgent)
 }
 
-export default function middleware(request: NextRequest) {
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
   const pathname = request.nextUrl.pathname
 
   if (
@@ -43,7 +43,7 @@ export default function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/admin")) {
-    return authMiddleware(request)
+    return authMiddleware(request, event)
   }
 
   return NextResponse.next()
