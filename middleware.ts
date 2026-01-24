@@ -1,4 +1,4 @@
-import { withAuth } from "next-auth/middleware"
+import { withAuth, type NextRequestWithAuth } from "next-auth/middleware"
 import { NextFetchEvent, NextRequest, NextResponse } from "next/server"
 
 const authMiddleware = withAuth({
@@ -43,7 +43,7 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
   }
 
   if (pathname.startsWith("/admin")) {
-    return authMiddleware(request, event)
+    return authMiddleware(request as NextRequestWithAuth, event)
   }
 
   return NextResponse.next()
