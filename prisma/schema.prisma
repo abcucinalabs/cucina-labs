@@ -81,6 +81,7 @@ model Sequence {
   systemPrompt  String?  @db.Text
   userPrompt    String   @db.Text
   templateId    String?  // NewsletterTemplate ID (null = use default)
+  layout        Json?    // [{ componentId: "x", order: 1 }, ...]
   status        String   @default("draft") // draft, active, paused
   lastSent      DateTime?
   createdAt     DateTime @default(now())
@@ -176,4 +177,34 @@ model PushSubscription {
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DataSource {
+  id           String    @id @default(cuid())
+  name         String    @unique // "news", "chefs_table", "recipes", "cooking"
+  type         String    // "rss_airtable", "airtable"
+  tableId      String?
+  tableName    String?
+  viewId       String?
+  viewName     String?
+  fieldMapping Json?     // { title: "Name", content: "Description", ... }
+  syncStatus   String    @default("idle") // "idle", "syncing", "success", "error"
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  components   NewsletterComponent[]
+}
+
+model NewsletterComponent {
+  id             String      @id @default(cuid())
+  name           String      // User-defined display name
+  description    String?     @db.Text // Internal admin reference
+  type           String      // "data", "static", "system"
+  dataSourceId   String?     // FK to DataSource (null for static/system)
+  dataSource     DataSource? @relation(fields: [dataSourceId], references: [id])
+  displayOptions Json?       // { maxItems: 5, layout: "cards", fieldMap: {...} }
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
