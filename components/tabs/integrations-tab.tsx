@@ -16,18 +16,11 @@ interface Integration {
   geminiModel?: string
   airtableBaseId?: string
   airtableBaseName?: string
-  airtableTableId?: string
-  airtableTableName?: string
   resendFromName?: string
   resendFromEmail?: string
 }
 
 interface AirtableBase {
-  id: string
-  name: string
-}
-
-interface AirtableTable {
   id: string
   name: string
 }
@@ -49,9 +42,7 @@ export function IntegrationsTab() {
   
   const [airtableKey, setAirtableKey] = useState("")
   const [airtableBases, setAirtableBases] = useState<AirtableBase[]>([])
-  const [airtableTables, setAirtableTables] = useState<AirtableTable[]>([])
   const [selectedBase, setSelectedBase] = useState<{ id: string; name: string } | null>(null)
-  const [selectedTable, setSelectedTable] = useState<{ id: string; name: string } | null>(null)
   
   const [resendKey, setResendKey] = useState("")
   const [resendFromName, setResendFromName] = useState('Adrian & Jimmy from "AI Product Briefing"')
@@ -60,7 +51,6 @@ export function IntegrationsTab() {
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [isTesting, setIsTesting] = useState<string | null>(null)
   const [loadingBases, setLoadingBases] = useState(false)
-  const [loadingTables, setLoadingTables] = useState(false)
 
   useEffect(() => {
     fetchIntegrations()
@@ -73,14 +63,6 @@ export function IntegrationsTab() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expandedItem, airtableKey, integrations.airtable?.hasKey])
-
-  // Auto-fetch tables when a base is selected
-  useEffect(() => {
-    if (selectedBase && airtableTables.length === 0 && (airtableKey || integrations.airtable?.hasKey)) {
-      fetchAirtableTables(selectedBase.id)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBase, airtableKey, integrations.airtable?.hasKey])
 
   const fetchIntegrations = async () => {
     try {
@@ -96,9 +78,6 @@ export function IntegrationsTab() {
         if (data.airtable) {
           if (data.airtable.airtableBaseId) {
             setSelectedBase({ id: data.airtable.airtableBaseId, name: data.airtable.airtableBaseName || "" })
-          }
-          if (data.airtable.airtableTableId) {
-            setSelectedTable({ id: data.airtable.airtableTableId, name: data.airtable.airtableTableName || "" })
           }
         }
         if (data.resend) {
@@ -152,15 +131,13 @@ export function IntegrationsTab() {
   const handleSaveAirtable = async () => {
     setIsLoading("airtable")
     try {
-      const payload: any = { 
+      const payload: any = {
         service: "airtable",
         airtableBaseId: selectedBase?.id,
         airtableBaseName: selectedBase?.name,
-        airtableTableId: selectedTable?.id,
-        airtableTableName: selectedTable?.name,
       }
       if (airtableKey) payload.key = airtableKey
-      
+
       const response = await fetch("/api/integrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -232,33 +209,6 @@ export function IntegrationsTab() {
       console.error("Failed to fetch Airtable bases:", error)
     } finally {
       setLoadingBases(false)
-    }
-  }
-
-  const fetchAirtableTables = async (baseId: string) => {
-    if (!airtableKey && !integrations.airtable?.hasKey) {
-      return
-    }
-    
-    setLoadingTables(true)
-    try {
-      const response = await fetch("/api/airtable/tables", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          apiKey: airtableKey || "USE_STORED_KEY",
-          baseId 
-        }),
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setAirtableTables(data.tables)
-      }
-    } catch (error) {
-      console.error("Failed to fetch Airtable tables:", error)
-    } finally {
-      setLoadingTables(false)
     }
   }
 
@@ -395,9 +345,9 @@ export function IntegrationsTab() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label>Base Selection</Label>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={fetchAirtableBases}
                   disabled={loadingBases}
                   isLoading={loadingBases}
@@ -405,15 +355,12 @@ export function IntegrationsTab() {
                   Fetch Bases
                 </Button>
               </div>
-              <Select 
-                value={selectedBase?.id || ""} 
+              <Select
+                value={selectedBase?.id || ""}
                 onValueChange={(value) => {
                   const base = airtableBases.find(b => b.id === value)
                   if (base) {
                     setSelectedBase(base)
-                    setSelectedTable(null)
-                    setAirtableTables([])
-                    fetchAirtableTables(base.id)
                   }
                 }}
               >
@@ -446,60 +393,9 @@ export function IntegrationsTab() {
                   Selected: {selectedBase.name} ({selectedBase.id})
                 </p>
               )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label>Table Selection</Label>
-                {selectedBase && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => fetchAirtableTables(selectedBase.id)}
-                    disabled={loadingTables}
-                    isLoading={loadingTables}
-                  >
-                    Fetch Tables
-                  </Button>
-                )}
-              </div>
-              <Select 
-                value={selectedTable?.id || ""} 
-                onValueChange={(value) => {
-                  const table = airtableTables.find(t => t.id === value)
-                  if (table) setSelectedTable(table)
-                }}
-                disabled={!selectedBase || loadingTables}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={loadingTables ? "Loading tables..." : "Select a table"}>
-                    {selectedTable?.name || (loadingTables ? "Loading tables..." : "Select a table")}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Show currently selected table even if not in fetched list */}
-                  {selectedTable && !airtableTables.find(t => t.id === selectedTable.id) && (
-                    <SelectItem key={selectedTable.id} value={selectedTable.id}>
-                      {selectedTable.name}
-                    </SelectItem>
-                  )}
-                  {airtableTables.map((table) => (
-                    <SelectItem key={table.id} value={table.id}>
-                      {table.name}
-                    </SelectItem>
-                  ))}
-                  {airtableTables.length === 0 && !selectedTable && selectedBase && (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      Click &ldquo;Fetch Tables&rdquo; to load available tables
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-              {selectedTable && (
-                <p className="text-xs text-muted-foreground">
-                  Selected: {selectedTable.name} ({selectedTable.id})
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Table selection has moved to the Data page for each data source.
+              </p>
             </div>
 
             <div className="flex flex-col-reverse gap-3 pt-4 border-t border-[var(--border-default)] sm:flex-row sm:justify-end">
