@@ -1,5 +1,6 @@
-import { NewsPage } from "@/components/news-page"
+import { redirect } from "next/navigation"
 
 export default function AdminNewsPage() {
-  return <NewsPage />
+  // Redirect to new Newsletter page - keeping this for backwards compatibility
+  redirect("/admin/newsletter")
 }

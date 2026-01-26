@@ -1,6 +1,6 @@
-import { UsersPage } from "@/components/users-page"
+import { redirect } from "next/navigation"
 
 export default function AdminUsersPage() {
-  return <UsersPage />
+  // Redirect to new Settings page Users tab - keeping this for backwards compatibility
+  redirect("/admin/settings")
 }
-

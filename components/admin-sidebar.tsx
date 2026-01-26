@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Newspaper, Users, LogOut } from "lucide-react"
+import { LayoutDashboard, Mail, Database, Settings, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
@@ -13,14 +13,19 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
-    name: "News",
-    href: "/admin/news",
-    icon: Newspaper,
+    name: "Newsletter",
+    href: "/admin/newsletter",
+    icon: Mail,
   },
   {
-    name: "Users",
-    href: "/admin/users",
-    icon: Users,
+    name: "Data",
+    href: "/admin/data",
+    icon: Database,
+  },
+  {
+    name: "Settings",
+    href: "/admin/settings",
+    icon: Settings,
   },
 ]
 
