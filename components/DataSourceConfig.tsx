@@ -320,15 +320,15 @@ export function DataSourceConfig({ name, displayName, description, requiredField
                 <div className="space-y-2">
                   <Label>View (optional)</Label>
                   <Select
-                    value={selectedView}
-                    onValueChange={setSelectedView}
+                    value={selectedView || "__none__"}
+                    onValueChange={(v) => setSelectedView(v === "__none__" ? "" : v)}
                     disabled={!selectedTable || isLoadingViews}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={isLoadingViews ? "Loading views..." : "Select a view"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific view</SelectItem>
+                      <SelectItem value="__none__">No specific view</SelectItem>
                       {views.map((view) => (
                         <SelectItem key={view.id} value={view.id}>
                           {view.name}
@@ -367,14 +367,14 @@ export function DataSourceConfig({ name, displayName, description, requiredField
                               <TableCell className="text-sm text-muted-foreground">{field.description || "-"}</TableCell>
                               <TableCell>
                                 <Select
-                                  value={fieldMapping[field.id] || ""}
-                                  onValueChange={(value) => handleFieldMappingChange(field.id, value)}
+                                  value={fieldMapping[field.id] || "__none__"}
+                                  onValueChange={(value) => handleFieldMappingChange(field.id, value === "__none__" ? "" : value)}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select column" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Not mapped</SelectItem>
+                                    <SelectItem value="__none__">Not mapped</SelectItem>
                                     {fields.map((f) => (
                                       <SelectItem key={f.id} value={f.name}>
                                         {f.name} ({f.type})

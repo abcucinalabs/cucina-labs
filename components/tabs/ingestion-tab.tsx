@@ -536,15 +536,15 @@ export function IngestionTab() {
                 <div className="space-y-2">
                   <Label>View (optional)</Label>
                   <Select
-                    value={selectedView}
-                    onValueChange={setSelectedView}
+                    value={selectedView || "__none__"}
+                    onValueChange={(v) => setSelectedView(v === "__none__" ? "" : v)}
                     disabled={!selectedTable || isLoadingViews}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={isLoadingViews ? "Loading views..." : "Select a view"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No specific view</SelectItem>
+                      <SelectItem value="__none__">No specific view</SelectItem>
                       {views.map((view) => (
                         <SelectItem key={view.id} value={view.id}>
                           {view.name}
@@ -581,14 +581,14 @@ export function IngestionTab() {
                               <TableCell className="font-medium">{rssField.name}</TableCell>
                               <TableCell>
                                 <Select
-                                  value={fieldMapping[rssField.id] || ""}
-                                  onValueChange={(value) => handleFieldMappingChange(rssField.id, value)}
+                                  value={fieldMapping[rssField.id] || "__none__"}
+                                  onValueChange={(value) => handleFieldMappingChange(rssField.id, value === "__none__" ? "" : value)}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select column" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Not mapped</SelectItem>
+                                    <SelectItem value="__none__">Not mapped</SelectItem>
                                     {fields.map((field) => (
                                       <SelectItem key={field.id} value={field.name}>
                                         {field.name} ({field.type})
