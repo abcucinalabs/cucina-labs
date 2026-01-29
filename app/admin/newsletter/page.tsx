@@ -5,6 +5,7 @@ import { SequencesTab } from "@/components/tabs/sequences-tab"
 import { TemplatesTab } from "@/components/tabs/templates-tab"
 import { SettingsTab } from "@/components/tabs/settings-tab"
 import { LogTab } from "@/components/tabs/log-tab"
+import { DragDropBuilder } from "@/components/newsletter/DragDropBuilder"
 
 export default function NewsletterPage() {
   return (
@@ -30,11 +31,7 @@ export default function NewsletterPage() {
         </TabsContent>
 
         <TabsContent value="one-time">
-          <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-surface)] p-8 text-center">
-            <p className="text-[color:var(--text-secondary)]">
-              One-Time Email composer coming soon...
-            </p>
-          </div>
+          <DragDropBuilder />
         </TabsContent>
 
         <TabsContent value="templates">

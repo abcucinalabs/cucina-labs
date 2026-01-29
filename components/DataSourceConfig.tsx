@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -45,10 +45,8 @@ export function DataSourceConfig({ name, displayName, description, requiredField
   const [isSaving, setIsSaving] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [mappingOpen, setMappingOpen] = useState(false)
-  const [previewData, setPreviewData] = useState<any[]>([])
-  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
 
-  const fetchAirtableConfig = useCallback(async () => {
+  const fetchAirtableConfig = async () => {
     try {
       const response = await fetch("/api/integrations")
       if (response.ok) {
@@ -63,9 +61,9 @@ export function DataSourceConfig({ name, displayName, description, requiredField
     } catch (error) {
       console.error("Failed to fetch Airtable config:", error)
     }
-  }, [])
+  }
 
-  const fetchDataSource = useCallback(async () => {
+  const fetchDataSource = async () => {
     try {
       const response = await fetch("/api/data-sources")
       if (response.ok) {
@@ -81,16 +79,15 @@ export function DataSourceConfig({ name, displayName, description, requiredField
     } catch (error) {
       console.error("Failed to fetch data source:", error)
     }
-  }, [name])
+  }
 
-  const fetchTables = useCallback(async () => {
-    if (!airtableConfig?.baseId) return
+  const fetchTables = async (baseId: string) => {
     setIsLoadingTables(true)
     try {
       const response = await fetch("/api/airtable/tables", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId: airtableConfig.baseId }),
+        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId }),
       })
       if (response.ok) {
         const data = await response.json()
@@ -101,16 +98,15 @@ export function DataSourceConfig({ name, displayName, description, requiredField
     } finally {
       setIsLoadingTables(false)
     }
-  }, [airtableConfig])
+  }
 
-  const fetchViews = useCallback(async (tableId: string) => {
-    if (!airtableConfig?.baseId) return
+  const fetchViews = async (baseId: string, tableId: string) => {
     setIsLoadingViews(true)
     try {
       const response = await fetch("/api/airtable/views", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId: airtableConfig.baseId, tableId }),
+        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId, tableId }),
       })
       if (response.ok) {
         const data = await response.json()
@@ -122,30 +118,31 @@ export function DataSourceConfig({ name, displayName, description, requiredField
     } finally {
       setIsLoadingViews(false)
     }
-  }, [airtableConfig])
+  }
 
   useEffect(() => {
     fetchAirtableConfig()
     fetchDataSource()
-  }, [fetchAirtableConfig, fetchDataSource])
+  }, [])
 
+  // Fetch tables when airtableConfig is loaded
   useEffect(() => {
     if (airtableConfig?.baseId) {
-      fetchTables()
+      fetchTables(airtableConfig.baseId)
     }
-  }, [airtableConfig, fetchTables])
+  }, [airtableConfig])
 
+  // Fetch views when table is selected
   useEffect(() => {
     if (selectedTable && airtableConfig?.baseId) {
-      fetchViews(selectedTable)
+      fetchViews(airtableConfig.baseId, selectedTable)
     }
-  }, [selectedTable, airtableConfig, fetchViews])
+  }, [selectedTable, airtableConfig])
 
   const handleTableChange = (tableId: string) => {
     setSelectedTable(tableId)
     setSelectedView("")
     setFieldMapping({})
-    setPreviewData([])
   }
 
   const handleFieldMappingChange = (fieldId: string, airtableField: string) => {
@@ -300,7 +297,7 @@ export function DataSourceConfig({ name, displayName, description, requiredField
                 <div className="space-y-2">
                   <Label>Table</Label>
                   <Select
-                    value={selectedTable}
+                    value={selectedTable || undefined}
                     onValueChange={handleTableChange}
                     disabled={isLoadingTables}
                   >

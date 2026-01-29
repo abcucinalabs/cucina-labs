@@ -22,13 +22,13 @@ import { Save, Undo } from "lucide-react"
 import type { DataSource, NewsletterComponent, LayoutItem } from "@/types/newsletter"
 
 interface DragDropBuilderProps {
-  sequenceId: string
+  sequenceId?: string
   initialLayout?: LayoutItem[]
   onSave?: (layout: LayoutItem[]) => void
 }
 
 export function DragDropBuilder({
-  sequenceId,
+  sequenceId: _sequenceId,
   initialLayout = [],
   onSave,
 }: DragDropBuilderProps) {
