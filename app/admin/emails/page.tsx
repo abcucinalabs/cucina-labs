@@ -5,6 +5,7 @@ import { SequencesTab } from "@/components/tabs/sequences-tab"
 import { SettingsTab } from "@/components/tabs/settings-tab"
 import { TemplatesTab } from "@/components/tabs/templates-tab"
 import { AdHocEmailTab } from "@/components/tabs/adhoc-email-tab"
+import { WeeklyNewsletterTab } from "@/components/tabs/weekly-newsletter-tab"
 import { DragDropBuilder } from "@/components/newsletter/DragDropBuilder"
 
 export default function EmailsPage() {
@@ -17,14 +18,19 @@ export default function EmailsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="settings" className="space-y-6">
+      <Tabs defaultValue="weekly" className="space-y-6">
         <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
+          <TabsTrigger value="weekly">Weekly Newsletter</TabsTrigger>
           <TabsTrigger value="settings">Welcome Email</TabsTrigger>
           <TabsTrigger value="adhoc">Ad Hoc Email</TabsTrigger>
           <TabsTrigger value="newsletters">Newsletters</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="builder">Email Builder</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="weekly">
+          <WeeklyNewsletterTab />
+        </TabsContent>
 
         <TabsContent value="settings">
           <SettingsTab />
