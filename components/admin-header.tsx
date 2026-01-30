@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Newspaper, Users } from "lucide-react"
+import { LayoutDashboard, Mail, Database, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "News", href: "/admin/news", icon: Newspaper },
-  { name: "Users", href: "/admin/users", icon: Users },
+  { name: "Emails", href: "/admin/emails", icon: Mail },
+  { name: "Data Ingestion", href: "/admin/data", icon: Database },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
 export function AdminHeader({ email }: { email: string }) {

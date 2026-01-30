@@ -349,7 +349,7 @@ export function TemplatesTab() {
       </Card>
 
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-6xl w-[95vw] md:w-auto">
+        <DialogContent className="max-w-[95vw] w-full lg:max-w-6xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{formState.id ? "Edit Template" : "Create Template"}</DialogTitle>
             <DialogDescription>
@@ -357,8 +357,8 @@ export function TemplatesTab() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-6 md:grid-cols-[1fr_1.1fr]">
-            <div className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-2 flex-1 overflow-hidden">
+            <div className="space-y-4 overflow-y-auto pr-2">
               <div className="space-y-2">
                 <Label htmlFor="template-name">Name</Label>
                 <Input
@@ -377,7 +377,7 @@ export function TemplatesTab() {
                     setFormState({ ...formState, description: event.target.value })
                   }
                   placeholder="Short description (optional)"
-                  rows={3}
+                  rows={2}
                 />
               </div>
               <div className="space-y-2">
@@ -387,7 +387,7 @@ export function TemplatesTab() {
                   value={formState.html}
                   onChange={(event) => setFormState({ ...formState, html: event.target.value })}
                   placeholder="Paste your template HTML here"
-                  className="min-h-[320px] font-mono text-xs md:min-h-[420px]"
+                  className="min-h-[300px] font-mono text-xs lg:min-h-[400px]"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export function TemplatesTab() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3 min-h-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-semibold">Live Preview</h3>
@@ -439,14 +439,14 @@ export function TemplatesTab() {
                   </Button>
                 </div>
               </div>
-              <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
+              <div className="flex-1 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 min-h-[400px]">
                 {editorPreview.error ? (
                   <div className="text-sm text-red-600">{editorPreview.error}</div>
                 ) : (
-                  <div className={`mx-auto ${previewWidth}`}>
+                  <div className={`mx-auto h-full ${previewWidth}`}>
                     <iframe
                       title="Template preview"
-                      className="h-[520px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white md:h-[560px]"
+                      className="h-full w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white"
                       srcDoc={editorPreview.html}
                     />
                   </div>
@@ -455,7 +455,7 @@ export function TemplatesTab() {
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-4 border-t border-[var(--border-default)]">
             <Button variant="outline" onClick={() => setEditorOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
@@ -467,7 +467,7 @@ export function TemplatesTab() {
       </Dialog>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] md:w-auto">
+        <DialogContent className="max-w-[95vw] w-full lg:max-w-5xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{previewTemplate?.name || "Template Preview"}</DialogTitle>
             <DialogDescription>Preview with sample newsletter data.</DialogDescription>
@@ -488,14 +488,14 @@ export function TemplatesTab() {
               Mobile
             </Button>
           </div>
-          <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-muted)] p-3">
+          <div className="flex-1 rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 min-h-[500px]">
             {modalPreview.error ? (
               <div className="text-sm text-red-600">{modalPreview.error}</div>
             ) : (
-              <div className={`mx-auto ${previewWidth}`}>
+              <div className={`mx-auto h-full ${previewWidth}`}>
                 <iframe
                   title="Template preview modal"
-                  className="h-[560px] w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white md:h-[600px]"
+                  className="h-full w-full rounded-[12px] border border-[rgba(0,0,0,0.08)] bg-white min-h-[480px]"
                   srcDoc={modalPreview.html}
                 />
               </div>

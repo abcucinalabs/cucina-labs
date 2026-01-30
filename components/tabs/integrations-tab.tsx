@@ -91,9 +91,30 @@ export function IntegrationsTab() {
   }
 
   const handleTestConnection = async (service: string) => {
+    const hasStoredKey = integrations[service]?.hasKey
+    const localKey =
+      service === "gemini" ? geminiKey : service === "airtable" ? airtableKey : resendKey
+
+    if (!localKey && !hasStoredKey) {
+      alert("Please enter an API key first")
+      return
+    }
+
     setIsTesting(service)
     try {
-      const response = await fetch(`/api/integrations/test?service=${service}`)
+      const payload: Record<string, string> = { service }
+      if (service === "gemini" && geminiKey) {
+        payload.key = geminiKey
+        payload.geminiModel = geminiModel
+      }
+      if (service === "airtable" && airtableKey) payload.key = airtableKey
+      if (service === "resend" && resendKey) payload.key = resendKey
+
+      const response = await fetch("/api/integrations/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
       const data = await response.json()
       alert(data.success ? "Connection successful!" : `Connection failed: ${data.error || "Unknown error"}`)
       fetchIntegrations()
@@ -272,6 +293,9 @@ export function IntegrationsTab() {
                   Test Connection
                 </Button>
               </div>
+              {!geminiKey && integrations.gemini?.hasKey && (
+                <p className="text-xs text-muted-foreground">Saved. Leave blank to keep the existing key.</p>
+              )}
             </div>
 
             <div className="space-y-3">

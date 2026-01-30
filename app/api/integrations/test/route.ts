@@ -7,18 +7,47 @@ import { logNewsActivity } from "@/lib/news-activity"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
 import Airtable from "airtable"
+import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
+const testIntegrationSchema = z.object({
+  service: z.enum(["gemini", "airtable", "resend"]),
+  key: z.string().optional(),
+  geminiModel: z.string().optional(),
+})
+
+async function getServiceFromRequest(request: NextRequest): Promise<{
+  service: string | null
+  key?: string
+  geminiModel?: string
+}> {
+  if (request.method === "POST") {
+    const body = await request.json()
+    const parsed = testIntegrationSchema.parse(body)
+    return parsed
+  }
+
+  const { searchParams } = new URL(request.url)
+  return { service: searchParams.get("service") }
+}
+
 export async function GET(request: NextRequest) {
+  return handleTestRequest(request)
+}
+
+export async function POST(request: NextRequest) {
+  return handleTestRequest(request)
+}
+
+async function handleTestRequest(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const service = searchParams.get("service")
+    const { service, key: providedKey, geminiModel: providedModel } = await getServiceFromRequest(request)
 
     if (!service) {
       return NextResponse.json(
@@ -27,32 +56,40 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const apiKey = await prisma.apiKey.findUnique({
-      where: { service },
-    })
+    const apiKey = await prisma.apiKey.findUnique({ where: { service } })
+    const usingProvidedKey = !!providedKey
 
     if (!apiKey || !apiKey.key) {
-      return NextResponse.json(
-        { error: "API key not configured" },
-        { status: 400 }
-      )
+      if (providedKey) {
+        // No stored key yet; test with provided key only.
+      } else {
+        return NextResponse.json(
+          { error: "API key not configured" },
+          { status: 400 }
+        )
+      }
     }
 
-    const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-    if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: apiKey.id },
-        data: { key: encrypt(plaintext) },
-      })
+    let decryptedKey = providedKey || ""
+    if (!providedKey && apiKey?.key) {
+      const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
+      if (needsRotation) {
+        await prisma.apiKey.update({
+          where: { id: apiKey.id },
+          data: { key: encrypt(plaintext) },
+        })
+      }
+      decryptedKey = plaintext
     }
-    const decryptedKey = plaintext
+
     let success = false
 
     try {
       switch (service) {
         case "gemini": {
           const genAI = new GoogleGenerativeAI(decryptedKey)
-          const model = genAI.getGenerativeModel({ model: "gemini-pro" })
+          const modelName = providedModel || apiKey?.geminiModel || "gemini-2.0-flash-exp"
+          const model = genAI.getGenerativeModel({ model: modelName })
           await model.generateContent("test")
           success = true
           break
@@ -76,7 +113,7 @@ export async function GET(request: NextRequest) {
           )
       }
 
-      if (success) {
+      if (success && apiKey?.id && !usingProvidedKey) {
         await prisma.apiKey.update({
           where: { service },
           data: { status: "connected" },
@@ -94,10 +131,12 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ success })
     } catch (error) {
-      await prisma.apiKey.update({
-        where: { service },
-        data: { status: "disconnected" },
-      })
+      if (apiKey?.id && !usingProvidedKey) {
+        await prisma.apiKey.update({
+          where: { service },
+          data: { status: "disconnected" },
+        })
+      }
       await logNewsActivity({
         event: "integrations.test.error",
         status: "error",
@@ -107,6 +146,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: String(error) })
     }
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 }
+      )
+    }
     console.error("Failed to test integration:", error)
     return NextResponse.json(
       { error: "Failed to test integration" },

@@ -34,7 +34,7 @@ export default function DataPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold text-foreground">Data</h1>
+        <h1 className="text-3xl font-semibold text-foreground">Data Ingestion</h1>
         <p className="text-[color:var(--text-secondary)] mt-2">
           Manage data sources that feed into your newsletters
         </p>

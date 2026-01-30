@@ -7,9 +7,9 @@ import { z } from "zod"
 export const dynamic = 'force-dynamic'
 
 const updateTemplateSchema = z.object({
-  html: z.string(),
   enabled: z.boolean(),
   subject: z.string().optional(),
+  html: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -25,16 +25,16 @@ export async function GET(request: NextRequest) {
 
     if (!template) {
       return NextResponse.json({
-        html: "",
         enabled: false,
         subject: "Welcome to cucina labs",
+        html: "",
       })
     }
 
     return NextResponse.json({
-      html: template.html,
       enabled: template.enabled,
       subject: template.subject || "Welcome to cucina labs",
+      html: template.html || "",
     })
   } catch (error) {
     console.error("Failed to fetch template:", error)
@@ -53,16 +53,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { html, enabled, subject } = updateTemplateSchema.parse(body)
+    const { enabled, subject, html } = updateTemplateSchema.parse(body)
 
     const template = await prisma.emailTemplate.upsert({
       where: { type: "welcome" },
-      update: { html, enabled, subject },
-      create: {
-        type: "welcome",
-        html,
+      update: {
         enabled,
         subject,
+        html: html || "",
+      },
+      create: {
+        type: "welcome",
+        enabled,
+        subject,
+        html: html || "",
       },
     })
 
@@ -77,9 +81,8 @@ export async function POST(request: NextRequest) {
 
     console.error("Failed to save template:", error)
     return NextResponse.json(
-      { error: "Failed to save template" },
+      { error: "Failed to save template", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
 }
-
