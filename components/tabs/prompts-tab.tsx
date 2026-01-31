@@ -149,6 +149,9 @@ export function PromptsTab() {
                 <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)]">
                   {"{{ $json.articles }}"} <span className="text-muted-foreground ml-1">- Articles JSON</span>
                 </div>
+                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)] sm:col-span-2">
+                  {"{{ $json.content_sections }}"} <span className="text-muted-foreground ml-1">- Dynamic content sections (based on sequence settings)</span>
+                </div>
               </div>
             </CardContent>
           </Card>

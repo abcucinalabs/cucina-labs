@@ -48,7 +48,13 @@ CRITICAL OUTPUT RULES
   "article_ids_selected": [1, 2, 3, 4]
 }
 
-⚠️ EVERY FIELD IS REQUIRED. You MUST select at least 4 total articles minimum (1 featured + 3 top stories), up to 6 articles maximum (1 featured + 5 top stories).`
+━━━━━━━━━━━━━━━━━━━━
+CONTENT SECTIONS
+━━━━━━━━━━━━━━━━━━━━
+
+{{ $json.content_sections }}
+
+⚠️ Only include the JSON fields listed above. You MUST select at least 4 total articles minimum (1 featured + 3 top stories), up to 6 articles maximum (1 featured + 5 top stories).`
 
 export const defaultSequenceUserPrompt = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ARTICLES FROM PAST 24 HOURS

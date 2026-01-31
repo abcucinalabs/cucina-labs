@@ -35,7 +35,34 @@ async function fetchContactsFromAudience(apiKey: string, audienceId: string): Pr
     const page = (data?.data || []) as ResendContact[]
     contacts.push(...page)
 
-    cursor = data?.next || data?.cursor || null
+    cursor = data?.next || data?.cursor || data?.pagination?.next || data?.links?.next || null
+    hasMore = Boolean(cursor && page.length)
+  }
+
+  return contacts
+}
+
+async function fetchAllContactsGlobal(apiKey: string): Promise<ResendContact[]> {
+  const contacts: ResendContact[] = []
+  let cursor: string | null = null
+  let hasMore = true
+
+  while (hasMore) {
+    const url = new URL("https://api.resend.com/contacts")
+    url.searchParams.set("limit", "100")
+    if (cursor) url.searchParams.set("cursor", cursor)
+
+    const response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    })
+
+    if (!response.ok) return [] // Not supported or error, return empty to fall back
+
+    const data = await response.json()
+    const page = (data?.data || []) as ResendContact[]
+    contacts.push(...page)
+
+    cursor = data?.next || data?.cursor || data?.pagination?.next || data?.links?.next || null
     hasMore = Boolean(cursor && page.length)
   }
 
@@ -81,7 +108,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ contacts: [], audiences })
     }
 
-    // Fetch contacts from ALL audiences and deduplicate by email
+    // Build a map of all contacts, deduplicating by email
     const contactMap = new Map<string, {
       id: string
       email: string
@@ -92,6 +119,23 @@ export async function GET(request: NextRequest) {
       audiences: string[]
     }>()
 
+    // Try global /contacts endpoint first (returns all contacts)
+    const globalContacts = await fetchAllContactsGlobal(plaintext)
+    for (const contact of globalContacts) {
+      if (!contact.email) continue
+      contactMap.set(contact.email, {
+        id: contact.id,
+        email: contact.email,
+        firstName: contact.first_name || null,
+        lastName: contact.last_name || null,
+        unsubscribed: contact.unsubscribed,
+        createdAt: contact.created_at,
+        audiences: [],
+      })
+    }
+
+    // Fetch per-audience contacts to get audience membership info
+    // (and pick up any contacts not returned by the global endpoint)
     for (const audience of audiences) {
       const audienceContacts = await fetchContactsFromAudience(plaintext, audience.id)
       for (const contact of audienceContacts) {

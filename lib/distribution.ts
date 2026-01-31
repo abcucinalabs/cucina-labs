@@ -469,10 +469,61 @@ export async function wrapNewsletterWithShortLinks(
   return content
 }
 
+const CONTENT_SOURCE_DESCRIPTIONS: Record<string, { label: string; jsonFields: string; instruction: string }> = {
+  news: {
+    label: "News",
+    jsonFields: '"featured_story" and "top_stories"',
+    instruction: "Select the most impactful articles as a featured story and top stories with headlines and insights.",
+  },
+  chefs_table: {
+    label: "Chef's Table",
+    jsonFields: '"intro"',
+    instruction: 'Write a 2-3 sentence editorial intro ("Chef\'s Table") about today\'s most important developments.',
+  },
+  recipes: {
+    label: "Recipes",
+    jsonFields: '"recipes"',
+    instruction: "If any saved social posts or curated articles are provided, include them in a recipes array with title, summary, and link.",
+  },
+  cooking: {
+    label: "What We're Cooking",
+    jsonFields: '"looking_ahead"',
+    instruction: 'Write a "Looking Ahead" / "What We\'re Cooking" section with 2-3 sentences about upcoming trends or things to watch.',
+  },
+}
+
+function buildContentSectionsText(contentSources: string[]): string {
+  if (!contentSources || contentSources.length === 0) {
+    // All sections when none specified
+    return Object.values(CONTENT_SOURCE_DESCRIPTIONS)
+      .map((s) => `- ${s.label}: ${s.instruction}`)
+      .join("\n")
+  }
+
+  const included = contentSources
+    .filter((s) => CONTENT_SOURCE_DESCRIPTIONS[s])
+    .map((s) => {
+      const desc = CONTENT_SOURCE_DESCRIPTIONS[s]
+      return `- ${desc.label} (${desc.jsonFields}): ${desc.instruction}`
+    })
+
+  const excluded = Object.entries(CONTENT_SOURCE_DESCRIPTIONS)
+    .filter(([key]) => !contentSources.includes(key))
+    .map(([, desc]) => desc.jsonFields)
+
+  let text = `INCLUDE these sections:\n${included.join("\n")}`
+  if (excluded.length > 0) {
+    text += `\n\nDO NOT include these fields in your JSON output: ${excluded.join(", ")}. Omit them entirely.`
+  }
+
+  return text
+}
+
 export async function generateNewsletterContent(
   articles: any[],
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  options?: { contentSources?: string[] }
 ): Promise<NewsletterContent> {
   const geminiConfig = await getGeminiConfig()
   if (!geminiConfig) {
@@ -488,14 +539,20 @@ export async function generateNewsletterContent(
   let prompt: string
   if (systemPrompt || userPrompt) {
     // Replace template placeholders with actual data
+    const contentSectionsText = buildContentSectionsText(options?.contentSources || [])
+
+    const processedSystemPrompt = systemPrompt
+      .replace(/\{\{\s*\$json\.content_sections\s*\}\}/g, contentSectionsText)
+
     const processedUserPrompt = userPrompt
       .replace(/\{\{\s*\$json\.articles\s*\}\}/g, JSON.stringify(articles, null, 2))
       .replace(/\{\{\s*JSON\.stringify\(\$json\.articles[^}]*\}\}/g, JSON.stringify(articles, null, 2))
       .replace(/\{\{\s*\$json\.day_start\s*\}\}/g, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .replace(/\{\{\s*\$json\.day_end\s*\}\}/g, new Date().toISOString())
       .replace(/\{\{\s*\$json\.total_articles\s*\}\}/g, String(articles.length))
-    
-    prompt = `${systemPrompt ? systemPrompt + "\n\n" : ""}${processedUserPrompt}`
+      .replace(/\{\{\s*\$json\.content_sections\s*\}\}/g, contentSectionsText)
+
+    prompt = `${processedSystemPrompt ? processedSystemPrompt + "\n\n" : ""}${processedUserPrompt}`
   } else {
     prompt = `Generate a newsletter from these articles:\n\n${JSON.stringify(articles, null, 2)}\n\nReturn a JSON object with: featuredStory (title, summary, link, imageUrl, category), topStories (array of 3-4 items with title, summary, link, category), intro (string), lookingAhead (string).`
   }
@@ -662,7 +719,8 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   let content = await generateNewsletterContent(
     articles,
     systemPrompt,
-    userPrompt
+    userPrompt,
+    { contentSources: sequence.contentSources || [] }
   )
 
   await logNewsActivity({

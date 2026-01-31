@@ -276,6 +276,7 @@ export function SequenceWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           dayOfWeek: formData.dayOfWeek,
+          contentSources: formData.contentSources,
           htmlTemplate: customHtml,
         }),
       })
@@ -362,7 +363,7 @@ export function SequenceWizard({
       const response = await fetch("/api/sequences/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testEmail, customHtml }),
+        body: JSON.stringify({ testEmail, customHtml, contentSources: formData.contentSources }),
       })
       
       const data = await response.json()

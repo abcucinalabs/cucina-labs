@@ -19,6 +19,7 @@ const testSchema = z.object({
   systemPrompt: z.string().optional(),
   userPrompt: z.string().optional(),
   customHtml: z.string().optional(),
+  contentSources: z.array(z.string()).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -77,7 +78,8 @@ export async function POST(request: NextRequest) {
     const content = await generateNewsletterContent(
       articles,
       systemPrompt || "",
-      userPrompt || ""
+      userPrompt || "",
+      { contentSources: parsed.contentSources || [] }
     )
 
     const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXTAUTH_URL || ""
