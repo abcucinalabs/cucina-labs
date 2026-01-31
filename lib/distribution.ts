@@ -10,6 +10,11 @@ import {
 } from "./newsletter-template"
 import { logNewsActivity } from "./news-activity"
 import { createShortLink } from "./short-links"
+import { computeTimeFrameHours } from "./schedule-rules"
+import {
+  defaultSequenceSystemPrompt,
+  defaultSequenceUserPrompt,
+} from "./sequence-prompt-defaults"
 
 // Flexible interface to handle different Gemini response structures
 interface NewsletterContent {
@@ -249,13 +254,20 @@ async function getAirtableConfig(): Promise<{
   }
 }
 
-export async function getRecentArticles() {
+export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] }) {
+  // Compute lookback hours based on schedule
+  const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+  const currentDay = DAY_NAMES[new Date().getDay()]
+  const lookbackHours = scheduleContext?.dayOfWeek?.length
+    ? computeTimeFrameHours(scheduleContext.dayOfWeek, currentDay)
+    : 24
+
   // First try to fetch from Airtable
   const airtableConfig = await getAirtableConfig()
-  
+
   if (airtableConfig) {
     try {
-      const articles = await getArticlesFromAirtable(airtableConfig)
+      const articles = await getArticlesFromAirtable(airtableConfig, lookbackHours)
       if (articles.length > 0) {
         return articles
       }
@@ -265,7 +277,7 @@ export async function getRecentArticles() {
   }
 
   // Fallback to local database
-  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
   const articles = await prisma.article.findMany({
     where: {
       ingestedAt: { gte: cutoffDate },
@@ -290,12 +302,11 @@ export async function getRecentArticles() {
   }))
 }
 
-async function getArticlesFromAirtable(config: { apiKey: string; baseId: string; tableIdOrName: string }) {
+async function getArticlesFromAirtable(config: { apiKey: string; baseId: string; tableIdOrName: string }, lookbackHours: number = 24) {
   const airtable = new Airtable({ apiKey: config.apiKey })
   const base = airtable.base(config.baseId)
-  
-  // Get articles from the last 24 hours
-  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+  const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
   
   const records = await base(config.tableIdOrName)
     .select({
@@ -612,8 +623,8 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     throw new Error("Sequence audience ID not configured")
   }
 
-  // Get recent articles
-  const articles = await getRecentArticles()
+  // Get recent articles with schedule-aware lookback
+  const articles = await getRecentArticles({ dayOfWeek: sequence.dayOfWeek })
 
   if (articles.length === 0 && !options.skipArticleCheck) {
     await logNewsActivity({
@@ -633,11 +644,25 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     metadata: { sequenceId, sequenceName: sequence.name, articleCount: articles.length },
   })
 
+  // Load prompts: sequence-level overrides → global config → hardcoded defaults
+  let systemPrompt = sequence.systemPrompt || ""
+  let userPrompt = sequence.userPrompt || ""
+
+  if (!systemPrompt || !userPrompt) {
+    const globalConfig = await prisma.sequencePromptConfig.findFirst()
+    if (!systemPrompt) {
+      systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
+    }
+    if (!userPrompt) {
+      userPrompt = globalConfig?.userPrompt || defaultSequenceUserPrompt
+    }
+  }
+
   // Generate newsletter content
   let content = await generateNewsletterContent(
     articles,
-    sequence.systemPrompt || "",
-    sequence.userPrompt
+    systemPrompt,
+    userPrompt
   )
 
   await logNewsActivity({

@@ -4,6 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles, wrapNewsletterWithShortLinks } from "@/lib/distribution"
 import { prisma } from "@/lib/db"
 import { logNewsActivity } from "@/lib/news-activity"
+import {
+  defaultSequenceSystemPrompt,
+  defaultSequenceUserPrompt,
+} from "@/lib/sequence-prompt-defaults"
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +19,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { systemPrompt, userPrompt, htmlTemplate } = body
+    let { systemPrompt, userPrompt, htmlTemplate, dayOfWeek } = body
+
+    // Load global prompts if not provided
+    if (!systemPrompt || !userPrompt) {
+      const globalConfig = await prisma.sequencePromptConfig.findFirst()
+      if (!systemPrompt) {
+        systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
+      }
+      if (!userPrompt) {
+        userPrompt = globalConfig?.userPrompt || defaultSequenceUserPrompt
+      }
+    }
 
     // Check if Airtable is configured
     const airtableConfig = await prisma.apiKey.findUnique({

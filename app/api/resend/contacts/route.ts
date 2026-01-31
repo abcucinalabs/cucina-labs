@@ -77,43 +77,44 @@ export async function GET(request: NextRequest) {
     const audiencesData = await audiencesResponse.json()
     const audiences = (audiencesData.data || []) as { id: string; name: string }[]
 
-    // Find "All Contacts" audience or use the first one
-    const allContactsAudience = audiences.find(
-      (a) => a.name?.toLowerCase() === "all contacts"
-    )
-    const primaryAudienceId = allContactsAudience?.id || audiences[0]?.id
-
-    if (!primaryAudienceId) {
+    if (audiences.length === 0) {
       return NextResponse.json({ contacts: [], audiences })
     }
 
-    // Fetch contacts from primary audience
-    const contacts = await fetchContactsFromAudience(plaintext, primaryAudienceId)
-
-    // Build audience membership map by checking other audiences
-    const contactAudienceMap: Record<string, string[]> = {}
+    // Fetch contacts from ALL audiences and deduplicate by email
+    const contactMap = new Map<string, {
+      id: string
+      email: string
+      firstName: string | null
+      lastName: string | null
+      unsubscribed: boolean
+      createdAt: string
+      audiences: string[]
+    }>()
 
     for (const audience of audiences) {
-      if (audience.id === primaryAudienceId) continue
       const audienceContacts = await fetchContactsFromAudience(plaintext, audience.id)
       for (const contact of audienceContacts) {
         if (!contact.email) continue
-        if (!contactAudienceMap[contact.email]) {
-          contactAudienceMap[contact.email] = []
+        const existing = contactMap.get(contact.email)
+        if (existing) {
+          existing.audiences.push(audience.name)
+          if (!contact.unsubscribed) existing.unsubscribed = false
+        } else {
+          contactMap.set(contact.email, {
+            id: contact.id,
+            email: contact.email,
+            firstName: contact.first_name || null,
+            lastName: contact.last_name || null,
+            unsubscribed: contact.unsubscribed,
+            createdAt: contact.created_at,
+            audiences: [audience.name],
+          })
         }
-        contactAudienceMap[contact.email].push(audience.name)
       }
     }
 
-    const enrichedContacts = contacts.map((contact) => ({
-      id: contact.id,
-      email: contact.email,
-      firstName: contact.first_name || null,
-      lastName: contact.last_name || null,
-      unsubscribed: contact.unsubscribed,
-      createdAt: contact.created_at,
-      audiences: contactAudienceMap[contact.email] || [],
-    }))
+    const enrichedContacts = Array.from(contactMap.values())
 
     return NextResponse.json({
       contacts: enrichedContacts,

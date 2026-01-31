@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DayPicker } from "@/components/ui/day-picker"
-import { RotateCcw, AlertCircle, Plus } from "lucide-react"
+import { AlertCircle, Plus, ExternalLink } from "lucide-react"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
   renderNewsletterTemplate,
 } from "@/lib/newsletter-template"
+import { computeScheduleRules } from "@/lib/schedule-rules"
 
 const timezones = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -40,15 +41,15 @@ export function SequenceWizard({
   const [formData, setFormData] = useState({
     name: "",
     audienceId: "",
+    topicId: "",
     contentSources: [] as string[],
     dayOfWeek: [] as string[],
     time: "09:00",
     timezone: "America/New_York",
-    systemPrompt: "",
-    userPrompt: "",
     templateId: "",
   })
   const [audiences, setAudiences] = useState<any[]>([])
+  const [topics, setTopics] = useState<any[]>([])
   const [testEmail, setTestEmail] = useState("")
   const [testApproved, setTestApproved] = useState(false)
   const [preview, setPreview] = useState("")
@@ -57,10 +58,8 @@ export function SequenceWizard({
   const [customHtmlOpen, setCustomHtmlOpen] = useState(false)
   const [previewData, setPreviewData] = useState<{ content: any; articles: any[] } | null>(null)
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
-  const [isLoadingDefaults, setIsLoadingDefaults] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testEmailStatus, setTestEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const htmlTextareaRef = useRef<HTMLTextAreaElement>(null)
   const [templates, setTemplates] = useState<any[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
   const systemDefaultValue = "system-default"
@@ -78,18 +77,18 @@ export function SequenceWizard({
   useEffect(() => {
     if (open) {
       fetchAudiences()
+      fetchTopics()
       fetchTemplates()
       if (sequence) {
         // Load existing sequence data
         setFormData({
           name: sequence.name || "",
           audienceId: normalizeAudienceId(sequence.audienceId),
+          topicId: sequence.topicId || "",
           contentSources: sequence.contentSources || [],
           dayOfWeek: sequence.dayOfWeek || [],
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",
-          systemPrompt: sequence.systemPrompt || "",
-          userPrompt: sequence.userPrompt || "",
           templateId: sequence.templateId || "",
         })
         setSelectedTemplateId(sequence.templateId || "")
@@ -102,9 +101,8 @@ export function SequenceWizard({
           setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
         }
       } else {
-        // New sequence: use default template and load default prompts
+        // New sequence: use default template
         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-        loadDefaultPrompts()
       }
       setPreviewData(null)
     }
@@ -120,6 +118,18 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
+    }
+  }
+
+  const fetchTopics = async () => {
+    try {
+      const response = await fetch("/api/resend/topics")
+      if (response.ok) {
+        const data = await response.json()
+        setTopics(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch topics:", error)
     }
   }
 
@@ -247,44 +257,6 @@ export function SequenceWizard({
     }
   }
 
-  const loadDefaultPrompts = async () => {
-    setIsLoadingDefaults(true)
-    try {
-      const response = await fetch("/api/sequences/defaults")
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({
-          ...prev,
-          systemPrompt: data.systemPrompt || "",
-          userPrompt: data.userPrompt || "",
-        }))
-      }
-    } catch (error) {
-      console.error("Failed to load default prompts:", error)
-    } finally {
-      setIsLoadingDefaults(false)
-    }
-  }
-
-  const handleResetPrompts = async () => {
-    setIsLoadingDefaults(true)
-    try {
-      const response = await fetch("/api/sequences/defaults")
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({
-          ...prev,
-          systemPrompt: data.systemPrompt || "",
-          userPrompt: data.userPrompt || "",
-        }))
-      }
-    } catch (error) {
-      console.error("Failed to reset prompts:", error)
-    } finally {
-      setIsLoadingDefaults(false)
-    }
-  }
-
   const handleNext = () => {
     if (step < 6) setStep(step + 1)
   }
@@ -303,8 +275,8 @@ export function SequenceWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
-          htmlTemplate: customHtml
+          dayOfWeek: formData.dayOfWeek,
+          htmlTemplate: customHtml,
         }),
       })
       
@@ -390,7 +362,7 @@ export function SequenceWizard({
       const response = await fetch("/api/sequences/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, testEmail, customHtml }),
+        body: JSON.stringify({ testEmail, customHtml }),
       })
       
       const data = await response.json()
@@ -476,7 +448,7 @@ export function SequenceWizard({
   const [hours, minutes] = formData.time.split(":")
   const hour12 = parseInt(hours) % 12 || 12
   const ampm = parseInt(hours) >= 12 ? "PM" : "AM"
-  const canSave = Boolean(formData.name && formData.audienceId && formData.userPrompt)
+  const canSave = Boolean(formData.name && formData.audienceId)
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -488,7 +460,7 @@ export function SequenceWizard({
           <DialogDescription>
             {step === 1 && "Basic information about your sequence"}
             {step === 2 && "When should this sequence run?"}
-            {step === 3 && "Configure AI prompts for content selection"}
+            {step === 3 && "Review content rules for this sequence"}
             {step === 4 && "Preview the generated newsletter"}
             {step === 5 && "Send a test email to verify"}
             {step === 6 && "Review and publish your sequence"}
@@ -512,13 +484,7 @@ export function SequenceWizard({
                 <Label htmlFor="audience">Resend Audience</Label>
                 <Select
                   value={formData.audienceId}
-                  onValueChange={(value) => {
-                    if (value === "__create_new__") {
-                      setShowCreateAudience(true)
-                    } else {
-                      setFormData({ ...formData, audienceId: value })
-                    }
-                  }}
+                  onValueChange={(value) => setFormData({ ...formData, audienceId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an audience" />
@@ -529,14 +495,20 @@ export function SequenceWizard({
                         {audience.name}
                       </SelectItem>
                     ))}
-                    <SelectItem value="__create_new__">
-                      <span className="flex items-center gap-1.5">
-                        <Plus className="h-3.5 w-3.5" />
-                        Create new audience...
-                      </span>
-                    </SelectItem>
                   </SelectContent>
                 </Select>
+                {!showCreateAudience && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCreateAudience(true)}
+                    className="mt-1.5"
+                  >
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    Create new audience
+                  </Button>
+                )}
                 {showCreateAudience && (
                   <div className="flex gap-2 mt-2">
                     <Input
@@ -607,6 +579,28 @@ export function SequenceWizard({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Select which content types to include in this sequence
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="topic">Resend Topic</Label>
+                <Select
+                  value={formData.topicId}
+                  onValueChange={(value) => setFormData({ ...formData, topicId: value === "__none__" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a topic (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No topic</SelectItem>
+                    {topics.map((topic) => (
+                      <SelectItem key={topic.id} value={topic.id}>
+                        {topic.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Topics allow subscribers to manage their email preferences
                 </p>
               </div>
             </div>
@@ -697,54 +691,45 @@ export function SequenceWizard({
             </div>
           )}
 
-          {/* Step 3: Prompts */}
-          {step === 3 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">AI Prompts Configuration</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetPrompts}
-                  disabled={isLoadingDefaults}
-                  isLoading={isLoadingDefaults}
-                  className="h-8 px-2 text-xs"
-                >
-                  <RotateCcw className="h-3 w-3 mr-1" />
-                  Reset to Default
-                </Button>
-              </div>
+          {/* Step 3: Content Rules */}
+          {step === 3 && (() => {
+            const rules = computeScheduleRules(formData.dayOfWeek)
+            return (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Content Rules</Label>
+                <Card>
+                  <CardContent className="pt-4 space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Schedule Pattern</span>
+                      <span className="font-medium capitalize">{rules.schedulePattern}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Article Lookback</span>
+                      <span className="font-medium">{rules.timeFrameLabel}</span>
+                    </div>
+                    <div className="border-t border-[var(--border-default)] pt-3">
+                      <p className="text-xs text-muted-foreground">{rules.dayExplanation}</p>
+                    </div>
+                    {formData.contentSources.length > 0 && (
+                      <div className="border-t border-[var(--border-default)] pt-3">
+                        <span className="text-muted-foreground text-xs">Content Sources: </span>
+                        <span className="text-xs font-medium">
+                          {formData.contentSources.map(s => s.charAt(0).toUpperCase() + s.slice(1).replace("_", " ")).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="system-prompt" className="text-xs">System Prompt</Label>
-                <Textarea
-                  id="system-prompt"
-                  value={formData.systemPrompt}
-                  onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
-                  rows={5}
-                  className="font-mono text-xs resize-none"
-                  placeholder="You are the Editor of a daily digest..."
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  {formData.systemPrompt.length} characters
-                </p>
+                <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700 flex items-center justify-between">
+                  <span>AI prompts are managed globally in Settings.</span>
+                  <a href="/admin/settings" className="inline-flex items-center gap-1 text-[#3c35f2] hover:underline">
+                    Edit Prompts <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="user-prompt" className="text-xs">User Prompt</Label>
-                <Textarea
-                  id="user-prompt"
-                  value={formData.userPrompt}
-                  onChange={(e) => setFormData({ ...formData, userPrompt: e.target.value })}
-                  rows={6}
-                  className="font-mono text-xs resize-none"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  {formData.userPrompt.length} characters • Use {"{{ variable }}"} for template variables
-                </p>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Step 4: Preview */}
           {step === 4 && (
@@ -983,6 +968,14 @@ export function SequenceWizard({
                       {audiences.find(a => a.id === formData.audienceId)?.name || formData.audienceId}
                     </span>
                   </div>
+                  {formData.topicId && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Topic:</span>
+                      <span className="font-medium">
+                        {topics.find(t => t.id === formData.topicId)?.name || formData.topicId}
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

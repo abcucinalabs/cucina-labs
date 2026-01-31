@@ -3,7 +3,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SequencesTab } from "@/components/tabs/sequences-tab"
 import { AdHocEmailTab } from "@/components/tabs/adhoc-email-tab"
-import { WeeklyNewsletterTab } from "@/components/tabs/weekly-newsletter-tab"
 
 export default function EmailsPage() {
   return (
@@ -15,18 +14,13 @@ export default function EmailsPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="weekly" className="space-y-6">
+      <Tabs defaultValue="sequences" className="space-y-6">
         <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
-          <TabsTrigger value="weekly">Compose</TabsTrigger>
-          <TabsTrigger value="newsletters">Sequences</TabsTrigger>
+          <TabsTrigger value="sequences">Sequences</TabsTrigger>
           <TabsTrigger value="adhoc">Ad Hoc Email</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="weekly">
-          <WeeklyNewsletterTab />
-        </TabsContent>
-
-        <TabsContent value="newsletters">
+        <TabsContent value="sequences">
           <SequencesTab />
         </TabsContent>
 

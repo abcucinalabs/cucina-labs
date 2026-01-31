@@ -6,6 +6,8 @@ import { TemplatesTab } from "@/components/tabs/templates-tab"
 import { SettingsTab } from "@/components/tabs/settings-tab"
 import { UsersTab } from "@/components/tabs/users-tab"
 import { AudiencesTab } from "@/components/tabs/audiences-tab"
+import { TopicsTab } from "@/components/tabs/topics-tab"
+import { PromptsTab } from "@/components/tabs/prompts-tab"
 import { LogTab } from "@/components/tabs/log-tab"
 
 export default function SettingsPage() {
@@ -24,6 +26,8 @@ export default function SettingsPage() {
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="welcome">Welcome Email</TabsTrigger>
           <TabsTrigger value="audiences">Audiences</TabsTrigger>
+          <TabsTrigger value="topics">Topics</TabsTrigger>
+          <TabsTrigger value="prompts">Prompts</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="log">Activity Log</TabsTrigger>
         </TabsList>
@@ -42,6 +46,14 @@ export default function SettingsPage() {
 
         <TabsContent value="audiences">
           <AudiencesTab />
+        </TabsContent>
+
+        <TabsContent value="topics">
+          <TopicsTab />
+        </TabsContent>
+
+        <TabsContent value="prompts">
+          <PromptsTab />
         </TabsContent>
 
         <TabsContent value="users">

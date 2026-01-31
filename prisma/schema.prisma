@@ -79,8 +79,9 @@ model Sequence {
   time          String   // "09:00"
   timezone      String   @default("UTC")
   systemPrompt  String?  @db.Text
-  userPrompt    String   @db.Text
+  userPrompt    String?  @db.Text
   templateId      String?  // NewsletterTemplate ID (null = use default)
+  topicId         String?  // Resend topic ID for scoping broadcasts
   contentSources  String[] // ["news", "chefs_table", "recipes", "cooking"]
   layout          Json?    // [{ componentId: "x", order: 1 }, ...]
   status        String   @default("draft") // draft, active, paused
@@ -269,4 +270,12 @@ model WeeklyNewsletter {
 
   @@index([weekStart])
   @@index([status])
+}
+
+model SequencePromptConfig {
+  id           String   @id @default(cuid())
+  systemPrompt String   @db.Text
+  userPrompt   String   @db.Text
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
 }

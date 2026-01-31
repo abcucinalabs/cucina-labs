@@ -62,8 +62,11 @@ export function AdminSidebar({ email }: { email: string }) {
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader className="p-0">
         <div className="flex h-12 items-center px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-          <span className="truncate text-base" style={{ fontFamily: 'Arial, sans-serif' }}>
+          <span className="text-base group-data-[collapsible=icon]:hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
             cucina <span className="font-bold">labs</span>
+          </span>
+          <span className="text-base hidden group-data-[collapsible=icon]:inline" style={{ fontFamily: 'Arial, sans-serif' }}>
+            c<span className="font-bold">l</span>
           </span>
         </div>
       </SidebarHeader>

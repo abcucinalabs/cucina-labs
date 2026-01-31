@@ -7,6 +7,10 @@ import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { prisma } from "@/lib/db"
 import { Resend } from "resend"
 import { z } from "zod"
+import {
+  defaultSequenceSystemPrompt,
+  defaultSequenceUserPrompt,
+} from "@/lib/sequence-prompt-defaults"
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +29,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { testEmail, systemPrompt, userPrompt, customHtml } = testSchema.parse(body)
+    const parsed = testSchema.parse(body)
+    const { testEmail, customHtml } = parsed
+    let systemPrompt = parsed.systemPrompt
+    let userPrompt = parsed.userPrompt
+
+    // Load global prompts if not provided
+    if (!systemPrompt || !userPrompt) {
+      const globalConfig = await prisma.sequencePromptConfig.findFirst()
+      if (!systemPrompt) {
+        systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
+      }
+      if (!userPrompt) {
+        userPrompt = globalConfig?.userPrompt || defaultSequenceUserPrompt
+      }
+    }
 
     // Check Airtable config
     const airtableConfig = await prisma.apiKey.findUnique({

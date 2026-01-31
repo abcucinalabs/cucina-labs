@@ -9,11 +9,12 @@ export const dynamic = 'force-dynamic'
 const updateSequenceSchema = z.object({
   name: z.string().min(1).optional(),
   audienceId: z.string().min(1).optional(),
+  topicId: z.string().optional(),
   dayOfWeek: z.array(z.string()).optional(),
   time: z.string().optional(),
   timezone: z.string().optional(),
   systemPrompt: z.string().optional(),
-  userPrompt: z.string().min(1).optional(),
+  userPrompt: z.string().optional(),
   templateId: z.string().optional(),
   contentSources: z.array(z.string()).optional(),
   status: z.enum(["draft", "active", "paused"]).optional(),
