@@ -12,7 +12,7 @@ const badgeVariants = cva(
         destructive: "border border-red-500/20 bg-red-500/10 text-red-700",
         outline: "border border-[var(--border-default)] text-[color:var(--text-muted)]",
         success:
-          "border border-[rgba(155,242,202,0.7)] bg-[rgba(155,242,202,0.35)] text-[#0d0d0d]",
+          "border border-[rgba(60,53,242,0.25)] bg-[rgba(60,53,242,0.08)] text-[#3c35f2]",
       },
     },
     defaultVariants: {

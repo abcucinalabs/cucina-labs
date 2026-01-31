@@ -22,8 +22,8 @@ type MetricKey = "emails" | "openRate" | "clickRate"
 
 const METRIC_CONFIG: Record<MetricKey, { label: string; color: string; unit: string }> = {
   emails: { label: "Total Emails", color: "#3c35f2", unit: "" },
-  openRate: { label: "Open Rate", color: "#9bf2ca", unit: "%" },
-  clickRate: { label: "Click Rate", color: "#f59e0b", unit: "%" },
+  openRate: { label: "Open Rate", color: "#a5b4fc", unit: "%" },
+  clickRate: { label: "Click Rate", color: "#d4d4d8", unit: "%" },
 }
 
 export function PerformanceChart({

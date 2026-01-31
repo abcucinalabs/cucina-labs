@@ -507,7 +507,7 @@ export function SequenceWizard({
           {/* Step 2: Schedule */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="p-2.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-800">
+              <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700">
                 Sequences are checked hourly. Newsletter sends at the next matching hour.
               </div>
               <div className="space-y-1.5">
@@ -694,10 +694,10 @@ export function SequenceWizard({
               </div>
 
               {previewError && (
-                <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 p-3 bg-zinc-100 border border-zinc-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-zinc-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-amber-700 font-medium">Preview Unavailable</p>
+                    <p className="text-xs text-zinc-700 font-medium">Preview Unavailable</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{previewError}</p>
                   </div>
                 </div>
@@ -820,14 +820,14 @@ export function SequenceWizard({
               {testEmailStatus && (
                 <div className={`flex items-start gap-2 p-3 rounded-lg ${
                   testEmailStatus.type === "success"
-                    ? "bg-green-500/10 border border-green-500/20"
+                    ? "bg-[rgba(60,53,242,0.06)] border border-[rgba(60,53,242,0.2)]"
                     : "bg-red-500/10 border border-red-500/20"
                 }`}>
                   <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    testEmailStatus.type === "success" ? "text-green-600" : "text-red-600"
+                    testEmailStatus.type === "success" ? "text-[#3c35f2]" : "text-red-600"
                   }`} />
                   <p className={`text-sm ${
-                    testEmailStatus.type === "success" ? "text-green-700" : "text-red-700"
+                    testEmailStatus.type === "success" ? "text-[#3c35f2]" : "text-red-700"
                   }`}>
                     {testEmailStatus.message}
                   </p>
@@ -897,7 +897,7 @@ export function SequenceWizard({
                     {sendNowStatus && (
                       <div className={`p-2 rounded-md text-xs ${
                         sendNowStatus.type === "success"
-                          ? "bg-green-50 text-green-800 border border-green-200"
+                          ? "bg-[rgba(60,53,242,0.06)] text-[#3c35f2] border border-[rgba(60,53,242,0.2)]"
                           : "bg-red-50 text-red-800 border border-red-200"
                       }`}>
                         {sendNowStatus.message}

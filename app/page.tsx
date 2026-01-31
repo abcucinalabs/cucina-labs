@@ -6,15 +6,11 @@ export default function Home() {
       <div className="relative min-h-screen overflow-hidden">
         {/* Background Video */}
         <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover grayscale"
-          >
-            <source src="/Video-Background-2.mp4" type="video/mp4" />
-          </video>
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
+            style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+            aria-hidden="true"
+          />
         </div>
 
         {/* Content */}
