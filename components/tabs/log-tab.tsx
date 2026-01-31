@@ -18,10 +18,10 @@ interface NewsActivity {
 }
 
 const statusStyles: Record<string, string> = {
-  success: "border border-[rgba(155,242,202,0.7)] bg-[rgba(155,242,202,0.35)] text-[#0d0d0d]",
-  warning: "border border-amber-500/20 bg-amber-500/10 text-amber-700",
+  success: "border border-[rgba(60,53,242,0.25)] bg-[rgba(60,53,242,0.08)] text-[#3c35f2]",
+  warning: "border border-zinc-300 bg-zinc-100 text-zinc-700",
   error: "border border-red-500/20 bg-red-500/10 text-red-700",
-  info: "border border-[rgba(74,81,217,0.35)] bg-[rgba(74,81,217,0.12)] text-[#4a51d9]",
+  info: "border border-zinc-200 bg-zinc-50 text-zinc-600",
 }
 
 export function LogTab() {

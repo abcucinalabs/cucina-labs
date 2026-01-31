@@ -507,7 +507,7 @@ export function SequenceWizard({
           {/* Step 2: Schedule */}
           {step === 2 && (
             <div className="space-y-6">
-              <div className="p-3 rounded-md bg-blue-50 border border-blue-200 text-sm text-blue-800">
+              <div className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-700">
                 <strong>Scheduling Info:</strong> Sequences are checked every hour on the hour. Your newsletter will be sent at the next matching hour based on your selected days and time.
               </div>
               <div className="space-y-3">
@@ -703,10 +703,10 @@ export function SequenceWizard({
               </div>
               
               {previewError && (
-                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-zinc-100 border border-zinc-200 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-zinc-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-amber-700 font-medium">Preview Unavailable</p>
+                    <p className="text-sm text-zinc-700 font-medium">Preview Unavailable</p>
                     <p className="text-sm text-muted-foreground mt-1">{previewError}</p>
                   </div>
                 </div>
@@ -825,15 +825,15 @@ export function SequenceWizard({
               
               {testEmailStatus && (
                 <div className={`flex items-start gap-3 p-4 rounded-lg ${
-                  testEmailStatus.type === "success" 
-                    ? "bg-green-500/10 border border-green-500/20" 
+                  testEmailStatus.type === "success"
+                    ? "bg-[rgba(60,53,242,0.06)] border border-[rgba(60,53,242,0.2)]"
                     : "bg-red-500/10 border border-red-500/20"
                 }`}>
                   <AlertCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
-                    testEmailStatus.type === "success" ? "text-green-600" : "text-red-600"
+                    testEmailStatus.type === "success" ? "text-[#3c35f2]" : "text-red-600"
                   }`} />
                   <p className={`text-sm ${
-                    testEmailStatus.type === "success" ? "text-green-700" : "text-red-700"
+                    testEmailStatus.type === "success" ? "text-[#3c35f2]" : "text-red-700"
                   }`}>
                     {testEmailStatus.message}
                   </p>
@@ -903,7 +903,7 @@ export function SequenceWizard({
                     {sendNowStatus && (
                       <div className={`p-3 rounded-md text-sm ${
                         sendNowStatus.type === "success"
-                          ? "bg-green-50 text-green-800 border border-green-200"
+                          ? "bg-[rgba(60,53,242,0.06)] text-[#3c35f2] border border-[rgba(60,53,242,0.2)]"
                           : "bg-red-50 text-red-800 border border-red-200"
                       }`}>
                         {sendNowStatus.message}

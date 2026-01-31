@@ -232,14 +232,14 @@ export function DataSourceConfig({ name, displayName, description, requiredField
     switch (dataSource.syncStatus) {
       case "syncing":
         return (
-          <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+          <Badge variant="outline" className="text-zinc-600 border-zinc-400">
             <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
             Syncing
           </Badge>
         )
       case "success":
         return (
-          <Badge variant="outline" className="text-green-600 border-green-600">
+          <Badge variant="outline" className="text-[#3c35f2] border-[#3c35f2]/30">
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Synced
           </Badge>

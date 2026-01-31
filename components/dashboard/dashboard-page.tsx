@@ -107,8 +107,8 @@ const PERIOD_OPTIONS = [
 
 const METRIC_COLORS: Record<MetricKey, string> = {
   emails: "#3c35f2",
-  openRate: "#9bf2ca",
-  clickRate: "#f59e0b",
+  openRate: "#a5b4fc",
+  clickRate: "#d4d4d8",
 }
 
 const formatNumber = (value: number) => value.toLocaleString()
@@ -411,7 +411,7 @@ export function DashboardPage() {
                 className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3 last:border-0 last:pb-0"
               >
                 <div className="flex items-center gap-3 min-w-[220px]">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: "#9bf2ca", color: "#0d0d0d" }}>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold" style={{ backgroundColor: "rgba(60, 53, 242, 0.12)", color: "#3c35f2" }}>
                     {index + 1}
                   </span>
                   <div>
@@ -454,13 +454,13 @@ export function DashboardPage() {
           label="Delivery Rate"
           value={formatPercent(data?.additionalMetrics.deliveryRate ?? null)}
           helper="Successful deliveries"
-          accent="text-emerald-600"
+          accent="text-foreground"
         />
         <MetricCard
           label="Bounce Rate"
           value={formatPercent(data?.additionalMetrics.bounceRate ?? null)}
           helper="Failed deliveries"
-          accent={data?.additionalMetrics.bounceRate && data.additionalMetrics.bounceRate > 5 ? "text-rose-500" : "text-foreground"}
+          accent={data?.additionalMetrics.bounceRate && data.additionalMetrics.bounceRate > 5 ? "text-red-500/80" : "text-foreground"}
         />
         <MetricCard
           label="Total Subscribers"
@@ -508,12 +508,12 @@ export function DashboardPage() {
                       <div className="h-2 rounded-full bg-[var(--bg-muted)]">
                         <div
                           className="h-2 rounded-full"
-                          style={{ width: `${newWidth}%`, backgroundColor: "#9bf2ca" }}
+                          style={{ width: `${newWidth}%`, backgroundColor: "#3c35f2" }}
                         />
                       </div>
                       <div className="mt-1 h-2 rounded-full bg-[var(--bg-muted)]">
                         <div
-                          className="h-2 rounded-full bg-rose-300"
+                          className="h-2 rounded-full bg-zinc-300"
                           style={{ width: `${unsubWidth}%` }}
                         />
                       </div>
@@ -619,8 +619,8 @@ export function DashboardPage() {
                   className={cn(
                     "rounded-[var(--radius-lg)] border border-[var(--border-default)] px-3 py-2 text-sm",
                     integration.status === "connected"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-amber-200 bg-amber-50 text-amber-700"
+                      ? "border-[rgba(60,53,242,0.2)] bg-[rgba(60,53,242,0.05)] text-[#3c35f2]"
+                      : "border-zinc-200 bg-zinc-50 text-zinc-600"
                   )}
                 >
                   <p className="font-semibold capitalize">{integration.service}</p>
