@@ -30,13 +30,13 @@ const COOKING_FIELDS = [
   { id: "imageUrl", name: "Image URL", description: "Photo or preview image" },
 ]
 
-export default function DataPage() {
+export default function ContentSourcesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold text-foreground">Data Ingestion</h1>
+        <h1 className="text-3xl font-semibold text-foreground">Content Sources</h1>
         <p className="text-[color:var(--text-secondary)] mt-2">
-          Manage data sources that feed into your newsletters
+          Manage content sources that feed into your newsletters
         </p>
       </div>
 

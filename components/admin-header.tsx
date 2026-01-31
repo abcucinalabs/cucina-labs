@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Emails", href: "/admin/emails", icon: Mail },
-  { name: "Data Ingestion", href: "/admin/data", icon: Database },
+  { name: "Content Sources", href: "/admin/content-sources", icon: Database },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ]
 

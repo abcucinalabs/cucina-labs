@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Mail, Database, Settings, LogOut, Plug, ScrollText, Bookmark, ChevronsUpDown } from "lucide-react"
+import { LayoutDashboard, Mail, Database, Settings, LogOut, Bookmark, ChevronsUpDown } from "lucide-react"
 
 import {
   Sidebar,
@@ -11,6 +11,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -24,14 +25,27 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-const navigation = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Emails", href: "/admin/emails", icon: Mail },
-  { name: "Saved Content", href: "/admin/saved-content", icon: Bookmark },
-  { name: "Data Ingestion", href: "/admin/data", icon: Database },
-  { name: "Integrations", href: "/admin/integrations", icon: Plug },
-  { name: "Log", href: "/admin/log", icon: ScrollText },
-  { name: "Settings", href: "/admin/settings", icon: Settings },
+const navGroups = [
+  {
+    label: "Newsletter",
+    items: [
+      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Emails", href: "/admin/emails", icon: Mail },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      { name: "Saved Content", href: "/admin/saved-content", icon: Bookmark },
+      { name: "Content Sources", href: "/admin/content-sources", icon: Database },
+    ],
+  },
+  {
+    label: "Configuration",
+    items: [
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+    ],
+  },
 ]
 
 export function AdminSidebar({ email }: { email: string }) {
@@ -50,9 +64,6 @@ export function AdminSidebar({ email }: { email: string }) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/admin/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-                  CL
-                </div>
                 <span className="truncate text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
                   cucina <span className="font-bold">labs</span>
                 </span>
@@ -63,28 +74,31 @@ export function AdminSidebar({ email }: { email: string }) {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
 
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
-                      <Link href={item.href}>
-                        <item.icon />
-                        <span>{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                        <Link href={item.href}>
+                          <item.icon />
+                          <span>{item.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
       <SidebarFooter>
