@@ -42,7 +42,7 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
     )
   }
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/save")) {
     return authMiddleware(request as NextRequestWithAuth, event)
   }
 
@@ -50,5 +50,5 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/:path*"],
+  matcher: ["/admin/:path*", "/api/:path*", "/save"],
 }
