@@ -17,8 +17,8 @@ export default async function AdminLayout({
   }
 
   return (
-    <SidebarProvider>
-      <AdminSidebar />
+    <SidebarProvider className="admin-theme">
+      <AdminSidebar email={session.user.email} />
       <SidebarInset>
         <AdminHeader email={session.user.email} />
         <div className="p-4 sm:p-6 lg:p-8">
