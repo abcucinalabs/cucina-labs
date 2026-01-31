@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DayPicker } from "@/components/ui/day-picker"
-import { AlertCircle, Plus, ExternalLink } from "lucide-react"
+import { AlertCircle, Plus } from "lucide-react"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
@@ -722,11 +722,8 @@ export function SequenceWizard({
                   </CardContent>
                 </Card>
 
-                <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700 flex items-center justify-between">
-                  <span>AI prompts are managed globally in Settings.</span>
-                  <a href="/admin/settings" className="inline-flex items-center gap-1 text-[#3c35f2] hover:underline">
-                    Edit Prompts <ExternalLink className="h-3 w-3" />
-                  </a>
+                <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700">
+                  AI prompts are managed globally in Settings.
                 </div>
               </div>
             )
