@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Mail, Database, Settings, LogOut, Bookmark, ChevronsUpDown } from "lucide-react"
+import { LayoutDashboard, Mail, Database, Settings, LogOut, Bookmark, ChevronsUpDown, Users } from "lucide-react"
 
 import {
   Sidebar,
@@ -31,6 +31,7 @@ const navGroups = [
     items: [
       { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
       { name: "Emails", href: "/admin/emails", icon: Mail },
+      { name: "Subscribers", href: "/admin/subscribers", icon: Users },
     ],
   },
   {

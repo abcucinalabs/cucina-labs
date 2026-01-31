@@ -17,8 +17,8 @@ export default function EmailsPage() {
 
       <Tabs defaultValue="weekly" className="space-y-6">
         <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
-          <TabsTrigger value="weekly">Weekly Newsletter</TabsTrigger>
-          <TabsTrigger value="newsletters">Newsletters</TabsTrigger>
+          <TabsTrigger value="weekly">Compose</TabsTrigger>
+          <TabsTrigger value="newsletters">Sequences</TabsTrigger>
           <TabsTrigger value="adhoc">Ad Hoc Email</TabsTrigger>
         </TabsList>
 

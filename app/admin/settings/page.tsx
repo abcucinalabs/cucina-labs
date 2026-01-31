@@ -5,6 +5,7 @@ import { IntegrationsTab } from "@/components/tabs/integrations-tab"
 import { TemplatesTab } from "@/components/tabs/templates-tab"
 import { SettingsTab } from "@/components/tabs/settings-tab"
 import { UsersTab } from "@/components/tabs/users-tab"
+import { AudiencesTab } from "@/components/tabs/audiences-tab"
 import { LogTab } from "@/components/tabs/log-tab"
 
 export default function SettingsPage() {
@@ -22,6 +23,7 @@ export default function SettingsPage() {
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="welcome">Welcome Email</TabsTrigger>
+          <TabsTrigger value="audiences">Audiences</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="log">Activity Log</TabsTrigger>
         </TabsList>
@@ -36,6 +38,10 @@ export default function SettingsPage() {
 
         <TabsContent value="welcome">
           <SettingsTab />
+        </TabsContent>
+
+        <TabsContent value="audiences">
+          <AudiencesTab />
         </TabsContent>
 
         <TabsContent value="users">

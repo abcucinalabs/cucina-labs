@@ -80,8 +80,9 @@ model Sequence {
   timezone      String   @default("UTC")
   systemPrompt  String?  @db.Text
   userPrompt    String   @db.Text
-  templateId    String?  // NewsletterTemplate ID (null = use default)
-  layout        Json?    // [{ componentId: "x", order: 1 }, ...]
+  templateId      String?  // NewsletterTemplate ID (null = use default)
+  contentSources  String[] // ["news", "chefs_table", "recipes", "cooking"]
+  layout          Json?    // [{ componentId: "x", order: 1 }, ...]
   status        String   @default("draft") // draft, active, paused
   lastSent      DateTime?
   createdAt     DateTime @default(now())

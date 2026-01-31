@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DayPicker } from "@/components/ui/day-picker"
-import { RotateCcw, AlertCircle } from "lucide-react"
+import { RotateCcw, AlertCircle, Plus } from "lucide-react"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
@@ -40,6 +40,7 @@ export function SequenceWizard({
   const [formData, setFormData] = useState({
     name: "",
     audienceId: "",
+    contentSources: [] as string[],
     dayOfWeek: [] as string[],
     time: "09:00",
     timezone: "America/New_York",
@@ -68,6 +69,9 @@ export function SequenceWizard({
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [isSendingNow, setIsSendingNow] = useState(false)
   const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [showCreateAudience, setShowCreateAudience] = useState(false)
+  const [newAudienceName, setNewAudienceName] = useState("")
+  const [isCreatingAudience, setIsCreatingAudience] = useState(false)
   const normalizeAudienceId = (audienceId?: string) =>
     audienceId === "local_all" ? "resend_all" : audienceId || ""
 
@@ -80,6 +84,7 @@ export function SequenceWizard({
         setFormData({
           name: sequence.name || "",
           audienceId: normalizeAudienceId(sequence.audienceId),
+          contentSources: sequence.contentSources || [],
           dayOfWeek: sequence.dayOfWeek || [],
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",
@@ -115,6 +120,29 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
+    }
+  }
+
+  const handleCreateAudience = async () => {
+    if (!newAudienceName.trim()) return
+    setIsCreatingAudience(true)
+    try {
+      const response = await fetch("/api/resend/audiences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newAudienceName.trim() }),
+      })
+      if (response.ok) {
+        const created = await response.json()
+        await fetchAudiences()
+        setFormData(prev => ({ ...prev, audienceId: created.id }))
+        setNewAudienceName("")
+        setShowCreateAudience(false)
+      }
+    } catch (error) {
+      console.error("Failed to create audience:", error)
+    } finally {
+      setIsCreatingAudience(false)
     }
   }
 
@@ -484,7 +512,13 @@ export function SequenceWizard({
                 <Label htmlFor="audience">Resend Audience</Label>
                 <Select
                   value={formData.audienceId}
-                  onValueChange={(value) => setFormData({ ...formData, audienceId: value })}
+                  onValueChange={(value) => {
+                    if (value === "__create_new__") {
+                      setShowCreateAudience(true)
+                    } else {
+                      setFormData({ ...formData, audienceId: value })
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an audience" />
@@ -495,10 +529,84 @@ export function SequenceWizard({
                         {audience.name}
                       </SelectItem>
                     ))}
+                    <SelectItem value="__create_new__">
+                      <span className="flex items-center gap-1.5">
+                        <Plus className="h-3.5 w-3.5" />
+                        Create new audience...
+                      </span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                {showCreateAudience && (
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      value={newAudienceName}
+                      onChange={(e) => setNewAudienceName(e.target.value)}
+                      placeholder="Audience name"
+                      className="flex-1"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleCreateAudience()
+                        if (e.key === "Escape") {
+                          setShowCreateAudience(false)
+                          setNewAudienceName("")
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleCreateAudience}
+                      disabled={!newAudienceName.trim() || isCreatingAudience}
+                      isLoading={isCreatingAudience}
+                    >
+                      Create
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateAudience(false)
+                        setNewAudienceName("")
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Audiences are fetched from your Resend account
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Content Sources</Label>
+                <div className="space-y-2">
+                  {[
+                    { value: "news", label: "News", description: "AI-curated news articles" },
+                    { value: "chefs_table", label: "Chef's Table", description: "Editorial intro section" },
+                    { value: "recipes", label: "Recipes", description: "Saved social posts & articles" },
+                    { value: "cooking", label: "What We're Cooking", description: "Experiments & projects" },
+                  ].map((source) => (
+                    <label key={source.value} className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={formData.contentSources.includes(source.value)}
+                        onCheckedChange={(checked) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            contentSources: checked
+                              ? [...prev.contentSources, source.value]
+                              : prev.contentSources.filter(s => s !== source.value),
+                          }))
+                        }}
+                      />
+                      <div>
+                        <span className="text-sm font-medium">{source.label}</span>
+                        <p className="text-xs text-muted-foreground">{source.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select which content types to include in this sequence
                 </p>
               </div>
             </div>

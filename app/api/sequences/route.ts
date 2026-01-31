@@ -15,6 +15,7 @@ const createSequenceSchema = z.object({
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1),
   templateId: z.string().optional(),
+  contentSources: z.array(z.string()).optional().default([]),
   status: z.enum(["draft", "active", "paused"]).default("draft"),
 })
 
