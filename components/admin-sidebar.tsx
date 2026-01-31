@@ -60,17 +60,11 @@ export function AdminSidebar({ email }: { email: string }) {
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader className="p-0">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/admin/dashboard">
-                <span className="truncate text-sm" style={{ fontFamily: 'Arial, sans-serif' }}>
-                  cucina <span className="font-bold">labs</span>
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex h-12 items-center px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+          <span className="truncate text-base" style={{ fontFamily: 'Arial, sans-serif' }}>
+            cucina <span className="font-bold">labs</span>
+          </span>
+        </div>
       </SidebarHeader>
 
       <SidebarContent>
@@ -127,7 +121,10 @@ export function AdminSidebar({ email }: { email: string }) {
                 align="end"
                 sideOffset={4}
               >
-                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+                <DropdownMenuItem
+                  className="focus:bg-[rgba(60,53,242,0.10)] focus:text-[#3c35f2]"
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                >
                   <LogOut />
                   Log out
                 </DropdownMenuItem>
