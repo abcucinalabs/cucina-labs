@@ -18,6 +18,7 @@ type NewsletterTemplate = {
   description?: string | null
   html: string
   isDefault: boolean
+  includeFooter: boolean
   createdAt: string
   updatedAt: string
   usageCount?: number
@@ -113,6 +114,7 @@ export function TemplatesTab() {
     description: "",
     html: DEFAULT_NEWSLETTER_TEMPLATE,
     isDefault: false,
+    includeFooter: true,
   })
 
   const sampleContext = useMemo(
@@ -151,6 +153,7 @@ export function TemplatesTab() {
       description: "",
       html: DEFAULT_NEWSLETTER_TEMPLATE,
       isDefault: templates.length === 0,
+      includeFooter: true,
     })
     setEditorOpen(true)
   }
@@ -162,6 +165,7 @@ export function TemplatesTab() {
       description: template.description || "",
       html: template.html,
       isDefault: template.isDefault,
+      includeFooter: template.includeFooter,
     })
     setEditorOpen(true)
   }
@@ -183,6 +187,7 @@ export function TemplatesTab() {
       description: formState.description.trim(),
       html: formState.html,
       isDefault: formState.isDefault,
+      includeFooter: formState.includeFooter,
     }
 
     try {
@@ -219,6 +224,7 @@ export function TemplatesTab() {
           description: template.description || "",
           html: template.html,
           isDefault: true,
+          includeFooter: template.includeFooter,
         }),
       })
 
@@ -390,15 +396,27 @@ export function TemplatesTab() {
                   className="min-h-[300px] font-mono text-xs lg:min-h-[400px]"
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="template-default"
-                  checked={formState.isDefault}
-                  onCheckedChange={(value) =>
-                    setFormState({ ...formState, isDefault: Boolean(value) })
-                  }
-                />
-                <Label htmlFor="template-default">Set as default template</Label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="template-default"
+                    checked={formState.isDefault}
+                    onCheckedChange={(value) =>
+                      setFormState({ ...formState, isDefault: Boolean(value) })
+                    }
+                  />
+                  <Label htmlFor="template-default">Set as default template</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="template-footer"
+                    checked={formState.includeFooter}
+                    onCheckedChange={(value) =>
+                      setFormState({ ...formState, includeFooter: Boolean(value) })
+                    }
+                  />
+                  <Label htmlFor="template-footer">Include unsubscribe footer</Label>
+                </div>
               </div>
               <div className="rounded-[var(--radius-lg)] border border-[var(--border-default)] bg-[var(--bg-muted)] p-3 text-xs text-[color:var(--text-secondary)]">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-muted)]">

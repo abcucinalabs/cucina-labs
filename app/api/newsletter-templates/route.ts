@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, html, isDefault } = body
+    const { name, description, html, isDefault, includeFooter } = body
 
     console.log("Creating template:", { name, htmlLength: html?.length, isDefault })
 
@@ -91,7 +91,8 @@ export async function POST(request: NextRequest) {
         name,
         description: description?.trim() || null,
         html,
-        isDefault: isDefault || false
+        isDefault: isDefault || false,
+        includeFooter: includeFooter !== undefined ? includeFooter : true,
       }
     })
 

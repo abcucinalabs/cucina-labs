@@ -10,6 +10,7 @@ const updateTemplateSchema = z.object({
   enabled: z.boolean(),
   subject: z.string().optional(),
   html: z.string().optional(),
+  templateId: z.string().nullable().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
 
     const template = await prisma.emailTemplate.findUnique({
       where: { type: "welcome" },
+      include: { template: true },
     })
 
     if (!template) {
@@ -28,6 +30,8 @@ export async function GET(request: NextRequest) {
         enabled: false,
         subject: "Welcome to cucina labs",
         html: "",
+        templateId: null,
+        templateName: null,
       })
     }
 
@@ -35,6 +39,8 @@ export async function GET(request: NextRequest) {
       enabled: template.enabled,
       subject: template.subject || "Welcome to cucina labs",
       html: template.html || "",
+      templateId: template.templateId,
+      templateName: template.template?.name || null,
     })
   } catch (error) {
     console.error("Failed to fetch template:", error)
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { enabled, subject, html } = updateTemplateSchema.parse(body)
+    const { enabled, subject, html, templateId } = updateTemplateSchema.parse(body)
 
     const template = await prisma.emailTemplate.upsert({
       where: { type: "welcome" },
@@ -61,12 +67,14 @@ export async function POST(request: NextRequest) {
         enabled,
         subject,
         html: html || "",
+        templateId: templateId ?? undefined,
       },
       create: {
         type: "welcome",
         enabled,
         subject,
         html: html || "",
+        templateId: templateId ?? undefined,
       },
     })
 

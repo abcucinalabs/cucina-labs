@@ -44,7 +44,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, html, isDefault } = body
+    const { name, description, html, isDefault, includeFooter } = body
 
     if (!name || !html) {
       return NextResponse.json(
@@ -65,6 +65,7 @@ export async function PUT(
       description?: string | null
       html: string
       isDefault?: boolean
+      includeFooter?: boolean
     } = {
       name,
       html,
@@ -73,6 +74,10 @@ export async function PUT(
 
     if (typeof isDefault === "boolean") {
       data.isDefault = isDefault
+    }
+
+    if (typeof includeFooter === "boolean") {
+      data.includeFooter = includeFooter
     }
 
     const template = await prisma.newsletterTemplate.update({
