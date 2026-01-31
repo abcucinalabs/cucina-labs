@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma db push && prisma migrate deploy && next build",
+    "vercel-build": "prisma db push && prisma migrate resolve --applied 20260131000000_add_include_footer_to_newsletter_template && prisma migrate deploy && next build",
     "start": "next start",
     "test": "node --test ./tests/**/*.test.js",
     "lint": "next lint",
