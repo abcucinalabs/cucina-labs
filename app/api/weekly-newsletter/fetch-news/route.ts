@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       table
         .select({
           maxRecords: limit * 3, // Fetch extra to filter
-          sort: [{ field: "Date", direction: "desc" }],
+          sort: [{ field: "published_date", direction: "desc" }],
         })
         .eachPage(
           (records, fetchNextPage) => {
