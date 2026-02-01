@@ -16,7 +16,12 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const config = await prisma.sequencePromptConfig.findFirst()
+    let config: { systemPrompt?: string; userPrompt?: string } | null = null
+    try {
+      config = await prisma.sequencePromptConfig.findFirst()
+    } catch {
+      // Table may not exist yet if migration hasn't run
+    }
 
     return NextResponse.json({
       systemPrompt: config?.systemPrompt || defaultSequenceSystemPrompt,

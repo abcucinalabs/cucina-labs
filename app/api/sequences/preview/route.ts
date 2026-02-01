@@ -23,7 +23,12 @@ export async function POST(request: NextRequest) {
 
     // Load global prompts if not provided
     if (!systemPrompt || !userPrompt) {
-      const globalConfig = await prisma.sequencePromptConfig.findFirst()
+      let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
+      try {
+        globalConfig = await prisma.sequencePromptConfig.findFirst()
+      } catch {
+        // Table may not exist yet if migration hasn't run
+      }
       if (!systemPrompt) {
         systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
       }
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // Fall back to local database if Airtable didn't work
     if (articles.length === 0) {
-      articles = await getRecentArticles()
+      articles = await getRecentArticles(dayOfWeek ? { dayOfWeek } : undefined)
       source = "local"
     }
 

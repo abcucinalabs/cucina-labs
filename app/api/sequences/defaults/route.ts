@@ -17,7 +17,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Try DB first, fall back to hardcoded defaults
-    const config = await prisma.sequencePromptConfig.findFirst()
+    let config: { systemPrompt?: string; userPrompt?: string } | null = null
+    try {
+      config = await prisma.sequencePromptConfig.findFirst()
+    } catch {
+      // Table may not exist yet if migration hasn't run
+    }
 
     return NextResponse.json({
       systemPrompt: config?.systemPrompt || defaultSequenceSystemPrompt,

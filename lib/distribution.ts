@@ -706,7 +706,12 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   let userPrompt = sequence.userPrompt || ""
 
   if (!systemPrompt || !userPrompt) {
-    const globalConfig = await prisma.sequencePromptConfig.findFirst()
+    let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
+    try {
+      globalConfig = await prisma.sequencePromptConfig.findFirst()
+    } catch {
+      // Table may not exist yet if migration hasn't run
+    }
     if (!systemPrompt) {
       systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
     }

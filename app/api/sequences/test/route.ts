@@ -37,7 +37,12 @@ export async function POST(request: NextRequest) {
 
     // Load global prompts if not provided
     if (!systemPrompt || !userPrompt) {
-      const globalConfig = await prisma.sequencePromptConfig.findFirst()
+      let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
+      try {
+        globalConfig = await prisma.sequencePromptConfig.findFirst()
+      } catch {
+        // Table may not exist yet if migration hasn't run
+      }
       if (!systemPrompt) {
         systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
       }
