@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles, wrapNewsletterWithShortLinks } from "@/lib/distribution"
-import { findSequencePromptConfig, findApiKeyByService, countArticles } from "@/lib/dal"
+import { generateNewsletterContent, generateEmailHtml, getRecentArticles, wrapNewsletterWithShortLinks } from "@/lib/distribution"
+import { findSequencePromptConfig, countArticles } from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 import {
   defaultSequenceSystemPrompt,
@@ -36,69 +36,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check if Airtable is configured
-    const airtableConfig = await findApiKeyByService("airtable")
-
-    console.log("Airtable config check:", {
-      hasKey: !!airtableConfig?.key,
-      hasBaseId: !!airtableConfig?.airtableBaseId,
-      hasTableId: !!airtableConfig?.airtableTableId,
-      baseId: airtableConfig?.airtableBaseId,
-      tableId: airtableConfig?.airtableTableId,
-    })
-
     let articles: any[] = []
-    let source = "local"
+    const source = "local"
 
-    // Try to get articles from Airtable first
-    if (airtableConfig?.key && airtableConfig?.airtableBaseId && airtableConfig?.airtableTableId) {
-      try {
-        console.log("Attempting to fetch articles from Airtable...")
-        articles = await getAllArticlesFromAirtable(20)
-        console.log(`Fetched ${articles.length} articles from Airtable`)
-        source = "airtable"
-      } catch (error: any) {
-        console.error("Failed to fetch from Airtable:", error.message || error)
-        // Will fall back to local DB below
-      }
-    } else {
-      console.log("Airtable not fully configured, skipping Airtable fetch")
-    }
-
-    // Fall back to local database if Airtable didn't work
-    if (articles.length === 0) {
-      articles = await getRecentArticles(dayOfWeek ? { dayOfWeek } : undefined)
-      source = "local"
-    }
+    articles = await getRecentArticles(dayOfWeek ? { dayOfWeek } : undefined)
 
     if (articles.length === 0) {
-      // Check Airtable configuration
-      if (!airtableConfig?.airtableBaseId || !airtableConfig?.airtableTableId) {
-        await logNewsActivity({
-          event: "sequences.preview",
-          status: "warning",
-          message: "Preview failed: Airtable not configured.",
-          metadata: { source },
-        })
-        return NextResponse.json({
-          error: "Airtable not configured",
-          details: "Please configure your Airtable integration on the Integrations tab. Select your Base and Table where articles are stored.",
-        }, { status: 400 })
-      }
-
-      // Check if there are any articles in local database
       const totalLocalArticles = await countArticles()
-      
+
       if (totalLocalArticles === 0) {
         await logNewsActivity({
           event: "sequences.preview",
           status: "warning",
-          message: "Preview failed: no articles found in Airtable or local DB.",
+          message: "Preview failed: no articles found in local DB.",
           metadata: { source },
         })
         return NextResponse.json({
           error: "No articles found",
-          details: "No articles found in Airtable or the local database. Please ensure your Airtable table contains articles, or run the ingestion workflow to populate articles.",
+          details: "No articles found in the local database. Please run the ingestion workflow to populate articles.",
         }, { status: 400 })
       } else {
         await logNewsActivity({
@@ -109,7 +64,7 @@ export async function POST(request: NextRequest) {
         })
         return NextResponse.json({
           error: "No recent articles",
-          details: `Found ${totalLocalArticles} articles in local database but none from the last 24 hours. Check your Airtable connection or run ingestion again.`,
+          details: `Found ${totalLocalArticles} articles in local database but none from the last 24 hours. Run ingestion again.`,
         }, { status: 400 })
       }
     }
@@ -154,19 +109,6 @@ export async function POST(request: NextRequest) {
     console.error("Failed to generate preview:", error)
     
     // Provide more specific error messages
-    if (error.message?.includes("Airtable")) {
-      await logNewsActivity({
-        event: "sequences.preview",
-        status: "error",
-        message: "Preview failed: Airtable connection failed.",
-        metadata: { details: error.message || String(error) },
-      })
-      return NextResponse.json({
-        error: "Airtable connection failed",
-        details: error.message || "Failed to connect to Airtable. Please check your API key and table configuration.",
-      }, { status: 500 })
-    }
-    
     if (error.message?.includes("Gemini")) {
       await logNewsActivity({
         event: "sequences.preview",

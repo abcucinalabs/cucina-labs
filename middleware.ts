@@ -5,7 +5,6 @@ const READONLY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
 const READONLY_API_PREFIXES = [
   "/api/users",
   "/api/integrations",
-  "/api/airtable",
   "/api/rss-sources",
   "/api/ingestion",
   "/api/sequences",

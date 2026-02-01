@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 
 const createDataSourceSchema = z.object({
   name: z.string().min(1),
-  type: z.enum(["rss_airtable", "airtable"]),
+  type: z.enum(["rss", "custom"]),
   tableId: z.string().optional(),
   tableName: z.string().optional(),
   viewId: z.string().optional(),

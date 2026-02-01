@@ -12,9 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DayPicker } from "@/components/ui/day-picker"
-import { Plus, Trash2, Play, RotateCcw, Database, ChevronDown, ChevronUp, AlertCircle } from "lucide-react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Plus, Trash2, Play, RotateCcw } from "lucide-react"
 
 const timezones = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -25,32 +23,6 @@ const timezones = [
   { value: "Europe/London", label: "London (GMT/BST)" },
   { value: "Europe/Paris", label: "Paris (CET/CEST)" },
 ]
-
-// RSS field names that can be mapped to Airtable columns
-const RSS_FIELDS = [
-  { id: "title", name: "Title" },
-  { id: "link", name: "Link" },
-  { id: "description", name: "Description" },
-  { id: "pubDate", name: "Published Date" },
-  { id: "author", name: "Author" },
-  { id: "category", name: "Category" },
-  { id: "aiSummary", name: "AI Summary" },
-  { id: "whyItMatters", name: "Why It Matters" },
-  { id: "businessValue", name: "Business Value" },
-]
-
-interface DataSource {
-  id: string
-  name: string
-  type: string
-  tableId: string | null
-  tableName: string | null
-  viewId: string | null
-  viewName: string | null
-  fieldMapping: Record<string, string> | null
-  syncStatus: string
-  lastSyncAt: string | null
-}
 
 export function IngestionTab() {
   const [rssSources, setRssSources] = useState<any[]>([])
@@ -67,116 +39,10 @@ export function IngestionTab() {
   const [isLoading, setIsLoading] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
 
-  // Destination configuration state
-  const [destinationOpen, setDestinationOpen] = useState(false)
-  const [dataSource, setDataSource] = useState<DataSource | null>(null)
-  const [airtableConfig, setAirtableConfig] = useState<{ baseId: string; baseName: string } | null>(null)
-  const [tables, setTables] = useState<{ id: string; name: string }[]>([])
-  const [views, setViews] = useState<{ id: string; name: string; type: string }[]>([])
-  const [fields, setFields] = useState<{ id: string; name: string; type: string }[]>([])
-  const [selectedTable, setSelectedTable] = useState<string>("")
-  const [selectedView, setSelectedView] = useState<string>("")
-  const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({})
-  const [isLoadingTables, setIsLoadingTables] = useState(false)
-  const [isLoadingViews, setIsLoadingViews] = useState(false)
-  const [isSavingDestination, setIsSavingDestination] = useState(false)
-
   useEffect(() => {
     fetchRssSources()
     fetchConfig()
-    fetchAirtableConfig()
-    fetchDataSource()
   }, [])
-
-  // Fetch tables when airtableConfig is loaded
-  useEffect(() => {
-    if (airtableConfig?.baseId) {
-      fetchTables()
-    }
-  }, [airtableConfig])
-
-  // Fetch views when table is selected
-  useEffect(() => {
-    if (selectedTable && airtableConfig?.baseId) {
-      fetchViews(selectedTable)
-    }
-  }, [selectedTable, airtableConfig])
-
-  const fetchAirtableConfig = async () => {
-    try {
-      const response = await fetch("/api/integrations")
-      if (response.ok) {
-        const data = await response.json()
-        if (data.airtable?.airtableBaseId) {
-          setAirtableConfig({
-            baseId: data.airtable.airtableBaseId,
-            baseName: data.airtable.airtableBaseName || "Unknown Base",
-          })
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch Airtable config:", error)
-    }
-  }
-
-  const fetchDataSource = async () => {
-    try {
-      const response = await fetch("/api/data-sources")
-      if (response.ok) {
-        const sources: DataSource[] = await response.json()
-        const newsSource = sources.find((s) => s.name === "news")
-        if (newsSource) {
-          setDataSource(newsSource)
-          setSelectedTable(newsSource.tableId || "")
-          setSelectedView(newsSource.viewId || "")
-          setFieldMapping(newsSource.fieldMapping || {})
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch data source:", error)
-    }
-  }
-
-  const fetchTables = async () => {
-    if (!airtableConfig?.baseId) return
-    setIsLoadingTables(true)
-    try {
-      const response = await fetch("/api/airtable/tables", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId: airtableConfig.baseId }),
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setTables(data.tables || [])
-      }
-    } catch (error) {
-      console.error("Failed to fetch tables:", error)
-    } finally {
-      setIsLoadingTables(false)
-    }
-  }
-
-  const fetchViews = async (tableId: string) => {
-    if (!airtableConfig?.baseId) return
-    setIsLoadingViews(true)
-    try {
-      const response = await fetch("/api/airtable/views", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: "USE_STORED_KEY", baseId: airtableConfig.baseId, tableId }),
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setViews(data.views || [])
-        setFields(data.fields || [])
-      }
-    } catch (error) {
-      console.error("Failed to fetch views:", error)
-    } finally {
-      setIsLoadingViews(false)
-    }
-  }
 
   const fetchRssSources = async () => {
     try {
@@ -297,61 +163,6 @@ export function IngestionTab() {
     } catch (error) {
       console.error("Failed to reset prompts:", error)
     }
-  }
-
-  const handleSaveDestination = async () => {
-    setIsSavingDestination(true)
-    try {
-      const tableName = tables.find((t) => t.id === selectedTable)?.name
-      const viewName = views.find((v) => v.id === selectedView)?.name
-
-      const payload = {
-        name: "news",
-        type: "rss_airtable",
-        tableId: selectedTable || null,
-        tableName: tableName || null,
-        viewId: selectedView || null,
-        viewName: viewName || null,
-        fieldMapping: Object.keys(fieldMapping).length > 0 ? fieldMapping : null,
-      }
-
-      if (dataSource) {
-        await fetch(`/api/data-sources/${dataSource.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      } else {
-        const response = await fetch("/api/data-sources", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-        if (response.ok) {
-          const newSource = await response.json()
-          setDataSource(newSource)
-        }
-      }
-      alert("Destination configuration saved!")
-    } catch (error) {
-      console.error("Failed to save destination:", error)
-      alert("Failed to save destination configuration")
-    } finally {
-      setIsSavingDestination(false)
-    }
-  }
-
-  const handleTableChange = (tableId: string) => {
-    setSelectedTable(tableId)
-    setSelectedView("")
-    setFieldMapping({})
-  }
-
-  const handleFieldMappingChange = (rssField: string, airtableField: string) => {
-    setFieldMapping((prev) => ({
-      ...prev,
-      [rssField]: airtableField,
-    }))
   }
 
   // Parse time for display
@@ -480,146 +291,6 @@ export function IngestionTab() {
         </CardContent>
       </Card>
 
-      {/* Destination Configuration */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
-                Destination Configuration
-              </CardTitle>
-              <CardDescription>Configure where ingested articles are stored in Airtable</CardDescription>
-            </div>
-            {dataSource?.tableId && (
-              <Badge variant="outline" className="text-xs">
-                {dataSource.tableName || "Table configured"}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {!airtableConfig ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Please configure your Airtable integration in Settings first, including selecting a base.
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <>
-              <div className="text-sm text-muted-foreground">
-                Base: <span className="font-medium text-foreground">{airtableConfig.baseName}</span>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Destination Table</Label>
-                  <Select
-                    value={selectedTable}
-                    onValueChange={handleTableChange}
-                    disabled={isLoadingTables}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingTables ? "Loading tables..." : "Select a table"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tables.map((table) => (
-                        <SelectItem key={table.id} value={table.id}>
-                          {table.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>View (optional)</Label>
-                  <Select
-                    value={selectedView || "__none__"}
-                    onValueChange={(v) => setSelectedView(v === "__none__" ? "" : v)}
-                    disabled={!selectedTable || isLoadingViews}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={isLoadingViews ? "Loading views..." : "Select a view"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">No specific view</SelectItem>
-                      {views.map((view) => (
-                        <SelectItem key={view.id} value={view.id}>
-                          {view.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {selectedTable && fields.length > 0 && (
-                <Collapsible open={destinationOpen} onOpenChange={setDestinationOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 p-0 h-auto">
-                      {destinationOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      <span className="text-sm font-medium">Field Mapping</span>
-                      <span className="text-xs text-muted-foreground">
-                        ({Object.keys(fieldMapping).filter((k) => fieldMapping[k]).length} mapped)
-                      </span>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-4">
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-1/2">RSS Field</TableHead>
-                            <TableHead className="w-1/2">Airtable Column</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {RSS_FIELDS.map((rssField) => (
-                            <TableRow key={rssField.id}>
-                              <TableCell className="font-medium">{rssField.name}</TableCell>
-                              <TableCell>
-                                <Select
-                                  value={fieldMapping[rssField.id] || "__none__"}
-                                  onValueChange={(value) => handleFieldMappingChange(rssField.id, value === "__none__" ? "" : value)}
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select column" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none__">Not mapped</SelectItem>
-                                    {fields.map((field) => (
-                                      <SelectItem key={field.id} value={field.name}>
-                                        {field.name} ({field.type})
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-
-              <div className="flex justify-end pt-2">
-                <Button
-                  onClick={handleSaveDestination}
-                  disabled={!selectedTable || isSavingDestination}
-                  isLoading={isSavingDestination}
-                >
-                  Save Destination
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Schedule Configuration */}
       <Card>
         <CardHeader>
@@ -629,12 +300,12 @@ export function IngestionTab() {
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <Label>Select Days</Label>
-            <DayPicker 
-              value={config.schedule} 
-              onChange={(days) => setConfig({ ...config, schedule: days })} 
+            <DayPicker
+              value={config.schedule}
+              onChange={(days) => setConfig({ ...config, schedule: days })}
             />
           </div>
-          
+
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Time</Label>
@@ -690,7 +361,7 @@ export function IngestionTab() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Timezone</Label>
               <Select
@@ -710,8 +381,8 @@ export function IngestionTab() {
 
             <div className="space-y-2">
               <Label>Time Frame</Label>
-              <Select 
-                value={config.timeFrame.toString()} 
+              <Select
+                value={config.timeFrame.toString()}
                 onValueChange={(v) => setConfig({ ...config, timeFrame: parseInt(v) })}
               >
                 <SelectTrigger className="w-full">

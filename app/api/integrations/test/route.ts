@@ -5,13 +5,12 @@ import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
-import Airtable from "airtable"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
 const testIntegrationSchema = z.object({
-  service: z.enum(["gemini", "airtable", "resend"]),
+  service: z.enum(["gemini", "resend"]),
   key: z.string().optional(),
   geminiModel: z.string().optional(),
 })
@@ -93,12 +92,6 @@ async function handleTestRequest(request: NextRequest) {
         case "resend": {
           const resend = new Resend(decryptedKey)
           // Just verify the key is valid by checking if we can access the API
-          success = true
-          break
-        }
-        case "airtable": {
-          Airtable.configure({ apiKey: decryptedKey })
-          // Basic validation - in production, test with actual base
           success = true
           break
         }

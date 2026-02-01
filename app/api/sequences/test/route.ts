@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { generateNewsletterContent, generateEmailHtml, generatePlainText, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
+import { generateNewsletterContent, generateEmailHtml, generatePlainText, getRecentArticles } from "@/lib/distribution"
 import { buildNewsletterTemplateContext, renderNewsletterTemplate } from "@/lib/newsletter-template"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { findSequencePromptConfig, findApiKeyByService, updateApiKey } from "@/lib/dal"
+
 import { Resend } from "resend"
 import { z } from "zod"
 import {
@@ -50,28 +51,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check Airtable config
-    const airtableConfig = await findApiKeyByService("airtable")
-
     let articles: any[] = []
-
-    // Try Airtable first
-    if (airtableConfig?.key && airtableConfig?.airtableBaseId && airtableConfig?.airtableTableId) {
-      try {
-        articles = await getAllArticlesFromAirtable(20)
-      } catch (error) {
-        console.error("Failed to fetch from Airtable:", error)
-      }
-    }
-
-    // Fallback to local database
-    if (articles.length === 0) {
-      articles = await getRecentArticles()
-    }
+    articles = await getRecentArticles()
 
     if (articles.length === 0) {
       return NextResponse.json(
-        { error: "No articles available. Please configure Airtable or run ingestion first." },
+        { error: "No articles available. Please run ingestion first." },
         { status: 400 }
       )
     }

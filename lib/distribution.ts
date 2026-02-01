@@ -11,7 +11,6 @@ import {
 import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
-import Airtable from "airtable"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
@@ -226,33 +225,6 @@ async function fetchResendAllContacts(apiKey: string) {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function getAirtableConfig(): Promise<{
-  apiKey: string
-  baseId: string
-  tableIdOrName: string
-} | null> {
-  const config = await findApiKeyByService("airtable")
-  const baseId = config?.airtableBaseId || process.env.AIRTABLE_BASE_ID
-  const tableIdOrName =
-    config?.airtableTableId ||
-    config?.airtableTableName ||
-    process.env.AIRTABLE_TABLE_ID ||
-    process.env.AIRTABLE_TABLE_NAME
-
-  if (!config || !config.key || !baseId || !tableIdOrName) {
-    return null
-  }
-  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
-  if (needsRotation) {
-    await updateApiKey(config.id, { key: encrypt(plaintext) })
-  }
-  return {
-    apiKey: plaintext,
-    baseId,
-    tableIdOrName,
-  }
-}
-
 export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] }) {
   // Compute lookback hours based on schedule
   const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
@@ -261,21 +233,6 @@ export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] 
     ? computeTimeFrameHours(scheduleContext.dayOfWeek, currentDay)
     : 24
 
-  // First try to fetch from Airtable
-  const airtableConfig = await getAirtableConfig()
-
-  if (airtableConfig) {
-    try {
-      const articles = await getArticlesFromAirtable(airtableConfig, lookbackHours)
-      if (articles.length > 0) {
-        return articles
-      }
-    } catch (error) {
-      console.error("Failed to fetch from Airtable, falling back to local DB:", error)
-    }
-  }
-
-  // Fallback to local database
   const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
   const articles = await findRecentArticles(cutoffDate)
 
@@ -289,65 +246,6 @@ export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] 
     whyItMatters: article.whyItMatters || "",
     businessValue: article.businessValue || "",
     creator: article.creator || "",
-  }))
-}
-
-async function getArticlesFromAirtable(config: { apiKey: string; baseId: string; tableIdOrName: string }, lookbackHours: number = 24) {
-  const airtable = new Airtable({ apiKey: config.apiKey })
-  const base = airtable.base(config.baseId)
-
-  const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
-
-  const records = await base(config.tableIdOrName)
-    .select({
-      maxRecords: 20,
-      sort: [{ field: "published_date", direction: "desc" }],
-      // Filter for recent articles - adjust field names based on your Airtable schema
-      filterByFormula: `IS_AFTER({published_date}, '${cutoffDate.toISOString().split('T')[0]}')`,
-    })
-    .all()
-
-  return records.map((record) => ({
-    id: record.id,
-    title: record.get("title") as string || "",
-    summary: record.get("ai_generated_summary") as string || "",
-    link: record.get("source_link") as string || "",
-    imageUrl: record.get("image_link") as string || "",
-    category: record.get("category") as string || "",
-    whyItMatters: record.get("why_it_matters") as string || "",
-    businessValue: record.get("business_value") as string || "",
-    creator: record.get("creator") as string || "",
-  }))
-}
-
-// Export for use in preview when no filter is needed
-export async function getAllArticlesFromAirtable(limit: number = 20) {
-  const airtableConfig = await getAirtableConfig()
-
-  if (!airtableConfig) {
-    throw new Error("Airtable not configured. Please set up Airtable integration first.")
-  }
-
-  const airtable = new Airtable({ apiKey: airtableConfig.apiKey })
-  const base = airtable.base(airtableConfig.baseId)
-
-  const records = await base(airtableConfig.tableIdOrName)
-    .select({
-      maxRecords: limit,
-      sort: [{ field: "published_date", direction: "desc" }],
-    })
-    .all()
-
-  return records.map((record) => ({
-    id: record.id,
-    title: record.get("title") as string || "",
-    summary: record.get("ai_generated_summary") as string || "",
-    link: record.get("source_link") as string || "",
-    imageUrl: record.get("image_link") as string || "",
-    category: record.get("category") as string || "",
-    whyItMatters: record.get("why_it_matters") as string || "",
-    businessValue: record.get("business_value") as string || "",
-    creator: record.get("creator") as string || "",
   }))
 }
 

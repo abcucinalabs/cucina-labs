@@ -9,7 +9,7 @@ import { z } from "zod"
 
 const updateDataSourceSchema = z.object({
   name: z.string().min(1).optional(),
-  type: z.enum(["rss_airtable", "airtable"]).optional(),
+  type: z.enum(["rss", "custom"]).optional(),
   tableId: z.string().nullable().optional(),
   tableName: z.string().nullable().optional(),
   viewId: z.string().nullable().optional(),

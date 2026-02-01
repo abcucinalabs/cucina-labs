@@ -8,15 +8,10 @@ import { z } from "zod"
 export const dynamic = 'force-dynamic'
 
 const saveIntegrationSchema = z.object({
-  service: z.enum(["gemini", "airtable", "resend"]),
+  service: z.enum(["gemini", "resend"]),
   key: z.string().optional(),
   // Gemini fields
   geminiModel: z.string().optional(),
-  // Airtable fields
-  airtableBaseId: z.string().optional(),
-  airtableBaseName: z.string().optional(),
-  airtableTableId: z.string().optional(),
-  airtableTableName: z.string().optional(),
   // Resend fields
   resendFromName: z.string().optional(),
   resendFromEmail: z.string().email().optional(),
@@ -38,11 +33,6 @@ export async function GET(request: NextRequest) {
         hasKey: !!key.key,
         // Gemini fields
         geminiModel: key.geminiModel,
-        // Airtable fields
-        airtableBaseId: key.airtableBaseId,
-        airtableBaseName: key.airtableBaseName,
-        airtableTableId: key.airtableTableId,
-        airtableTableName: key.airtableTableName,
         // Resend fields
         resendFromName: key.resendFromName,
         resendFromEmail: key.resendFromEmail,
@@ -50,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Add missing services
-    const services = ["gemini", "airtable", "resend"]
+    const services = ["gemini", "resend"]
     for (const service of services) {
       if (!result[service]) {
         result[service] = {

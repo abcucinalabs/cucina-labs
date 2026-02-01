@@ -8,7 +8,6 @@ import {
 import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Parser from "rss-parser"
-import Airtable from "airtable"
 import { logNewsActivity } from "@/lib/news-activity"
 
 const parser = new Parser({
@@ -22,29 +21,6 @@ const parser = new Parser({
     ],
   },
 })
-let loggedMissingAirtableConfig = false
-let loggedMissingAirtableBase = false
-let loggedDefaultAirtableTable = false
-type AirtableFieldInfo = {
-  name: string
-  type: string
-  options?: Record<string, any> | null
-}
-
-const airtableFieldCache = new Map<string, AirtableFieldInfo[]>()
-const nonWritableFieldTypes = new Set([
-  "formula",
-  "rollup",
-  "lookup",
-  "createdTime",
-  "autoNumber",
-  "lastModifiedTime",
-  "count",
-  "multipleLookupValues",
-])
-
-const normalizeFieldName = (name: string) =>
-  name.toLowerCase().replace(/[^a-z0-9]/g, "")
 
 const normalizeCategory = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
@@ -79,22 +55,6 @@ const getFallbackImage = (category?: string) => {
   const normalized = normalizeCategory(category)
   const alias = categoryAliases[normalized] || normalized
   return fallbackImages[alias] || fallbackImages.default
-}
-
-const fieldAliases: Record<string, string[]> = {
-  title: ["title", "headline"],
-  category: ["category", "categories", "topic", "section"],
-  creator: ["creator", "source", "publication", "outlet"],
-  source_link: ["source_link", "source link", "source_url", "link", "url"],
-  canonical_link: ["canonical_link", "canonical link", "canonical_url", "canonical url"],
-  image_link: ["image_link", "image link", "image_url", "image url", "image"],
-  published_date: ["published_date", "published date", "publish date", "pub_date"],
-  ingested_at: ["ingested_at", "ingested at", "ingest date", "ingestion date"],
-  days_since_published: ["days_since_published", "days since published"],
-  is_recent: ["is_recent", "is recent", "recent"],
-  ai_generated_summary: ["ai_generated_summary", "ai generated summary", "ai_summary", "ai summary", "summary"],
-  why_it_matters: ["why_it_matters", "why it matters"],
-  business_value: ["business_value", "business value"],
 }
 
 interface Article {
@@ -201,26 +161,6 @@ async function fetchRssFeed(url: string): Promise<Article[]> {
   } catch (error) {
     console.error(`Failed to fetch RSS feed ${url}:`, error)
     return []
-  }
-}
-
-async function getAirtableConfig(): Promise<{
-  apiKey: string
-  baseId?: string | null
-  tableId?: string | null
-  tableName?: string | null
-} | null> {
-  const apiKey = await findApiKeyByService("airtable")
-  if (!apiKey || !apiKey.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
-  }
-  return {
-    apiKey: plaintext,
-    baseId: apiKey.airtableBaseId,
-    tableId: apiKey.airtableTableId,
-    tableName: apiKey.airtableTableName,
   }
 }
 
@@ -357,342 +297,6 @@ async function selectArticlesWithGemini(
   }
 }
 
-async function saveToAirtable(article: Article): Promise<boolean> {
-  const config = await getAirtableConfig()
-  if (!config?.apiKey) {
-    if (!loggedMissingAirtableConfig) {
-      loggedMissingAirtableConfig = true
-      await logNewsActivity({
-        event: "airtable.config.missing",
-        status: "warning",
-        message: "Airtable API key not configured; falling back to database.",
-      })
-    }
-    // Fallback to PostgreSQL if Airtable not configured
-    await saveToDatabase(article)
-    return false
-  }
-
-  const baseId = config.baseId || process.env.AIRTABLE_BASE_ID
-  const tableIdOrName =
-    config.tableId ||
-    config.tableName ||
-    process.env.AIRTABLE_TABLE_ID ||
-    process.env.AIRTABLE_TABLE_NAME ||
-    "BriefingItems"
-
-  if (!baseId) {
-    if (!loggedMissingAirtableBase) {
-      loggedMissingAirtableBase = true
-      await logNewsActivity({
-        event: "airtable.config.missing",
-        status: "warning",
-        message: "Airtable base ID not configured; falling back to database.",
-        metadata: { table: tableIdOrName },
-      })
-    }
-    await saveToDatabase(article)
-    return false
-  }
-
-  if (!config.tableId && !config.tableName && !process.env.AIRTABLE_TABLE_ID && !process.env.AIRTABLE_TABLE_NAME) {
-    if (!loggedDefaultAirtableTable) {
-      loggedDefaultAirtableTable = true
-      await logNewsActivity({
-        event: "airtable.table.defaulted",
-        status: "warning",
-        message: "Airtable table not configured; defaulting to BriefingItems.",
-        metadata: { table: tableIdOrName },
-      })
-    }
-  }
-
-  Airtable.configure({ apiKey: config.apiKey })
-  const base = Airtable.base(baseId)
-
-  const canonicalLink = generateCanonicalLink(article.link)
-  const publishedDate = new Date(article.pubDate)
-  const daysSincePublished = Math.floor(
-    (Date.now() - publishedDate.getTime()) / (1000 * 60 * 60 * 24)
-  )
-
-  let fields: AirtableFieldInfo[] = []
-  let recordData: Record<string, unknown> = {}
-
-  try {
-    // Check for duplicates using Airtable API
-    const table = base(tableIdOrName)
-    fields = await getAirtableFields(config.apiKey, baseId, tableIdOrName)
-    const fieldLookup = new Map<string, AirtableFieldInfo>()
-    for (const field of fields) {
-      fieldLookup.set(field.name, field)
-      const normalized = normalizeFieldName(field.name)
-      if (!fieldLookup.has(normalized)) {
-        fieldLookup.set(normalized, field)
-      }
-    }
-
-    const resolveField = (canonicalName: string): AirtableFieldInfo | null => {
-      if (fields.length === 0) {
-        return { name: canonicalName, type: "unknown", options: null }
-      }
-      const direct =
-        fieldLookup.get(canonicalName) ||
-        fieldLookup.get(normalizeFieldName(canonicalName)) ||
-        null
-      if (direct) return direct
-
-      const aliases = fieldAliases[canonicalName] || []
-      for (const alias of aliases) {
-        const match =
-          fieldLookup.get(alias) || fieldLookup.get(normalizeFieldName(alias))
-        if (match) return match
-      }
-
-      return null
-    }
-
-    const isWritable = (fieldInfo: AirtableFieldInfo | null) => {
-      if (!fieldInfo) return false
-      if (fields.length === 0) return true
-      return !nonWritableFieldTypes.has(fieldInfo.type)
-    }
-
-    const canonicalLinkField = resolveField("canonical_link")
-    const sourceLinkField = resolveField("source_link")
-    let filterField = canonicalLinkField?.name || sourceLinkField?.name || null
-
-    const selectWithField = (field: string) =>
-      new Promise<any[]>((resolve, reject) => {
-        const fieldValue = field === canonicalLinkField?.name ? canonicalLink : article.link
-        table.select({
-          filterByFormula: `{${field}} = "${fieldValue}"`,
-        }).firstPage((err, records) => {
-          if (err) reject(err)
-          else resolve(records ? [...records] : [])
-        })
-      })
-
-    let records: any[] = []
-    if (filterField) {
-      try {
-        records = await selectWithField(filterField)
-      } catch (error) {
-        const errorText = String(error)
-        const isCanonicalField = canonicalLinkField && filterField === canonicalLinkField.name
-        const isSourceField = sourceLinkField && filterField === sourceLinkField.name
-        if (errorText.includes("INVALID_FILTER_BY_FORMULA") && isCanonicalField) {
-          if (sourceLinkField || fields.length === 0) {
-            filterField = sourceLinkField?.name || "source_link"
-            records = await selectWithField(filterField)
-          } else {
-            filterField = null
-          }
-        } else if (errorText.includes("INVALID_FILTER_BY_FORMULA") && isSourceField) {
-          filterField = null
-        } else {
-          throw error
-        }
-      }
-    }
-
-    recordData = {}
-    const setField = (field: string, value: unknown) => {
-      const info = resolveField(field)
-      if (!info || !isWritable(info)) return
-
-      let finalValue: unknown = value
-      if (info.type === "checkbox") {
-        finalValue = Boolean(value)
-      } else if (info.type === "number") {
-        const num = typeof value === "number" ? value : Number(value)
-        if (Number.isNaN(num)) return
-        finalValue = num
-      } else if (info.type === "singleSelect") {
-        const choices = info.options?.choices || []
-        if (typeof value !== "string") return
-        if (!choices.some((choice: any) => choice.name === value)) return
-        finalValue = value
-      } else if (info.type === "multipleSelects") {
-        const choices = info.options?.choices || []
-        const choiceNames = new Set(choices.map((choice: any) => choice.name))
-        const values = Array.isArray(value) ? value : typeof value === "string" ? [value] : []
-        const filtered = values.filter((item) => choiceNames.has(item))
-        if (filtered.length === 0) return
-        finalValue = filtered
-      } else if (info.type === "attachment") {
-        if (typeof value !== "string" || !value) return
-        finalValue = [{ url: value }]
-      } else if (
-        info.type === "singleLineText" ||
-        info.type === "multilineText" ||
-        info.type === "richText" ||
-        info.type === "url" ||
-        info.type === "email"
-      ) {
-        finalValue = typeof value === "string" ? value : String(value)
-      }
-
-      recordData[info.name] = finalValue
-    }
-    const setDateField = (field: string, date: Date) => {
-      const info = resolveField(field)
-      if (!info || !isWritable(info)) return
-      const iso = date.toISOString()
-      const dateOnly = iso.split("T")[0]
-
-      if (fields.length === 0) {
-        recordData[info.name] = dateOnly
-        return
-      }
-
-      if (info.type === "date") {
-        if (info.options?.includeTime) {
-          recordData[info.name] = iso
-        } else {
-          recordData[info.name] = dateOnly
-        }
-        return
-      }
-
-      if (info.type === "dateTime") {
-        recordData[info.name] = iso
-        return
-      }
-
-      if (info.type === "singleLineText" || info.type === "multilineText") {
-        recordData[info.name] = dateOnly
-        return
-      }
-    }
-
-    const resolvedImageUrl = article.imageUrl || getFallbackImage(article.category)
-
-    setField("title", article.title)
-    setField("category", article.category || "AI Products")
-    setField("creator", article.creator || "AI Curator")
-    setField("source_link", article.link)
-    setField("canonical_link", canonicalLink)
-    setField("image_link", resolvedImageUrl)
-    if (article.aiGeneratedSummary) {
-      setField("ai_generated_summary", article.aiGeneratedSummary)
-    }
-    if (article.whyItMatters) {
-      setField("why_it_matters", article.whyItMatters)
-    }
-    if (article.businessValue) {
-      setField("business_value", article.businessValue)
-    }
-    setDateField("published_date", publishedDate)
-    setDateField("ingested_at", new Date())
-    setField("days_since_published", daysSincePublished)
-    setField("is_recent", daysSincePublished <= 1)
-
-    if (Object.keys(recordData).length === 0) {
-      await logNewsActivity({
-        event: "airtable.write.skipped",
-        status: "warning",
-        message: "No writable Airtable fields matched; falling back to database.",
-        metadata: {
-          baseId,
-          table: tableIdOrName,
-          articleLink: article.link,
-          fields: fields.map((f) => ({ name: f.name, type: f.type, options: f.options })),
-        },
-      })
-      await saveToDatabase(article)
-      return false
-    }
-
-    if (records.length > 0) {
-      // Update existing
-      await new Promise<void>((resolve, reject) => {
-        table.update(records[0].id, recordData, (err) => {
-          if (err) reject(err)
-          else resolve()
-        })
-      })
-      await logNewsActivity({
-        event: "airtable.write.success",
-        status: "success",
-        message: "Airtable record updated.",
-        metadata: { baseId, table: tableIdOrName, articleLink: article.link, filterField },
-      })
-      return true
-    } else {
-      // Create new
-      await new Promise<void>((resolve, reject) => {
-        table.create(recordData as any, (err: any) => {
-          if (err) reject(err)
-          else resolve()
-        })
-      })
-      await logNewsActivity({
-        event: "airtable.write.success",
-        status: "success",
-        message: "Airtable record created.",
-        metadata: { baseId, table: tableIdOrName, articleLink: article.link, filterField },
-      })
-      return true
-    }
-  } catch (error) {
-    console.error("Airtable error:", error)
-    await logNewsActivity({
-      event: "airtable.write.error",
-      status: "error",
-      message: "Failed to write to Airtable; falling back to database.",
-      metadata: {
-        error: String(error),
-        baseId,
-        table: tableIdOrName,
-        articleLink: article.link,
-        fields: fields.map((f) => ({ name: f.name, type: f.type, options: f.options })),
-        recordData,
-      },
-    })
-    // Fallback to database
-    await saveToDatabase(article)
-    return false
-  }
-}
-
-async function getAirtableFields(
-  apiKey: string,
-  baseId: string,
-  tableIdOrName: string
-): Promise<AirtableFieldInfo[]> {
-  const cacheKey = `${baseId}:${tableIdOrName}`
-  const cached = airtableFieldCache.get(cacheKey)
-  if (cached) return cached
-
-  try {
-    const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    })
-    if (!response.ok) {
-      return []
-    }
-
-    const data = await response.json()
-    const table = (data.tables || []).find((t: any) => t.id === tableIdOrName || t.name === tableIdOrName)
-    const fields: AirtableFieldInfo[] =
-      table?.fields?.map((field: any) => ({
-        name: field.name,
-        type: field.type,
-        options: field.options || null,
-      })) || []
-    if (fields.length > 0) {
-      airtableFieldCache.set(cacheKey, fields)
-    }
-    return fields
-  } catch (error) {
-    console.error("Failed to fetch Airtable fields:", error)
-    return []
-  }
-}
-
 async function saveToDatabase(article: Article): Promise<void> {
   const canonicalLink = generateCanonicalLink(article.link)
   const publishedDate = new Date(article.pubDate)
@@ -780,12 +384,14 @@ export async function runIngestion(
     defaultUserPrompt
   )
 
-  // Save selected articles
+  // Save selected articles to database
   let stored = 0
   for (const article of selectedArticles) {
-    const storedInAirtable = await saveToAirtable(article)
-    if (storedInAirtable) {
+    try {
+      await saveToDatabase(article)
       stored++
+    } catch (error) {
+      console.error("Failed to save article to database:", error)
     }
   }
 

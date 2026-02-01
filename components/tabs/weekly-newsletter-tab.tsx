@@ -148,13 +148,13 @@ export function WeeklyNewsletterTab() {
     }
   }
 
-  const fetchNewsFromAirtable = async () => {
+  const fetchNewsFromDatabase = async () => {
     setIsFetchingNews(true)
     try {
       const res = await fetch("/api/weekly-newsletter/fetch-news", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tableName: "Daily items", limit: 3 }),
+        body: JSON.stringify({ limit: 3 }),
       })
       if (res.ok) {
         const data = await res.json()
@@ -165,7 +165,7 @@ export function WeeklyNewsletterTab() {
       }
     } catch (error) {
       console.error("Failed to fetch news:", error)
-      alert("Failed to fetch news from Airtable")
+      alert("Failed to fetch news")
     } finally {
       setIsFetchingNews(false)
     }
@@ -414,13 +414,13 @@ export function WeeklyNewsletterTab() {
                 News
               </CardTitle>
               <CardDescription>
-                Top 3 stories from Airtable (AI Product Briefing)
+                Top 3 stories from recent articles
               </CardDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchNewsFromAirtable}
+              onClick={fetchNewsFromDatabase}
               disabled={isFetchingNews}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetchingNews ? "animate-spin" : ""}`} />
@@ -431,7 +431,7 @@ export function WeeklyNewsletterTab() {
         <CardContent>
           {newsItems.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
-              No news items yet. Click &quot;Fetch News&quot; to pull from Airtable.
+              No news items yet. Click &quot;Fetch News&quot; to pull recent articles.
             </p>
           ) : (
             <div className="space-y-4">
