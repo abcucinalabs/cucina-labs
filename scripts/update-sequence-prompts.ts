@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import { createClient } from '@supabase/supabase-js'
 
-const prisma = new PrismaClient()
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 const NEW_SYSTEM_PROMPT = `You are the Editor of a daily digest for Product Managers building AI-powered products. Your focus is on the most significant and timely developments from the past 24 hours.
 
@@ -55,38 +58,35 @@ CRITICAL OUTPUT RULES
 ⚠️ EVERY FIELD IS REQUIRED. You MUST select at least 4 total articles minimum (1 featured + 3 top stories), up to 6 articles maximum (1 featured + 5 top stories).`
 
 async function main() {
-  console.log('🔍 Checking for sequences with old prompts...')
+  console.log('Checking for sequences with old prompts...')
 
-  const sequences = await prisma.sequence.findMany({
-    where: {
-      systemPrompt: {
-        not: null
-      }
-    }
-  })
+  const { data: sequences, error } = await supabaseAdmin
+    .from('sequences')
+    .select('id, name, system_prompt')
+    .not('system_prompt', 'is', null)
 
-  console.log(`Found ${sequences.length} sequences to check`)
+  if (error) throw error
+
+  console.log(`Found ${sequences?.length || 0} sequences to check`)
 
   let updated = 0
   let skipped = 0
 
-  for (const sequence of sequences) {
-    // Check if prompt needs updating (missing link field OR outdated article count requirement)
-    const needsUpdate = sequence.systemPrompt && (
-      !sequence.systemPrompt.includes('"link": "URL from the article') ||
-      !sequence.systemPrompt.includes('at least 4 total articles minimum')
+  for (const sequence of sequences || []) {
+    const needsUpdate = sequence.system_prompt && (
+      !sequence.system_prompt.includes('"link": "URL from the article') ||
+      !sequence.system_prompt.includes('at least 4 total articles minimum')
     )
 
     if (needsUpdate) {
       console.log(`Updating sequence: ${sequence.name} (${sequence.id})`)
 
-      await prisma.sequence.update({
-        where: { id: sequence.id },
-        data: {
-          systemPrompt: NEW_SYSTEM_PROMPT
-        }
-      })
+      const { error: updateError } = await supabaseAdmin
+        .from('sequences')
+        .update({ system_prompt: NEW_SYSTEM_PROMPT })
+        .eq('id', sequence.id)
 
+      if (updateError) throw updateError
       updated++
     } else {
       console.log(`Skipping sequence: ${sequence.name} (already up to date)`)
@@ -94,16 +94,12 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ Update complete!`)
+  console.log(`\nUpdate complete!`)
   console.log(`   Updated: ${updated} sequences`)
   console.log(`   Skipped: ${skipped} sequences (already up to date)`)
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Error:', e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+main().catch((e) => {
+  console.error('Error:', e)
+  process.exit(1)
+})

@@ -1,5 +1,10 @@
-import { prisma } from "../lib/db"
+import { createClient } from "@supabase/supabase-js"
 import { decrypt } from "../lib/encryption"
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 type ResendAudience = {
   id: string
@@ -28,9 +33,11 @@ async function main() {
   const audienceNameArg =
     audienceNameArgIndex >= 0 ? process.argv[audienceNameArgIndex + 1] : undefined
 
-  const resendConfig = await prisma.apiKey.findUnique({
-    where: { service: "resend" },
-  })
+  const { data: resendConfig } = await supabaseAdmin
+    .from("api_keys")
+    .select("key")
+    .eq("service", "resend")
+    .single()
 
   if (!resendConfig?.key) {
     throw new Error("Resend API key not configured")
@@ -60,27 +67,20 @@ async function main() {
     throw new Error("Resend 'All Contacts' audience not found")
   }
 
-  const result = await prisma.sequence.updateMany({
-    where: {
-      audienceId: {
-        in: ["resend_all", "local_all"],
-      },
-    },
-    data: {
-      audienceId: allContactsAudience.id,
-    },
-  })
+  const { data, error } = await supabaseAdmin
+    .from("sequences")
+    .update({ audience_id: allContactsAudience.id })
+    .in("audience_id", ["resend_all", "local_all"])
+    .select("id")
+
+  if (error) throw error
 
   console.log(
-    `Updated ${result.count} sequence(s) to audience ${allContactsAudience.id} (${allContactsAudience.name})`
+    `Updated ${data?.length || 0} sequence(s) to audience ${allContactsAudience.id} (${allContactsAudience.name})`
   )
 }
 
-main()
-  .catch((error) => {
-    console.error(error)
-    process.exitCode = 1
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+main().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})
