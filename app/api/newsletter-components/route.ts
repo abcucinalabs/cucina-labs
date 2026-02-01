@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import {
+  findAllNewsletterComponents,
+  createNewsletterComponent,
+} from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -25,12 +28,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const components = await prisma.newsletterComponent.findMany({
-      include: {
-        dataSource: true,
-      },
-      orderBy: { name: "asc" },
-    })
+    const components = await findAllNewsletterComponents()
 
     return NextResponse.json(components)
   } catch (error) {
@@ -52,17 +50,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createComponentSchema.parse(body)
 
-    const component = await prisma.newsletterComponent.create({
-      data: {
-        name: validatedData.name,
-        description: validatedData.description,
-        type: validatedData.type,
-        dataSourceId: validatedData.dataSourceId,
-        displayOptions: validatedData.displayOptions,
-      },
-      include: {
-        dataSource: true,
-      },
+    const component = await createNewsletterComponent({
+      name: validatedData.name,
+      description: validatedData.description,
+      type: validatedData.type,
+      dataSourceId: validatedData.dataSourceId,
+      displayOptions: validatedData.displayOptions,
     })
 
     return NextResponse.json(component, { status: 201 })

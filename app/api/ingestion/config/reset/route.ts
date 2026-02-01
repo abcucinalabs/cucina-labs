@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import {
+  findIngestionConfig,
+  updateIngestionConfig,
+  upsertIngestionConfig,
+} from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 
 export const dynamic = 'force-dynamic'
@@ -97,26 +101,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Get existing config
-    const existing = await prisma.ingestionConfig.findFirst()
+    const existing = await findIngestionConfig()
 
     if (existing) {
-      await prisma.ingestionConfig.update({
-        where: { id: existing.id },
-        data: {
-          systemPrompt: defaultSystemPrompt,
-          userPrompt: defaultUserPrompt,
-        },
+      await updateIngestionConfig(existing.id, {
+        systemPrompt: defaultSystemPrompt,
+        userPrompt: defaultUserPrompt,
       })
     } else {
-      await prisma.ingestionConfig.create({
-        data: {
-          schedule: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-          time: "09:00",
-          timezone: "America/New_York",
-          timeFrame: 72,
-          systemPrompt: defaultSystemPrompt,
-          userPrompt: defaultUserPrompt,
-        },
+      await upsertIngestionConfig({
+        schedule: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+        time: "09:00",
+        timezone: "America/New_York",
+        timeFrame: 72,
+        systemPrompt: defaultSystemPrompt,
+        userPrompt: defaultUserPrompt,
       })
     }
 

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import {
+  findIngestionConfig,
+  upsertIngestionConfig,
+} from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the first (and should be only) config
-    const config = await prisma.ingestionConfig.findFirst()
+    const config = await findIngestionConfig()
 
     if (!config) {
       return NextResponse.json(null)
@@ -57,33 +60,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const data = configSchema.parse(body)
 
-    // Get existing config or create new one
-    const existing = await prisma.ingestionConfig.findFirst()
-
-    if (existing) {
-      await prisma.ingestionConfig.update({
-        where: { id: existing.id },
-        data: {
-          schedule: data.schedule,
-          time: data.time,
-          timezone: data.timezone,
-          timeFrame: data.timeFrame,
-          systemPrompt: data.systemPrompt,
-          userPrompt: data.userPrompt,
-        },
-      })
-    } else {
-      await prisma.ingestionConfig.create({
-        data: {
-          schedule: data.schedule,
-          time: data.time,
-          timezone: data.timezone,
-          timeFrame: data.timeFrame,
-          systemPrompt: data.systemPrompt,
-          userPrompt: data.userPrompt,
-        },
-      })
-    }
+    await upsertIngestionConfig({
+      schedule: data.schedule,
+      time: data.time,
+      timezone: data.timezone,
+      timeFrame: data.timeFrame,
+      systemPrompt: data.systemPrompt,
+      userPrompt: data.userPrompt,
+    })
 
     await logNewsActivity({
       event: "ingestion.config.saved",

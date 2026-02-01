@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findWeeklyNewsletterById,
+  findSavedContentByIds,
+} from "@/lib/dal"
 import { renderWeeklyNewsletter, buildWeeklyNewsletterContext } from "@/lib/weekly-newsletter-template"
 
 // POST - Preview the weekly newsletter HTML
@@ -12,9 +15,7 @@ export async function POST(
     const body = await request.json()
     const { origin } = body
 
-    const newsletter = await prisma.weeklyNewsletter.findUnique({
-      where: { id },
-    })
+    const newsletter = await findWeeklyNewsletterById(id)
 
     if (!newsletter) {
       return NextResponse.json(
@@ -25,9 +26,7 @@ export async function POST(
 
     // Get saved recipes
     const recipes = newsletter.recipeIds.length > 0
-      ? await prisma.savedContent.findMany({
-          where: { id: { in: newsletter.recipeIds } },
-        })
+      ? await findSavedContentByIds(newsletter.recipeIds)
       : []
 
     // Build context and render
@@ -39,7 +38,7 @@ export async function POST(
         newsItems: newsletter.newsItems as any[] | null,
         cookingItems: newsletter.cookingItems as any[] | null,
       },
-      recipes.map((r) => ({
+      recipes.map((r: any) => ({
         title: r.title,
         url: r.url,
         description: r.description,

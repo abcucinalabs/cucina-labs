@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findSequenceById, updateSequence, deleteSequence } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -36,9 +36,7 @@ export async function PUT(
 
     // Regenerate cron if schedule changed
     if (data.dayOfWeek || data.time) {
-      const existing = await prisma.sequence.findUnique({
-        where: { id: params.id },
-      })
+      const existing = await findSequenceById(params.id)
       if (existing) {
         const dayOfWeek = data.dayOfWeek || existing.dayOfWeek
         const time = data.time || existing.time
@@ -47,10 +45,7 @@ export async function PUT(
       }
     }
 
-    const sequence = await prisma.sequence.update({
-      where: { id: params.id },
-      data,
-    })
+    const sequence = await updateSequence(params.id, data)
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -82,10 +77,7 @@ export async function PATCH(
     const body = await request.json()
     const data = updateSequenceSchema.parse(body)
 
-    const sequence = await prisma.sequence.update({
-      where: { id: params.id },
-      data,
-    })
+    const sequence = await updateSequence(params.id, data)
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -114,9 +106,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await prisma.sequence.delete({
-      where: { id: params.id },
-    })
+    await deleteSequence(params.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

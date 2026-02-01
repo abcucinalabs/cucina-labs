@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import {
+  findAllDataSources,
+  createDataSource,
+} from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -23,9 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const dataSources = await prisma.dataSource.findMany({
-      orderBy: { name: "asc" },
-    })
+    const dataSources = await findAllDataSources()
 
     return NextResponse.json(dataSources)
   } catch (error) {
@@ -47,9 +48,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validatedData = createDataSourceSchema.parse(body)
 
-    const dataSource = await prisma.dataSource.create({
-      data: validatedData,
-    })
+    const dataSource = await createDataSource(validatedData)
 
     return NextResponse.json(dataSource, { status: 201 })
   } catch (error) {

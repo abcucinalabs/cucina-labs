@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findWeeklyNewsletterById,
+  updateWeeklyNewsletter,
+  deleteWeeklyNewsletter,
+  findSavedContentByIds,
+  updateSavedContentByIds,
+  resetSavedContentByUsedInId,
+} from "@/lib/dal"
 
 // GET - Get single weekly newsletter with recipes
 export async function GET(
@@ -9,9 +16,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    const newsletter = await prisma.weeklyNewsletter.findUnique({
-      where: { id },
-    })
+    const newsletter = await findWeeklyNewsletterById(id)
 
     if (!newsletter) {
       return NextResponse.json(
@@ -22,9 +27,7 @@ export async function GET(
 
     // Fetch associated saved content (recipes)
     const recipes = newsletter.recipeIds.length > 0
-      ? await prisma.savedContent.findMany({
-          where: { id: { in: newsletter.recipeIds } },
-        })
+      ? await findSavedContentByIds(newsletter.recipeIds)
       : []
 
     return NextResponse.json({ ...newsletter, recipes })
@@ -68,17 +71,11 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status
     if (audienceId !== undefined) updateData.audienceId = audienceId
 
-    const newsletter = await prisma.weeklyNewsletter.update({
-      where: { id },
-      data: updateData,
-    })
+    const newsletter = await updateWeeklyNewsletter(id, updateData)
 
     // If recipeIds were updated, mark those as used
     if (recipeIds && recipeIds.length > 0) {
-      await prisma.savedContent.updateMany({
-        where: { id: { in: recipeIds } },
-        data: { used: true, usedInId: id },
-      })
+      await updateSavedContentByIds(recipeIds, { used: true, usedInId: id })
     }
 
     return NextResponse.json(newsletter)
@@ -100,14 +97,9 @@ export async function DELETE(
     const { id } = await params
 
     // Unmark recipes as used
-    await prisma.savedContent.updateMany({
-      where: { usedInId: id },
-      data: { used: false, usedInId: null },
-    })
+    await resetSavedContentByUsedInId(id)
 
-    await prisma.weeklyNewsletter.delete({
-      where: { id },
-    })
+    await deleteWeeklyNewsletter(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

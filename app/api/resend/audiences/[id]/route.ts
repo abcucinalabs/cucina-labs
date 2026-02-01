@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findApiKeyByService, updateApiKey } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 
 export const dynamic = 'force-dynamic'
@@ -16,9 +16,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKey = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const apiKey = await findApiKeyByService("resend")
 
     if (!apiKey?.key) {
       return NextResponse.json({ error: "Resend API key not configured" }, { status: 400 })
@@ -26,10 +24,7 @@ export async function DELETE(
 
     const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: apiKey.id },
-        data: { key: encrypt(plaintext) },
-      })
+      await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
     }
 
     const response = await fetch(`https://api.resend.com/audiences/${params.id}`, {

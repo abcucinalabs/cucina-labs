@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findEmailTemplateWithNewsletterTemplate, upsertEmailTemplate } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -20,10 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.emailTemplate.findUnique({
-      where: { type: "welcome" },
-      include: { template: true },
-    })
+    const template = await findEmailTemplateWithNewsletterTemplate("welcome")
 
     if (!template) {
       return NextResponse.json({
@@ -61,21 +58,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { enabled, subject, html, templateId } = updateTemplateSchema.parse(body)
 
-    const template = await prisma.emailTemplate.upsert({
-      where: { type: "welcome" },
-      update: {
-        enabled,
-        subject,
-        html: html || "",
-        templateId: templateId ?? undefined,
-      },
-      create: {
-        type: "welcome",
-        enabled,
-        subject,
-        html: html || "",
-        templateId: templateId ?? undefined,
-      },
+    const template = await upsertEmailTemplate("welcome", {
+      enabled,
+      subject,
+      html: html || "",
+      templateId: templateId ?? undefined,
     })
 
     return NextResponse.json(template)

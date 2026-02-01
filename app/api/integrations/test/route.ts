@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findApiKeyByService, updateApiKey, upsertApiKey } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { GoogleGenerativeAI } from "@google/generative-ai"
@@ -56,7 +56,7 @@ async function handleTestRequest(request: NextRequest) {
       )
     }
 
-    const apiKey = await prisma.apiKey.findUnique({ where: { service } })
+    const apiKey = await findApiKeyByService(service)
     const usingProvidedKey = !!providedKey
 
     if (!apiKey || !apiKey.key) {
@@ -74,10 +74,7 @@ async function handleTestRequest(request: NextRequest) {
     if (!providedKey && apiKey?.key) {
       const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
       if (needsRotation) {
-        await prisma.apiKey.update({
-          where: { id: apiKey.id },
-          data: { key: encrypt(plaintext) },
-        })
+        await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
       }
       decryptedKey = plaintext
     }
@@ -114,10 +111,7 @@ async function handleTestRequest(request: NextRequest) {
       }
 
       if (success && apiKey?.id && !usingProvidedKey) {
-        await prisma.apiKey.update({
-          where: { service },
-          data: { status: "connected" },
-        })
+        await upsertApiKey(service, { status: "connected" })
       }
 
       if (success) {
@@ -132,10 +126,7 @@ async function handleTestRequest(request: NextRequest) {
       return NextResponse.json({ success })
     } catch (error) {
       if (apiKey?.id && !usingProvidedKey) {
-        await prisma.apiKey.update({
-          where: { service },
-          data: { status: "disconnected" },
-        })
+        await upsertApiKey(service, { status: "disconnected" })
       }
       await logNewsActivity({
         event: "integrations.test.error",

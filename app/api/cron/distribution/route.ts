@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { findActiveSequences } from "@/lib/dal"
 import { runDistribution } from "@/lib/distribution"
 import { logNewsActivity } from "@/lib/news-activity"
 
@@ -23,9 +23,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get all active sequences
-    const sequences = await prisma.sequence.findMany({
-      where: { status: "active" },
-    })
+    const sequences = await findActiveSequences()
 
     await logNewsActivity({
       event: "distribution_cron_sequences_found",

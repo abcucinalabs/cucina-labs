@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { upsertSequencePromptConfig } from "@/lib/dal"
 import {
   defaultSequenceSystemPrompt,
   defaultSequenceUserPrompt,
@@ -16,26 +16,11 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const existing = await prisma.sequencePromptConfig.findFirst()
-
-    if (existing) {
-      const updated = await prisma.sequencePromptConfig.update({
-        where: { id: existing.id },
-        data: {
-          systemPrompt: defaultSequenceSystemPrompt,
-          userPrompt: defaultSequenceUserPrompt,
-        },
-      })
-      return NextResponse.json(updated)
-    } else {
-      const created = await prisma.sequencePromptConfig.create({
-        data: {
-          systemPrompt: defaultSequenceSystemPrompt,
-          userPrompt: defaultSequenceUserPrompt,
-        },
-      })
-      return NextResponse.json(created, { status: 201 })
-    }
+    const result = await upsertSequencePromptConfig({
+      systemPrompt: defaultSequenceSystemPrompt,
+      userPrompt: defaultSequenceUserPrompt,
+    })
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Failed to reset prompt config:", error)
     return NextResponse.json(

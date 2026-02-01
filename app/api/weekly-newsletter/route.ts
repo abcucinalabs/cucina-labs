@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findWeeklyNewsletterByWeekRange,
+  createWeeklyNewsletter,
+  findWeeklyNewslettersByStatus,
+  findAllWeeklyNewsletters,
+  findSavedContentByIds,
+} from "@/lib/dal"
 import { startOfWeek, endOfWeek, addDays } from "date-fns"
 
 // GET - List all weekly newsletters or get current week's
@@ -15,45 +21,29 @@ export async function GET(request: Request) {
       const weekStart = startOfWeek(today, { weekStartsOn: 1 }) // Monday
       const weekEnd = endOfWeek(today, { weekStartsOn: 1 }) // Sunday
 
-      let newsletter = await prisma.weeklyNewsletter.findFirst({
-        where: {
-          weekStart: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-      })
+      let newsletter = await findWeeklyNewsletterByWeekRange(weekStart, weekEnd)
 
       // Create if doesn't exist
       if (!newsletter) {
-        newsletter = await prisma.weeklyNewsletter.create({
-          data: {
-            weekStart,
-            weekEnd,
-            status: "draft",
-          },
+        newsletter = await createWeeklyNewsletter({
+          weekStart,
+          weekEnd,
+          status: "draft",
         })
       }
 
       // Fetch associated saved content (recipes)
       const recipes = newsletter.recipeIds.length > 0
-        ? await prisma.savedContent.findMany({
-            where: { id: { in: newsletter.recipeIds } },
-          })
+        ? await findSavedContentByIds(newsletter.recipeIds)
         : []
 
       return NextResponse.json({ ...newsletter, recipes })
     }
 
     // List all newsletters
-    const where: any = {}
-    if (status) where.status = status
-
-    const newsletters = await prisma.weeklyNewsletter.findMany({
-      where,
-      orderBy: { weekStart: "desc" },
-      take: 20,
-    })
+    const newsletters = status
+      ? await findWeeklyNewslettersByStatus(status)
+      : await findAllWeeklyNewsletters()
 
     return NextResponse.json(newsletters)
   } catch (error) {
@@ -77,14 +67,10 @@ export async function POST(request: Request) {
     const weekEnd = addDays(weekStart, 6)
 
     // Check if newsletter already exists for this week
-    const existing = await prisma.weeklyNewsletter.findFirst({
-      where: {
-        weekStart: {
-          gte: startOfWeek(weekStart, { weekStartsOn: 1 }),
-          lte: endOfWeek(weekStart, { weekStartsOn: 1 }),
-        },
-      },
-    })
+    const existing = await findWeeklyNewsletterByWeekRange(
+      startOfWeek(weekStart, { weekStartsOn: 1 }),
+      endOfWeek(weekStart, { weekStartsOn: 1 })
+    )
 
     if (existing) {
       return NextResponse.json(
@@ -93,12 +79,10 @@ export async function POST(request: Request) {
       )
     }
 
-    const newsletter = await prisma.weeklyNewsletter.create({
-      data: {
-        weekStart,
-        weekEnd,
-        status: "draft",
-      },
+    const newsletter = await createWeeklyNewsletter({
+      weekStart,
+      weekEnd,
+      status: "draft",
     })
 
     return NextResponse.json(newsletter, { status: 201 })

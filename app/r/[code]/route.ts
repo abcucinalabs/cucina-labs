@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { findShortLinkByCode, incrementShortLinkClicks } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
 
@@ -11,9 +11,7 @@ export async function GET(
     const { code } = params
 
     // Find the short link
-    const link = await prisma.shortLink.findUnique({
-      where: { shortCode: code },
-    })
+    const link = await findShortLinkByCode(code)
 
     if (!link) {
       // Redirect to homepage if link not found
@@ -21,14 +19,7 @@ export async function GET(
     }
 
     // Track click asynchronously (don't block redirect)
-    prisma.shortLink
-      .update({
-        where: { id: link.id },
-        data: {
-          clicks: { increment: 1 },
-          updatedAt: new Date(),
-        },
-      })
+    incrementShortLinkClicks(link.id)
       .catch((err) => console.error('Click tracking error:', err))
 
     // Redirect to target URL

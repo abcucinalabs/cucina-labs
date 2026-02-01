@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { findSubscriberByEmail, updateSubscriberByEmail, findApiKeyByService, updateApiKey } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { Resend } from "resend"
 import crypto from "crypto"
@@ -50,9 +50,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid or expired link" }, { status: 403 })
     }
 
-    const subscriber = await prisma.subscriber.findUnique({
-      where: { email: parsed.email.trim().toLowerCase() },
-    })
+    const subscriber = await findSubscriberByEmail(parsed.email.trim().toLowerCase())
 
     if (!subscriber) {
       return NextResponse.json({ error: "Subscriber not found" }, { status: 404 })
@@ -87,24 +85,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update local database
-    await prisma.subscriber.update({
-      where: { email: normalizedEmail },
-      data: { dailyEnabled, weeklyEnabled },
-    })
+    await updateSubscriberByEmail(normalizedEmail, { dailyEnabled, weeklyEnabled })
 
     // Update Resend audiences if configured
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     if (resendConfig?.key) {
       try {
         const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
         if (needsRotation) {
-          await prisma.apiKey.update({
-            where: { id: resendConfig.id },
-            data: { key: encrypt(plaintext) },
-          })
+          await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
         }
         const resend = new Resend(plaintext)
 

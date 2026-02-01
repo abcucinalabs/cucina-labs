@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { upsertEmailEvent } from "@/lib/dal"
 import { verifyResendSignature } from "@/lib/resend-webhook"
 
 export const dynamic = "force-dynamic"
@@ -54,21 +54,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (eventId) {
-      await prisma.emailEvent.upsert({
-        where: { eventId: String(eventId) },
-        update: {
-          eventType: eventData.eventType,
-          emailId: eventData.emailId,
-          broadcastId: eventData.broadcastId,
-          recipient: eventData.recipient,
-          subject: eventData.subject,
-          clickUrl: eventData.clickUrl,
-          payload: eventData.payload,
-        },
-        create: eventData,
-      })
+      await upsertEmailEvent(String(eventId), eventData)
     } else {
-      await prisma.emailEvent.create({ data: eventData })
+      await upsertEmailEvent(null, eventData)
     }
 
     return NextResponse.json({ success: true })

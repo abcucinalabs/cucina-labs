@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findWeeklyNewsletterById,
+  updateWeeklyNewsletter,
+  findApiKeyByService,
+  updateApiKey,
+  findSavedContentByIds,
+  updateSavedContentByIds,
+} from "@/lib/dal"
 import { Resend } from "resend"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { renderWeeklyNewsletter, buildWeeklyNewsletterContext } from "@/lib/weekly-newsletter-template"
@@ -14,9 +21,7 @@ export async function POST(
     const body = await request.json()
     const { testEmail, origin } = body
 
-    const newsletter = await prisma.weeklyNewsletter.findUnique({
-      where: { id },
-    })
+    const newsletter = await findWeeklyNewsletterById(id)
 
     if (!newsletter) {
       return NextResponse.json(
@@ -26,9 +31,7 @@ export async function POST(
     }
 
     // Get Resend config
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     if (!resendConfig || !resendConfig.key) {
       return NextResponse.json(
@@ -39,19 +42,14 @@ export async function POST(
 
     const { plaintext: apiKey, needsRotation } = decryptWithMetadata(resendConfig.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: resendConfig.id },
-        data: { key: encrypt(apiKey) },
-      })
+      await updateApiKey(resendConfig.id, { key: encrypt(apiKey) })
     }
 
     const resend = new Resend(apiKey)
 
     // Get saved recipes
     const recipes = newsletter.recipeIds.length > 0
-      ? await prisma.savedContent.findMany({
-          where: { id: { in: newsletter.recipeIds } },
-        })
+      ? await findSavedContentByIds(newsletter.recipeIds)
       : []
 
     // Build context and render
@@ -63,7 +61,7 @@ export async function POST(
         newsItems: newsletter.newsItems as any[] | null,
         cookingItems: newsletter.cookingItems as any[] | null,
       },
-      recipes.map((r) => ({
+      recipes.map((r: any) => ({
         title: r.title,
         url: r.url,
         description: r.description,
@@ -128,20 +126,14 @@ export async function POST(
     const result = await resend.broadcasts.send(broadcastResponse.data.id)
 
     // Update newsletter status
-    await prisma.weeklyNewsletter.update({
-      where: { id },
-      data: {
-        status: "sent",
-        sentAt: new Date(),
-      },
+    await updateWeeklyNewsletter(id, {
+      status: "sent",
+      sentAt: new Date(),
     })
 
     // Mark recipes as used
     if (newsletter.recipeIds.length > 0) {
-      await prisma.savedContent.updateMany({
-        where: { id: { in: newsletter.recipeIds } },
-        data: { used: true, usedInId: id },
-      })
+      await updateSavedContentByIds(newsletter.recipeIds, { used: true, usedInId: id })
     }
 
     return NextResponse.json({

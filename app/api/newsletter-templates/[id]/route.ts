@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findNewsletterTemplateById, updateNewsletterTemplate, deleteNewsletterTemplate, clearDefaultNewsletterTemplates, countSequencesByTemplateId } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
 
@@ -15,9 +15,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.newsletterTemplate.findUnique({
-      where: { id: params.id },
-    })
+    const template = await findNewsletterTemplateById(params.id)
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
@@ -54,10 +52,7 @@ export async function PUT(
     }
 
     if (isDefault === true) {
-      await prisma.newsletterTemplate.updateMany({
-        where: { isDefault: true, id: { not: params.id } },
-        data: { isDefault: false }
-      })
+      await clearDefaultNewsletterTemplates(params.id)
     }
 
     const data: {
@@ -80,10 +75,7 @@ export async function PUT(
       data.includeFooter = includeFooter
     }
 
-    const template = await prisma.newsletterTemplate.update({
-      where: { id: params.id },
-      data,
-    })
+    const template = await updateNewsletterTemplate(params.id, data)
 
     return NextResponse.json(template)
   } catch (error) {
@@ -105,9 +97,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.newsletterTemplate.findUnique({
-      where: { id: params.id },
-    })
+    const template = await findNewsletterTemplateById(params.id)
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
@@ -120,9 +110,7 @@ export async function DELETE(
       )
     }
 
-    const usageCount = await prisma.sequence.count({
-      where: { templateId: params.id },
-    })
+    const usageCount = await countSequencesByTemplateId(params.id)
 
     if (usageCount > 0) {
       return NextResponse.json(
@@ -135,9 +123,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.newsletterTemplate.delete({
-      where: { id: params.id },
-    })
+    await deleteNewsletterTemplate(params.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { findApiKeyByService, updateApiKey, updateSubscribersByEmail } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { Resend } from "resend"
 import crypto from "crypto"
@@ -67,9 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get Resend API key from database
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     let unsubscribedInResend = false
 
@@ -77,10 +75,7 @@ export async function POST(request: NextRequest) {
       try {
         const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
         if (needsRotation) {
-          await prisma.apiKey.update({
-            where: { id: resendConfig.id },
-            data: { key: encrypt(plaintext) },
-          })
+          await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
         }
         const resendApiKey = plaintext
         const resend = new Resend(resendApiKey)
@@ -134,10 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update local database status
-    await prisma.subscriber.updateMany({
-      where: { email },
-      data: { status: "unsubscribed" },
-    })
+    await updateSubscribersByEmail(email, { status: "unsubscribed" })
 
     return NextResponse.json({
       success: true,

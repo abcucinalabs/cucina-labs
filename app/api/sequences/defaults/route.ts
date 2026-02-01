@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findSequencePromptConfig } from "@/lib/dal"
 import {
   defaultSequenceSystemPrompt,
   defaultSequenceUserPrompt,
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Try DB first, fall back to hardcoded defaults
     let config: { systemPrompt?: string; userPrompt?: string } | null = null
     try {
-      config = await prisma.sequencePromptConfig.findFirst()
+      config = await findSequencePromptConfig()
     } catch {
       // Table may not exist yet if migration hasn't run
     }

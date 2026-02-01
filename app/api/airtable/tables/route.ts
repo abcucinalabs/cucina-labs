@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findApiKeyByService, updateApiKey } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 
 export async function POST(request: Request) {
@@ -14,19 +14,16 @@ export async function POST(request: Request) {
     const { apiKey, baseId } = await request.json()
 
     let keyToUse = apiKey
-    
+
     // If using stored key, fetch from database
     if (apiKey === "USE_STORED_KEY") {
-      const stored = await prisma.apiKey.findUnique({ where: { service: "airtable" } })
+      const stored = await findApiKeyByService("airtable")
       if (!stored?.key) {
         return NextResponse.json({ error: "No stored API key found" }, { status: 400 })
       }
       const { plaintext, needsRotation } = decryptWithMetadata(stored.key)
       if (needsRotation) {
-        await prisma.apiKey.update({
-          where: { id: stored.id },
-          data: { key: encrypt(plaintext) },
-        })
+        await updateApiKey(stored.id, { key: encrypt(plaintext) })
       }
       keyToUse = plaintext
     }

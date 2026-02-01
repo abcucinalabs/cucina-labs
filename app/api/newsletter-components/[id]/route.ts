@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import { Prisma } from "@prisma/client"
+import {
+  findNewsletterComponentById,
+  updateNewsletterComponent,
+  deleteNewsletterComponent,
+} from "@/lib/dal"
 import { z } from "zod"
 
 const updateComponentSchema = z.object({
@@ -29,12 +32,7 @@ export async function GET(
 
     const { id } = await params
 
-    const component = await prisma.newsletterComponent.findUnique({
-      where: { id },
-      include: {
-        dataSource: true,
-      },
-    })
+    const component = await findNewsletterComponentById(id)
 
     if (!component) {
       return NextResponse.json(
@@ -67,28 +65,7 @@ export async function PUT(
     const body = await request.json()
     const validatedData = updateComponentSchema.parse(body)
 
-    // Transform the data for Prisma - handle null values properly
-    const updateData: Prisma.NewsletterComponentUpdateInput = {
-      ...validatedData,
-      displayOptions: validatedData.displayOptions === null
-        ? Prisma.DbNull
-        : validatedData.displayOptions,
-      dataSource: validatedData.dataSourceId === null
-        ? { disconnect: true }
-        : validatedData.dataSourceId
-          ? { connect: { id: validatedData.dataSourceId } }
-          : undefined,
-    }
-    // Remove dataSourceId from updateData as we're using the relation instead
-    delete (updateData as any).dataSourceId
-
-    const component = await prisma.newsletterComponent.update({
-      where: { id },
-      data: updateData,
-      include: {
-        dataSource: true,
-      },
-    })
+    const component = await updateNewsletterComponent(id, validatedData)
 
     return NextResponse.json(component)
   } catch (error) {
@@ -119,9 +96,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    await prisma.newsletterComponent.delete({
-      where: { id },
-    })
+    await deleteNewsletterComponent(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

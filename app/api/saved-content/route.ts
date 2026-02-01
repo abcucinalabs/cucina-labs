@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findSavedContent,
+  createSavedContent,
+  updateSavedContent,
+  deleteSavedContent,
+} from "@/lib/dal"
 
 // GET - List all saved content
 export async function GET(request: Request) {
@@ -8,14 +13,11 @@ export async function GET(request: Request) {
     const type = searchParams.get("type") // "recipe" or "cooking"
     const used = searchParams.get("used") // "true" or "false"
 
-    const where: any = {}
-    if (type) where.type = type
-    if (used !== null) where.used = used === "true"
+    const filters: any = {}
+    if (type) filters.type = type
+    if (used !== null) filters.used = used === "true"
 
-    const content = await prisma.savedContent.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    })
+    const content = await findSavedContent(filters)
 
     return NextResponse.json(content)
   } catch (error) {
@@ -47,16 +49,14 @@ export async function POST(request: Request) {
       )
     }
 
-    const savedContent = await prisma.savedContent.create({
-      data: {
-        type,
-        title,
-        url: url || null,
-        description: description || null,
-        imageUrl: imageUrl || null,
-        source: source || null,
-        notes: notes || null,
-      },
+    const savedContent = await createSavedContent({
+      type,
+      title,
+      url: url || null,
+      description: description || null,
+      imageUrl: imageUrl || null,
+      source: source || null,
+      notes: notes || null,
     })
 
     return NextResponse.json(savedContent, { status: 201 })
@@ -82,10 +82,7 @@ export async function PATCH(request: Request) {
       )
     }
 
-    const savedContent = await prisma.savedContent.update({
-      where: { id },
-      data: updates,
-    })
+    const savedContent = await updateSavedContent(id, updates)
 
     return NextResponse.json(savedContent)
   } catch (error) {
@@ -110,9 +107,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    await prisma.savedContent.delete({
-      where: { id },
-    })
+    await deleteSavedContent(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

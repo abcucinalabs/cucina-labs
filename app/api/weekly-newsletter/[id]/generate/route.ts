@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findWeeklyNewsletterById,
+  updateWeeklyNewsletter,
+  findApiKeyByService,
+  updateApiKey,
+  findSavedContentByIds,
+} from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -14,9 +20,7 @@ export async function POST(
     const { customPrompt } = body
 
     // Get newsletter
-    const newsletter = await prisma.weeklyNewsletter.findUnique({
-      where: { id },
-    })
+    const newsletter = await findWeeklyNewsletterById(id)
 
     if (!newsletter) {
       return NextResponse.json(
@@ -26,9 +30,7 @@ export async function POST(
     }
 
     // Get Gemini config
-    const geminiConfig = await prisma.apiKey.findUnique({
-      where: { service: "gemini" },
-    })
+    const geminiConfig = await findApiKeyByService("gemini")
 
     if (!geminiConfig || !geminiConfig.key) {
       return NextResponse.json(
@@ -39,17 +41,12 @@ export async function POST(
 
     const { plaintext: apiKey, needsRotation } = decryptWithMetadata(geminiConfig.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: geminiConfig.id },
-        data: { key: encrypt(apiKey) },
-      })
+      await updateApiKey(geminiConfig.id, { key: encrypt(apiKey) })
     }
 
     // Get saved recipes for context
     const recipes = newsletter.recipeIds.length > 0
-      ? await prisma.savedContent.findMany({
-          where: { id: { in: newsletter.recipeIds } },
-        })
+      ? await findSavedContentByIds(newsletter.recipeIds)
       : []
 
     // Build context for AI
@@ -64,7 +61,7 @@ export async function POST(
       .join('\n')
 
     const recipesContext = recipes
-      .map((r) => `- ${r.title}: ${r.description || ''}`)
+      .map((r: any) => `- ${r.title}: ${r.description || ''}`)
       .join('\n')
 
     const cookingContext = (newsletter.cookingItems as any[] || [])
@@ -111,13 +108,10 @@ Write a brief, engaging intro that gives readers a taste of what's coming. Don't
     }
 
     // Update newsletter
-    const updated = await prisma.weeklyNewsletter.update({
-      where: { id },
-      data: {
-        chefsTableTitle: chefsTable.title,
-        chefsTableBody: chefsTable.body,
-        generatedAt: new Date(),
-      },
+    const updated = await updateWeeklyNewsletter(id, {
+      chefsTableTitle: chefsTable.title,
+      chefsTableBody: chefsTable.body,
+      generatedAt: new Date(),
     })
 
     return NextResponse.json({

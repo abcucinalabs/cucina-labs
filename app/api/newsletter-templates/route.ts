@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findAllNewsletterTemplates, createNewsletterTemplate, clearDefaultNewsletterTemplates, getSequenceCountsByTemplateId } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
 
@@ -13,35 +13,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const templates = await prisma.newsletterTemplate.findMany({
-      orderBy: [
-        { isDefault: 'desc' },
-        { createdAt: 'desc' }
-      ]
-    })
+    const templates = await findAllNewsletterTemplates()
 
-    const usage = await prisma.sequence.groupBy({
-      by: ["templateId"],
-      _count: { _all: true },
-      _max: { lastSent: true },
-      where: { templateId: { not: null } }
-    })
+    const usageCounts = await getSequenceCountsByTemplateId()
 
-    const usageMap = new Map(
-      usage
-        .filter((item) => item.templateId)
-        .map((item) => [
-          item.templateId as string,
-          { count: item._count._all, lastSent: item._max.lastSent }
-        ])
-    )
-
-    const templatesWithUsage = templates.map((template) => {
-      const usageInfo = usageMap.get(template.id)
+    const templatesWithUsage = templates.map((template: any) => {
       return {
         ...template,
-        usageCount: usageInfo?.count ?? 0,
-        lastUsedAt: usageInfo?.lastSent ?? null,
+        usageCount: usageCounts[template.id] ?? 0,
+        lastUsedAt: null,
       }
     })
 
@@ -80,20 +60,15 @@ export async function POST(request: NextRequest) {
     // If this template is set as default, unset all other defaults
     if (isDefault) {
       console.log("Unsetting other default templates")
-      await prisma.newsletterTemplate.updateMany({
-        where: { isDefault: true },
-        data: { isDefault: false }
-      })
+      await clearDefaultNewsletterTemplates()
     }
 
-    const template = await prisma.newsletterTemplate.create({
-      data: {
-        name,
-        description: description?.trim() || null,
-        html,
-        isDefault: isDefault || false,
-        includeFooter: includeFooter !== undefined ? includeFooter : true,
-      }
+    const template = await createNewsletterTemplate({
+      name,
+      description: description?.trim() || null,
+      html,
+      isDefault: isDefault || false,
+      includeFooter: includeFooter !== undefined ? includeFooter : true,
     })
 
     console.log("Template created successfully:", { id: template.id, name: template.name })

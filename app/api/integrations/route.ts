@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import { encrypt, decrypt } from "@/lib/encryption"
+import { findAllApiKeys, findApiKeyByService, upsertApiKey } from "@/lib/dal"
+import { encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKeys = await prisma.apiKey.findMany()
+    const apiKeys = await findAllApiKeys()
 
     const result: Record<string, any> = {}
     for (const key of apiKeys) {
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
     const services = ["gemini", "airtable", "resend"]
     for (const service of services) {
       if (!result[service]) {
-        result[service] = { 
-          status: "disconnected", 
+        result[service] = {
+          status: "disconnected",
           hasKey: false,
           geminiModel: service === "gemini" ? "gemini-2.0-flash-exp" : undefined,
           resendFromName: service === "resend" ? 'Adrian & Jimmy from "AI Product Briefing"' : undefined,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     // Build update data
     const updateData: any = { ...configFields }
-    
+
     // Only update the key if one is provided
     if (key) {
       updateData.key = encrypt(key)
@@ -95,13 +95,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if we're updating an existing record or creating new
-    const existing = await prisma.apiKey.findUnique({ where: { service } })
-    
+    const existing = await findApiKeyByService(service)
+
     if (existing) {
-      await prisma.apiKey.update({
-        where: { service },
-        data: updateData,
-      })
+      await upsertApiKey(service, updateData)
     } else {
       // If creating new, a key is required
       if (!key) {
@@ -110,13 +107,10 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      await prisma.apiKey.create({
-        data: {
-          service,
-          key: encrypt(key),
-          status: "connected",
-          ...configFields,
-        },
+      await upsertApiKey(service, {
+        key: encrypt(key),
+        status: "connected",
+        ...configFields,
       })
     }
 

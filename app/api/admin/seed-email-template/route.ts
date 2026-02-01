@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { upsertEmailTemplate } from "@/lib/dal"
 
 const welcomeEmailHtml = `<!DOCTYPE html>
 <html>
@@ -127,18 +127,10 @@ export async function POST() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await prisma.emailTemplate.upsert({
-      where: { type: "welcome" },
-      update: {
-        subject: "Welcome to cucina labs!",
-        html: welcomeEmailHtml,
-      },
-      create: {
-        type: "welcome",
-        subject: "Welcome to cucina labs!",
-        html: welcomeEmailHtml,
-        enabled: true,
-      },
+    await upsertEmailTemplate("welcome", {
+      subject: "Welcome to cucina labs!",
+      html: welcomeEmailHtml,
+      enabled: true,
     })
 
     return NextResponse.json({

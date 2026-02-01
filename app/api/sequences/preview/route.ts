@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, getAllArticlesFromAirtable, getRecentArticles, wrapNewsletterWithShortLinks } from "@/lib/distribution"
-import { prisma } from "@/lib/db"
+import { findSequencePromptConfig, findApiKeyByService, countArticles } from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 import {
   defaultSequenceSystemPrompt,
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!systemPrompt || !userPrompt) {
       let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
       try {
-        globalConfig = await prisma.sequencePromptConfig.findFirst()
+        globalConfig = await findSequencePromptConfig()
       } catch {
         // Table may not exist yet if migration hasn't run
       }
@@ -38,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if Airtable is configured
-    const airtableConfig = await prisma.apiKey.findUnique({
-      where: { service: "airtable" },
-    })
+    const airtableConfig = await findApiKeyByService("airtable")
 
     console.log("Airtable config check:", {
       hasKey: !!airtableConfig?.key,
@@ -90,7 +88,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Check if there are any articles in local database
-      const totalLocalArticles = await prisma.article.count()
+      const totalLocalArticles = await countArticles()
       
       if (totalLocalArticles === 0) {
         await logNewsActivity({

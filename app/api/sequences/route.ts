@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findAllSequences, createSequence } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -27,9 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const sequences = await prisma.sequence.findMany({
-      orderBy: { createdAt: "desc" },
-    })
+    const sequences = await findAllSequences()
 
     return NextResponse.json(sequences)
   } catch (error) {
@@ -54,11 +52,9 @@ export async function POST(request: NextRequest) {
     // Generate cron expression
     const schedule = generateCronExpression(data.dayOfWeek, data.time)
 
-    const sequence = await prisma.sequence.create({
-      data: {
-        ...data,
-        schedule,
-      },
+    const sequence = await createSequence({
+      ...data,
+      schedule,
     })
 
     return NextResponse.json(sequence, { status: 201 })

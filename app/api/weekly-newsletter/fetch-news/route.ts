@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import {
+  findApiKeyByService,
+  updateApiKey,
+} from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import Airtable from "airtable"
 
@@ -14,9 +17,7 @@ export async function POST(request: Request) {
     } = body
 
     // Get Airtable config
-    const apiKeyRecord = await prisma.apiKey.findUnique({
-      where: { service: "airtable" },
-    })
+    const apiKeyRecord = await findApiKeyByService("airtable")
 
     if (!apiKeyRecord || !apiKeyRecord.key) {
       return NextResponse.json(
@@ -27,10 +28,7 @@ export async function POST(request: Request) {
 
     const { plaintext: apiKey, needsRotation } = decryptWithMetadata(apiKeyRecord.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: apiKeyRecord.id },
-        data: { key: encrypt(apiKey) },
-      })
+      await updateApiKey(apiKeyRecord.id, { key: encrypt(apiKey) })
     }
 
     // Use provided base/table or default from config
@@ -105,9 +103,7 @@ export async function POST(request: Request) {
 // GET - List available Airtable bases and tables
 export async function GET() {
   try {
-    const apiKeyRecord = await prisma.apiKey.findUnique({
-      where: { service: "airtable" },
-    })
+    const apiKeyRecord = await findApiKeyByService("airtable")
 
     if (!apiKeyRecord || !apiKeyRecord.key) {
       return NextResponse.json(

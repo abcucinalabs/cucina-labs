@@ -943,3 +943,245 @@ export async function deleteProfile(id: string) {
   const { error } = await supabaseAdmin.from("profiles").delete().eq("id", id)
   if (error) throw error
 }
+
+// ─────────────────────────────────────────────
+// Additional query helpers for API routes
+// ─────────────────────────────────────────────
+
+// Article: find by IDs
+export async function findArticlesByIds(ids: string[]) {
+  if (ids.length === 0) return []
+  const { data, error } = await supabaseAdmin
+    .from("articles")
+    .select("id, title, category, creator")
+    .in("id", ids)
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// Article: count since date
+export async function countArticlesSince(since: Date) {
+  const { count, error } = await supabaseAdmin
+    .from("articles")
+    .select("*", { count: "exact", head: true })
+    .gte("ingested_at", since.toISOString())
+  if (error) throw error
+  return count || 0
+}
+
+// ShortLink: find top clicked
+export async function findTopClickedShortLinks(limit = 8) {
+  const { data, error } = await supabaseAdmin
+    .from("short_links")
+    .select("*")
+    .gt("clicks", 0)
+    .order("clicks", { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// NewsActivity: find by event filter
+export async function findNewsActivityByEvent(event: string, limit = 8) {
+  const { data, error } = await supabaseAdmin
+    .from("news_activity")
+    .select("*")
+    .eq("event", event)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// NewsActivity: find first by event prefix
+export async function findFirstNewsActivityByEventPrefix(prefix: string) {
+  const { data } = await supabaseAdmin
+    .from("news_activity")
+    .select("*")
+    .like("event", `${prefix}%`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return data ? toCamelCase<any>(data) : null
+}
+
+// NewsActivity: find by event with date filter
+export async function findNewsActivityByEventSince(event: string, since: Date, limit = 8) {
+  const { data, error } = await supabaseAdmin
+    .from("news_activity")
+    .select("*")
+    .eq("event", event)
+    .gte("created_at", since.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// EmailEvent: group by event type since date
+export async function findEmailEventsSince(since: Date) {
+  const { data, error } = await supabaseAdmin
+    .from("email_events")
+    .select("event_type, click_url, created_at")
+    .gte("created_at", since.toISOString())
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// EmailEvent: find events in date range
+export async function findEmailEventsInRange(start: Date, end: Date) {
+  const { data, error } = await supabaseAdmin
+    .from("email_events")
+    .select("event_type, created_at")
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString())
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// EmailEvent: find events in range for previous period comparison
+export async function findEmailEventsInRangeGrouped(start: Date, end: Date) {
+  const { data, error } = await supabaseAdmin
+    .from("email_events")
+    .select("event_type")
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString())
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// Subscriber: update many by email
+export async function updateSubscribersByEmail(email: string, updates: Record<string, any>) {
+  const { error } = await supabaseAdmin
+    .from("subscribers")
+    .update(toSnakeCase(updates))
+    .eq("email", email)
+  if (error) throw error
+}
+
+// NewsletterTemplate: clear all defaults except one
+export async function clearDefaultNewsletterTemplates(exceptId?: string) {
+  let query = supabaseAdmin
+    .from("newsletter_templates")
+    .update({ is_default: false })
+    .eq("is_default", true)
+  if (exceptId) query = query.neq("id", exceptId)
+  const { error } = await query
+  if (error) throw error
+}
+
+// Sequence: count by template ID
+export async function countSequencesByTemplateId(templateId: string) {
+  const { count, error } = await supabaseAdmin
+    .from("sequences")
+    .select("*", { count: "exact", head: true })
+    .eq("template_id", templateId)
+  if (error) throw error
+  return count || 0
+}
+
+// Sequence: group by template ID (returns counts per template)
+export async function getSequenceCountsByTemplateId() {
+  const { data, error } = await supabaseAdmin
+    .from("sequences")
+    .select("template_id")
+  if (error) throw error
+  const counts: Record<string, number> = {}
+  for (const row of data || []) {
+    const tid = row.template_id
+    if (tid) counts[tid] = (counts[tid] || 0) + 1
+  }
+  return counts
+}
+
+// Sequence: find first active ordered by last_sent desc
+export async function findLatestActiveSequence() {
+  const { data } = await supabaseAdmin
+    .from("sequences")
+    .select("*")
+    .eq("status", "active")
+    .order("last_sent", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle()
+  return data ? toCamelCase<any>(data) : null
+}
+
+// Sequence: update many by filter
+export async function updateSequencesByFilter(
+  filter: Record<string, any>,
+  updates: Record<string, any>
+) {
+  let query = supabaseAdmin.from("sequences").update(toSnakeCase(updates))
+  for (const [key, value] of Object.entries(filter)) {
+    query = query.eq(key, value)
+  }
+  const { error } = await query
+  if (error) throw error
+}
+
+// EmailTemplate: find by type with joined newsletter template
+export async function findEmailTemplateWithNewsletterTemplate(type: string) {
+  const { data } = await supabaseAdmin
+    .from("email_templates")
+    .select("*, newsletter_templates(*)")
+    .eq("type", type)
+    .maybeSingle()
+  if (!data) return null
+  const result = toCamelCase<any>(data)
+  if (data.newsletter_templates) {
+    result.template = toCamelCase(data.newsletter_templates)
+  }
+  return result
+}
+
+// SavedContent: update many by IDs
+export async function updateSavedContentByIds(ids: string[], updates: Record<string, any>) {
+  if (ids.length === 0) return
+  const { error } = await supabaseAdmin
+    .from("saved_content")
+    .update(toSnakeCase(updates))
+    .in("id", ids)
+  if (error) throw error
+}
+
+// SavedContent: reset used status by usedInId
+export async function resetSavedContentByUsedInId(usedInId: string) {
+  const { error } = await supabaseAdmin
+    .from("saved_content")
+    .update({ used: false, used_in_id: null })
+    .eq("used_in_id", usedInId)
+  if (error) throw error
+}
+
+// WeeklyNewsletter: find by week range
+export async function findWeeklyNewsletterByWeekRange(start: Date, end: Date) {
+  const { data } = await supabaseAdmin
+    .from("weekly_newsletters")
+    .select("*")
+    .gte("week_start", start.toISOString())
+    .lt("week_start", end.toISOString())
+    .limit(1)
+    .maybeSingle()
+  return data ? toCamelCase<any>(data) : null
+}
+
+// WeeklyNewsletter: find with status filter
+export async function findWeeklyNewslettersByStatus(status?: string) {
+  let query = supabaseAdmin
+    .from("weekly_newsletters")
+    .select("*")
+    .order("week_start", { ascending: false })
+  if (status) query = query.eq("status", status)
+  const { data, error } = await query
+  if (error) throw error
+  return toCamelCaseArray<any>(data || [])
+}
+
+// ShortLink: increment clicks and return link
+export async function findShortLinkByCodeAndIncrement(shortCode: string) {
+  const link = await findShortLinkByCode(shortCode)
+  if (link) {
+    await incrementShortLinkClicks(link.id)
+  }
+  return link
+}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { findSequencePromptConfig, upsertSequencePromptConfig } from "@/lib/dal"
 import {
   defaultSequenceSystemPrompt,
   defaultSequenceUserPrompt,
@@ -18,7 +18,7 @@ export async function GET() {
 
     let config: { systemPrompt?: string; userPrompt?: string } | null = null
     try {
-      config = await prisma.sequencePromptConfig.findFirst()
+      config = await findSequencePromptConfig()
     } catch {
       // Table may not exist yet if migration hasn't run
     }
@@ -54,26 +54,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const existing = await prisma.sequencePromptConfig.findFirst()
-
-    if (existing) {
-      const updated = await prisma.sequencePromptConfig.update({
-        where: { id: existing.id },
-        data: {
-          ...(systemPrompt !== undefined && { systemPrompt }),
-          ...(userPrompt !== undefined && { userPrompt }),
-        },
-      })
-      return NextResponse.json(updated)
-    } else {
-      const created = await prisma.sequencePromptConfig.create({
-        data: {
-          systemPrompt: systemPrompt || defaultSequenceSystemPrompt,
-          userPrompt: userPrompt || defaultSequenceUserPrompt,
-        },
-      })
-      return NextResponse.json(created, { status: 201 })
-    }
+    const result = await upsertSequencePromptConfig({
+      ...(systemPrompt !== undefined && { systemPrompt }),
+      ...(userPrompt !== undefined && { userPrompt }),
+    })
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Failed to update prompt config:", error)
     return NextResponse.json(

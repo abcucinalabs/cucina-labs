@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import { Prisma } from "@prisma/client"
+import {
+  findDataSourceById,
+  updateDataSource,
+  deleteDataSource,
+} from "@/lib/dal"
 import { z } from "zod"
 
 const updateDataSourceSchema = z.object({
@@ -28,9 +31,7 @@ export async function GET(
 
     const { id } = await params
 
-    const dataSource = await prisma.dataSource.findUnique({
-      where: { id },
-    })
+    const dataSource = await findDataSourceById(id)
 
     if (!dataSource) {
       return NextResponse.json(
@@ -63,18 +64,7 @@ export async function PUT(
     const body = await request.json()
     const validatedData = updateDataSourceSchema.parse(body)
 
-    // Transform the data for Prisma - handle null JSON values properly
-    const updateData: Prisma.DataSourceUpdateInput = {
-      ...validatedData,
-      fieldMapping: validatedData.fieldMapping === null
-        ? Prisma.DbNull
-        : validatedData.fieldMapping,
-    }
-
-    const dataSource = await prisma.dataSource.update({
-      where: { id },
-      data: updateData,
-    })
+    const dataSource = await updateDataSource(id, validatedData)
 
     return NextResponse.json(dataSource)
   } catch (error) {
@@ -105,9 +95,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    await prisma.dataSource.delete({
-      where: { id },
-    })
+    await deleteDataSource(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, generatePlainText, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
 import { buildNewsletterTemplateContext, renderNewsletterTemplate } from "@/lib/newsletter-template"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
-import { prisma } from "@/lib/db"
+import { findSequencePromptConfig, findApiKeyByService, updateApiKey } from "@/lib/dal"
 import { Resend } from "resend"
 import { z } from "zod"
 import {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (!systemPrompt || !userPrompt) {
       let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
       try {
-        globalConfig = await prisma.sequencePromptConfig.findFirst()
+        globalConfig = await findSequencePromptConfig()
       } catch {
         // Table may not exist yet if migration hasn't run
       }
@@ -52,9 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check Airtable config
-    const airtableConfig = await prisma.apiKey.findUnique({
-      where: { service: "airtable" },
-    })
+    const airtableConfig = await findApiKeyByService("airtable")
 
     let articles: any[] = []
 
@@ -106,9 +104,7 @@ export async function POST(request: NextRequest) {
     const plainText = generatePlainText(content)
 
     // Get Resend API key
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     if (!resendConfig || !resendConfig.key) {
       return NextResponse.json(
@@ -119,10 +115,7 @@ export async function POST(request: NextRequest) {
 
     const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: resendConfig.id },
-        data: { key: encrypt(plaintext) },
-      })
+      await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
     }
     const resend = new Resend(plaintext)
 
