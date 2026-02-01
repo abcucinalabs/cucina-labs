@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthSession } from "@/lib/auth"
 import { findAllNewsletterTemplates, createNewsletterTemplate, clearDefaultNewsletterTemplates, getSequenceCountsByTemplateId } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
@@ -8,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // GET - List all newsletter templates
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 // POST - Create a new newsletter template
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       console.error("Template creation failed: No session found")
       return NextResponse.json({ error: "Unauthorized - Please log in again" }, { status: 401 })

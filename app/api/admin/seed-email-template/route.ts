@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthSession } from "@/lib/auth"
 import { upsertEmailTemplate } from "@/lib/dal"
 
 const welcomeEmailHtml = `<!DOCTYPE html>
@@ -122,7 +121,7 @@ const welcomeEmailHtml = `<!DOCTYPE html>
 // Call it once after deployment to update the subject line
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

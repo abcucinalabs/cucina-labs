@@ -22,7 +22,7 @@ export async function createShortLink(
   )
 
   if (existing) {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://cucinalabs.com'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://cucinalabs.com'
     return `${baseUrl}/r/${existing.shortCode}`
   }
 
@@ -51,7 +51,7 @@ export async function createShortLink(
     sequenceId,
   })
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://cucinalabs.com'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://cucinalabs.com'
   return `${baseUrl}/r/${link.shortCode}`
 }
 

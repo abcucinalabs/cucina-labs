@@ -25,8 +25,7 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase()
 
     if (token) {
-      // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
-      const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+      const secret = process.env.UNSUBSCRIBE_SECRET || ""
 
       // Verify token with expiration check
       let expectedToken: string

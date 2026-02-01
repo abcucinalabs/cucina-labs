@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthSession } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, generatePlainText, getAllArticlesFromAirtable, getRecentArticles } from "@/lib/distribution"
 import { buildNewsletterTemplateContext, renderNewsletterTemplate } from "@/lib/newsletter-template"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
@@ -24,7 +23,7 @@ const testSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest) {
       { contentSources: parsed.contentSources || [] }
     )
 
-    const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXTAUTH_URL || ""
+    const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXT_PUBLIC_BASE_URL || ""
 
     // Generate email HTML and plain text
     let html = generateEmailHtml(content, { articles, origin })

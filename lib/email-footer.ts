@@ -37,11 +37,11 @@ export function generateEmailFooter(options: FooterOptions): string {
     const normalizedEmail = email.trim().toLowerCase()
     const expirationDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
     const timestamp = Math.floor(expirationDate.getTime() / 1000)
-    const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+    const secret = process.env.UNSUBSCRIBE_SECRET || ""
     const payload = `${normalizedEmail}:${timestamp}`
     const token = crypto.createHmac("sha256", secret).update(payload).digest("hex")
 
-    const baseUrl = origin || process.env.NEXTAUTH_URL || ""
+    const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || ""
     const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}&exp=${timestamp}`
 
     const preferencesUrl = `${baseUrl}/preferences?email=${encodeURIComponent(email)}&token=${token}&exp=${timestamp}`

@@ -1,11 +1,5 @@
-import { withAuth, type NextRequestWithAuth } from "next-auth/middleware"
-import { NextFetchEvent, NextRequest, NextResponse } from "next/server"
-
-const authMiddleware = withAuth({
-  pages: {
-    signIn: "/login",
-  },
-})
+import { createServerClient } from "@supabase/ssr"
+import { NextRequest, NextResponse } from "next/server"
 
 const READONLY_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
 const READONLY_API_PREFIXES = [
@@ -25,7 +19,7 @@ const isMobileUserAgent = (userAgent: string | null) => {
   return /iphone|ipad|ipod|android|mobile/i.test(userAgent)
 }
 
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (
@@ -42,8 +36,48 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
     )
   }
 
+  // Only check auth for admin pages and /save
   if (pathname.startsWith("/admin") || pathname.startsWith("/save")) {
-    return authMiddleware(request as NextRequestWithAuth, event)
+    let response = NextResponse.next({
+      request: { headers: request.headers },
+    })
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return request.cookies.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            request.cookies.set({ name, value, ...options })
+            response = NextResponse.next({
+              request: { headers: request.headers },
+            })
+            response.cookies.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            request.cookies.set({ name, value: "", ...options })
+            response = NextResponse.next({
+              request: { headers: request.headers },
+            })
+            response.cookies.set({ name, value: "", ...options })
+          },
+        },
+      }
+    )
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      const loginUrl = new URL("/login", request.url)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    return response
   }
 
   return NextResponse.next()

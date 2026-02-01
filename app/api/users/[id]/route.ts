@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { getAuthSession } from "@/lib/auth"
+import { getSupabaseAdmin } from "@/lib/supabase"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +15,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -25,24 +23,43 @@ export async function PUT(
     const body = await request.json()
     const data = updateUserSchema.parse(body)
 
-    const updateData: any = {}
-    if (data.email) updateData.email = data.email
-    if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10)
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Update auth user
+    const authUpdate: any = {}
+    if (data.email) authUpdate.email = data.email
+    if (data.password) authUpdate.password = data.password
+
+    if (Object.keys(authUpdate).length > 0) {
+      const { error: authError } =
+        await supabaseAdmin.auth.admin.updateUserById(params.id, authUpdate)
+      if (authError) throw authError
     }
 
-    const user = await prisma.user.update({
-      where: { id: params.id },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    })
+    // Update profile if email changed
+    if (data.email) {
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ email: data.email })
+        .eq("id", params.id)
+      if (profileError) throw profileError
+    }
 
-    return NextResponse.json(user)
+    // Fetch updated profile
+    const { data: profile, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, role, created_at")
+      .eq("id", params.id)
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({
+      id: profile.id,
+      email: profile.email,
+      role: profile.role,
+      createdAt: profile.created_at,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -64,7 +81,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -77,9 +94,14 @@ export async function DELETE(
       )
     }
 
-    await prisma.user.delete({
-      where: { id: params.id },
-    })
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Delete profile first (FK constraint)
+    await supabaseAdmin.from("profiles").delete().eq("id", params.id)
+
+    // Delete auth user
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(params.id)
+    if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -90,4 +112,3 @@ export async function DELETE(
     )
   }
 }
-

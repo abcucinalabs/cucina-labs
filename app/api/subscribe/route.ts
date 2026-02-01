@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
           const htmlWithFooter = appendEmailFooter(welcomeTemplate.html, {
             email,
             includeUnsubscribe: true,
-            origin: process.env.NEXTAUTH_URL,
+            origin: process.env.NEXT_PUBLIC_BASE_URL,
           })
 
           const emailPayload = {

@@ -629,7 +629,7 @@ ${lookingAhead}` : ""}
 
 ---
 © ${new Date().getFullYear()} cucina labs
-Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
+Unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe
   `.trim()
 }
 
@@ -736,7 +736,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   }
 
   // Generate email HTML and plain text
-  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "", template })
+  const html = generateEmailHtml(content, { articles, origin: process.env.NEXT_PUBLIC_BASE_URL || "", template })
   const plainText = generatePlainText(content)
 
   // Get Resend API key

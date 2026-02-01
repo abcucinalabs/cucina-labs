@@ -26,7 +26,7 @@ function verifyToken(email: string, token: string, exp: string): boolean {
   const now = Math.floor(Date.now() / 1000)
   if (now > expirationTimestamp) return false
 
-  const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+  const secret = process.env.UNSUBSCRIBE_SECRET || ""
   const payload = `${normalizedEmail}:${exp}`
   const expectedToken = crypto.createHmac("sha256", secret).update(payload).digest("hex")
   return token === expectedToken

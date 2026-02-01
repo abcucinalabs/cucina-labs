@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser"
 import { LayoutDashboard, Mail, Database, Settings, LogOut, Bookmark, ChevronsUpDown, Users } from "lucide-react"
 
 import {
@@ -51,6 +52,7 @@ const navGroups = [
 
 export function AdminSidebar({ email }: { email: string }) {
   const pathname = usePathname()
+  const router = useRouter()
   const initials = email
     .split("@")[0]
     .split(/[._-]/)
@@ -127,7 +129,12 @@ export function AdminSidebar({ email }: { email: string }) {
               >
                 <DropdownMenuItem
                   className="focus:bg-[rgba(60,53,242,0.10)] focus:text-[#3c35f2]"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  onClick={async () => {
+                    const supabase = createSupabaseBrowserClient()
+                    await supabase.auth.signOut()
+                    router.push("/login")
+                    router.refresh()
+                  }}
                 >
                   <LogOut />
                   Log out
