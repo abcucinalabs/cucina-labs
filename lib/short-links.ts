@@ -1,4 +1,9 @@
-import { prisma } from "./db"
+import {
+  findShortLinkByTarget,
+  findShortLinkByCode,
+  createShortLinkRecord,
+  aggregateShortLinks,
+} from "./dal"
 import { customAlphabet } from 'nanoid'
 
 // Use URL-safe characters only (no ambiguous characters like 0, O, I, l)
@@ -10,13 +15,11 @@ export async function createShortLink(
   sequenceId?: string | null
 ): Promise<string> {
   // Check if short link already exists for this URL
-  const existing = await prisma.shortLink.findFirst({
-    where: {
-      targetUrl,
-      articleId: articleId || null,
-      sequenceId: sequenceId || null,
-    },
-  })
+  const existing = await findShortLinkByTarget(
+    targetUrl,
+    articleId || null,
+    sequenceId || null
+  )
 
   if (existing) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://cucinalabs.com'
@@ -30,9 +33,7 @@ export async function createShortLink(
 
   do {
     shortCode = nanoid()
-    const exists = await prisma.shortLink.findUnique({
-      where: { shortCode },
-    })
+    const exists = await findShortLinkByCode(shortCode)
 
     if (!exists) break
     attempts++
@@ -43,13 +44,11 @@ export async function createShortLink(
   }
 
   // Create short link
-  const link = await prisma.shortLink.create({
-    data: {
-      shortCode,
-      targetUrl,
-      articleId,
-      sequenceId,
-    },
+  const link = await createShortLinkRecord({
+    shortCode,
+    targetUrl,
+    articleId,
+    sequenceId,
   })
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://cucinalabs.com'
@@ -57,18 +56,10 @@ export async function createShortLink(
 }
 
 export async function getShortLinkStats(sequenceId?: string) {
-  const where = sequenceId ? { sequenceId } : {}
-
-  const stats = await prisma.shortLink.aggregate({
-    where,
-    _sum: {
-      clicks: true,
-    },
-    _count: true,
-  })
+  const stats = await aggregateShortLinks(sequenceId)
 
   return {
-    totalLinks: stats._count,
-    totalClicks: stats._sum.clicks || 0,
+    totalLinks: stats.totalLinks,
+    totalClicks: stats.totalClicks,
   }
 }

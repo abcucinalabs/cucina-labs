@@ -1,4 +1,10 @@
-import { prisma } from "./db"
+import {
+  findApiKeyByService,
+  updateApiKey,
+  upsertArticle,
+  findEnabledRssSources,
+  findIngestionConfig,
+} from "./dal"
 import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Parser from "rss-parser"
@@ -204,16 +210,11 @@ async function getAirtableConfig(): Promise<{
   tableId?: string | null
   tableName?: string | null
 } | null> {
-  const apiKey = await prisma.apiKey.findUnique({
-    where: { service: "airtable" },
-  })
+  const apiKey = await findApiKeyByService("airtable")
   if (!apiKey || !apiKey.key) return null
   const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
   if (needsRotation) {
-    await prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { key: encrypt(plaintext) },
-    })
+    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
   }
   return {
     apiKey: plaintext,
@@ -224,16 +225,11 @@ async function getAirtableConfig(): Promise<{
 }
 
 async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | null> {
-  const config = await prisma.apiKey.findUnique({
-    where: { service: "gemini" },
-  })
+  const config = await findApiKeyByService("gemini")
   if (!config || !config.key) return null
   const { plaintext, needsRotation } = decryptWithMetadata(config.key)
   if (needsRotation) {
-    await prisma.apiKey.update({
-      where: { id: config.id },
-      data: { key: encrypt(plaintext) },
-    })
+    await updateApiKey(config.id, { key: encrypt(plaintext) })
   }
   return {
     apiKey: plaintext,
@@ -425,7 +421,6 @@ async function saveToAirtable(article: Article): Promise<boolean> {
 
   try {
     // Check for duplicates using Airtable API
-    // Note: Airtable v0.12.2 uses callbacks, but we'll use a promise wrapper
     const table = base(tableIdOrName)
     fields = await getAirtableFields(config.apiKey, baseId, tableIdOrName)
     const fieldLookup = new Map<string, AirtableFieldInfo>()
@@ -720,24 +715,20 @@ async function saveToDatabase(article: Article): Promise<void> {
     if (article.whyItMatters) updateData.whyItMatters = article.whyItMatters
     if (article.businessValue) updateData.businessValue = article.businessValue
 
-    await prisma.article.upsert({
-      where: { canonicalLink },
-      update: updateData,
-      create: {
-        title: article.title,
-        category: article.category || "AI Products",
-        creator: article.creator || "AI Curator",
-        aiSummary: article.aiGeneratedSummary || "",
-        whyItMatters: article.whyItMatters || "",
-        businessValue: article.businessValue || "",
-        publishedDate,
-        sourceLink: article.link,
-        canonicalLink,
-        imageLink: resolvedImageUrl || null,
-        daysSincePublished,
-        isRecent: daysSincePublished <= 1,
-      },
-    })
+    await upsertArticle(canonicalLink, {
+      title: article.title,
+      category: article.category || "AI Products",
+      creator: article.creator || "AI Curator",
+      aiSummary: article.aiGeneratedSummary || "",
+      whyItMatters: article.whyItMatters || "",
+      businessValue: article.businessValue || "",
+      publishedDate,
+      sourceLink: article.link,
+      canonicalLink,
+      imageLink: resolvedImageUrl || null,
+      daysSincePublished,
+      isRecent: daysSincePublished <= 1,
+    }, updateData)
   } catch (error) {
     console.error("Database error:", error)
   }
@@ -749,9 +740,7 @@ export async function runIngestion(
   userPrompt?: string
 ): Promise<{ processed: number; selected: number; stored: number }> {
   // Fetch enabled RSS sources
-  const rssSources = await prisma.rssSource.findMany({
-    where: { enabled: true },
-  })
+  const rssSources = await findEnabledRssSources()
 
   if (rssSources.length === 0) {
     return { processed: 0, selected: 0, stored: 0 }
@@ -777,7 +766,7 @@ export async function runIngestion(
   })
 
   // Get default prompts if not provided
-  const config = await prisma.ingestionConfig.findFirst()
+  const config = await findIngestionConfig()
   const defaultSystemPrompt = systemPrompt ?? config?.systemPrompt ?? ""
   const defaultUserPrompt =
     userPrompt ??

@@ -1,4 +1,13 @@
-import { prisma } from "./db"
+import {
+  findApiKeyByService,
+  updateApiKey,
+  findRecentArticles,
+  findSequenceById,
+  updateSequence,
+  findSequencePromptConfig,
+  findNewsletterTemplateById,
+  findDefaultNewsletterTemplate,
+} from "./dal"
 import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
@@ -64,16 +73,11 @@ async function getResendConfig(): Promise<{
   fromName: string
   fromEmail: string
 } | null> {
-  const apiKey = await prisma.apiKey.findUnique({
-    where: { service: "resend" },
-  })
+  const apiKey = await findApiKeyByService("resend")
   if (!apiKey || !apiKey.key) return null
   const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
   if (needsRotation) {
-    await prisma.apiKey.update({
-      where: { id: apiKey.id },
-      data: { key: encrypt(plaintext) },
-    })
+    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
   }
   return {
     apiKey: plaintext,
@@ -227,9 +231,7 @@ async function getAirtableConfig(): Promise<{
   baseId: string
   tableIdOrName: string
 } | null> {
-  const config = await prisma.apiKey.findUnique({
-    where: { service: "airtable" },
-  })
+  const config = await findApiKeyByService("airtable")
   const baseId = config?.airtableBaseId || process.env.AIRTABLE_BASE_ID
   const tableIdOrName =
     config?.airtableTableId ||
@@ -242,10 +244,7 @@ async function getAirtableConfig(): Promise<{
   }
   const { plaintext, needsRotation } = decryptWithMetadata(config.key)
   if (needsRotation) {
-    await prisma.apiKey.update({
-      where: { id: config.id },
-      data: { key: encrypt(plaintext) },
-    })
+    await updateApiKey(config.id, { key: encrypt(plaintext) })
   }
   return {
     apiKey: plaintext,
@@ -278,18 +277,9 @@ export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] 
 
   // Fallback to local database
   const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
-  const articles = await prisma.article.findMany({
-    where: {
-      ingestedAt: { gte: cutoffDate },
-      isRecent: true,
-    },
-    orderBy: {
-      publishedDate: "desc",
-    },
-    take: 20,
-  })
+  const articles = await findRecentArticles(cutoffDate)
 
-  return articles.map((article) => ({
+  return articles.map((article: any) => ({
     id: article.id,
     title: article.title,
     summary: article.aiSummary || "",
@@ -307,7 +297,7 @@ async function getArticlesFromAirtable(config: { apiKey: string; baseId: string;
   const base = airtable.base(config.baseId)
 
   const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
-  
+
   const records = await base(config.tableIdOrName)
     .select({
       maxRecords: 20,
@@ -333,14 +323,14 @@ async function getArticlesFromAirtable(config: { apiKey: string; baseId: string;
 // Export for use in preview when no filter is needed
 export async function getAllArticlesFromAirtable(limit: number = 20) {
   const airtableConfig = await getAirtableConfig()
-  
+
   if (!airtableConfig) {
     throw new Error("Airtable not configured. Please set up Airtable integration first.")
   }
 
   const airtable = new Airtable({ apiKey: airtableConfig.apiKey })
   const base = airtable.base(airtableConfig.baseId)
-  
+
   const records = await base(airtableConfig.tableIdOrName)
     .select({
       maxRecords: limit,
@@ -362,16 +352,11 @@ export async function getAllArticlesFromAirtable(limit: number = 20) {
 }
 
 async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | null> {
-  const config = await prisma.apiKey.findUnique({
-    where: { service: "gemini" },
-  })
+  const config = await findApiKeyByService("gemini")
   if (!config || !config.key) return null
   const { plaintext, needsRotation } = decryptWithMetadata(config.key)
   if (needsRotation) {
-    await prisma.apiKey.update({
-      where: { id: config.id },
-      data: { key: encrypt(plaintext) },
-    })
+    await updateApiKey(config.id, { key: encrypt(plaintext) })
   }
   return {
     apiKey: plaintext,
@@ -531,7 +516,7 @@ export async function generateNewsletterContent(
   }
 
   console.log("Using Gemini model:", geminiConfig.model)
-  
+
   const genAI = new GoogleGenerativeAI(geminiConfig.apiKey)
   const model = genAI.getGenerativeModel({ model: geminiConfig.model })
 
@@ -601,7 +586,7 @@ export function generatePlainText(content: NewsletterContent): string {
   const stories = content.topStories || content.top_stories || []
   const intro = content.intro || ""
   const lookingAhead = content.lookingAhead || content.looking_ahead || ""
-  
+
   const featuredCategory = featured.category || ""
   const featuredTitle = featured.title || featured.headline || ""
   const featuredSummary = featured.summary || featured.why_this_matters || ""
@@ -614,7 +599,7 @@ export function generatePlainText(content: NewsletterContent): string {
       return storyTitle ? `- ${storyTitle}${storySummary ? ` — ${storySummary}` : ""}` : ""
     }),
   ].filter(Boolean)
-  
+
   return `
 CUCINA LABS - AI Product Newsletter
 
@@ -649,9 +634,7 @@ Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
 }
 
 export async function runDistribution(sequenceId: string, options: { skipArticleCheck?: boolean } = {}): Promise<void> {
-  const sequence = await prisma.sequence.findUnique({
-    where: { id: sequenceId },
-  })
+  const sequence = await findSequenceById(sequenceId)
 
   if (!sequence || sequence.status !== "active") {
     await logNewsActivity({
@@ -708,7 +691,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   if (!systemPrompt || !userPrompt) {
     let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
     try {
-      globalConfig = await prisma.sequencePromptConfig.findFirst()
+      globalConfig = await findSequencePromptConfig()
     } catch {
       // Table may not exist yet if migration hasn't run
     }
@@ -741,17 +724,12 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   // Fetch the template if specified
   let template: string | undefined
   if (sequence.templateId) {
-    const newsletterTemplate = await prisma.newsletterTemplate.findUnique({
-      where: { id: sequence.templateId },
-    })
+    const newsletterTemplate = await findNewsletterTemplateById(sequence.templateId)
     if (newsletterTemplate) {
       template = newsletterTemplate.html
     }
   } else {
-    const defaultTemplate = await prisma.newsletterTemplate.findFirst({
-      where: { isDefault: true },
-      orderBy: { updatedAt: "desc" },
-    })
+    const defaultTemplate = await findDefaultNewsletterTemplate()
     if (defaultTemplate) {
       template = defaultTemplate.html
     }
@@ -939,8 +917,5 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   }
 
   // Update sequence last sent time
-  await prisma.sequence.update({
-    where: { id: sequenceId },
-    data: { lastSent: new Date() },
-  })
+  await updateSequence(sequenceId, { lastSent: new Date() })
 }
