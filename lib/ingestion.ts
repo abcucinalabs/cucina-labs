@@ -173,7 +173,7 @@ async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | nu
   }
   return {
     apiKey: plaintext,
-    model: config.geminiModel || "gemini-1.5-flash",
+    model: config.geminiModel || "gemini-2.5-flash-preview-05-20",
   }
 }
 

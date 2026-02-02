@@ -86,7 +86,7 @@ ${cookingContext || 'No experiments listed yet'}
 Write a brief, engaging intro that gives readers a taste of what's coming. Don't list everything - just tease the highlights and set the mood. Return JSON with format: { "title": "optional catchy title", "body": "the intro paragraph" }`
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: geminiConfig.geminiModel || "gemini-2.0-flash-exp" })
+    const model = genAI.getGenerativeModel({ model: geminiConfig.geminiModel || "gemini-2.5-flash-preview-05-20" })
 
     const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`)
     const response = await result.response

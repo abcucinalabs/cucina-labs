@@ -21,7 +21,7 @@ create table if not exists public.api_keys (
   service text unique not null,
   key text not null,
   status text not null default 'disconnected',
-  gemini_model text default 'gemini-2.0-flash-exp',
+  gemini_model text default 'gemini-2.5-flash-preview-05-20',
   resend_from_name text default 'Adrian & Jimmy from "AI Product Briefing"',
   resend_from_email text default 'hello@jimmy-iliohan.com',
   created_at timestamptz not null default now(),
@@ -347,14 +347,19 @@ end;
 $$;
 
 -- Public insert policies for unauthenticated endpoints
-create policy if not exists "Anyone can subscribe" on public.subscribers
-  for insert with check (true);
-
-create policy if not exists "Webhook can insert email events" on public.email_events
-  for insert with check (true);
-
-create policy if not exists "Anyone can create push subscription" on public.push_subscriptions
-  for insert with check (true);
+do $$
+begin
+  if not exists (select 1 from pg_policies where policyname = 'Anyone can subscribe' and tablename = 'subscribers') then
+    create policy "Anyone can subscribe" on public.subscribers for insert with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Webhook can insert email events' and tablename = 'email_events') then
+    create policy "Webhook can insert email events" on public.email_events for insert with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where policyname = 'Anyone can create push subscription' and tablename = 'push_subscriptions') then
+    create policy "Anyone can create push subscription" on public.push_subscriptions for insert with check (true);
+  end if;
+end;
+$$;
 
 -- Auto-create profile on auth user creation
 create or replace function public.handle_new_user()

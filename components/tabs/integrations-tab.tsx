@@ -18,9 +18,8 @@ interface Integration {
 }
 
 const geminiModels = [
-  { value: "gemini-2.0-flash-exp", label: "gemini-2.0-flash-exp", description: "Fastest, recommended" },
-  { value: "gemini-2.5-flash-preview-05-20", label: "gemini-2.5-flash", description: "Latest" },
-  { value: "gemini-2.0-pro-exp", label: "gemini-2.0-pro-exp", description: "Most capable" },
+  { value: "gemini-2.5-flash-preview-05-20", label: "gemini-2.5-flash", description: "Latest, recommended" },
+  { value: "gemini-2.0-flash", label: "gemini-2.0-flash", description: "Fast" },
   { value: "gemini-1.5-pro", label: "gemini-1.5-pro", description: "Stable" },
 ]
 
@@ -30,7 +29,7 @@ export function IntegrationsTab() {
 
   // Form states
   const [geminiKey, setGeminiKey] = useState("")
-  const [geminiModel, setGeminiModel] = useState("gemini-2.0-flash-exp")
+  const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash-preview-05-20")
 
   const [resendKey, setResendKey] = useState("")
   const [resendFromName, setResendFromName] = useState('Adrian & Jimmy from "AI Product Briefing"')
@@ -52,7 +51,7 @@ export function IntegrationsTab() {
 
         // Set initial values from existing integrations
         if (data.gemini) {
-          setGeminiModel(data.gemini.geminiModel || "gemini-2.0-flash-exp")
+          setGeminiModel(data.gemini.geminiModel || "gemini-2.5-flash-preview-05-20")
         }
         if (data.resend) {
           setResendFromName(data.resend.resendFromName || 'Adrian & Jimmy from "AI Product Briefing"')

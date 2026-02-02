@@ -83,7 +83,7 @@ async function handleTestRequest(request: NextRequest) {
       switch (service) {
         case "gemini": {
           const genAI = new GoogleGenerativeAI(decryptedKey)
-          const modelName = providedModel || apiKey?.geminiModel || "gemini-2.0-flash-exp"
+          const modelName = providedModel || apiKey?.geminiModel || "gemini-2.5-flash-preview-05-20"
           const model = genAI.getGenerativeModel({ model: modelName })
           await model.generateContent("test")
           success = true

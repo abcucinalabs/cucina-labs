@@ -35,8 +35,13 @@ export default async function middleware(request: NextRequest) {
     )
   }
 
-  // Only check auth for admin pages and /save
-  if (pathname.startsWith("/admin") || pathname.startsWith("/save")) {
+  // Refresh auth cookies for admin pages, /save, and API routes
+  const needsAuth =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/save") ||
+    pathname.startsWith("/api/")
+
+  if (needsAuth) {
     let response = NextResponse.next({
       request: { headers: request.headers },
     })
@@ -71,7 +76,8 @@ export default async function middleware(request: NextRequest) {
       data: { session },
     } = await supabase.auth.getSession()
 
-    if (!session) {
+    // Only redirect to login for page routes, not API routes
+    if (!session && !pathname.startsWith("/api/")) {
       const loginUrl = new URL("/login", request.url)
       return NextResponse.redirect(loginUrl)
     }

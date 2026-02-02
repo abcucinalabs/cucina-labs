@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         result[service] = {
           status: "disconnected",
           hasKey: false,
-          geminiModel: service === "gemini" ? "gemini-2.0-flash-exp" : undefined,
+          geminiModel: service === "gemini" ? "gemini-2.5-flash-preview-05-20" : undefined,
           resendFromName: service === "resend" ? 'Adrian & Jimmy from "AI Product Briefing"' : undefined,
           resendFromEmail: service === "resend" ? "hello@jimmy-iliohan.com" : undefined,
         }
