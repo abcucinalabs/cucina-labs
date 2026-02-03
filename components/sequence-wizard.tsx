@@ -556,7 +556,7 @@ export function SequenceWizard({
                   {[
                     { value: "news", label: "News", description: "AI-curated news articles" },
                     { value: "chefs_table", label: "Chef's Table", description: "Editorial intro section" },
-                    { value: "recipes", label: "Recipes", description: "Saved social posts & articles" },
+                    { value: "recipes", label: "What We're Reading", description: "Saved social posts & articles" },
                     { value: "cooking", label: "What We're Cooking", description: "Experiments & projects" },
                   ].map((source) => (
                     <label key={source.value} className="flex items-start gap-2 cursor-pointer">

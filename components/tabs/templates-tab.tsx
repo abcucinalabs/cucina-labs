@@ -62,7 +62,7 @@ const sampleArticles = [
 ]
 
 const sampleContent = {
-  subject: "AI Product Briefing",
+  subject: "Building AI Products - Weekly Menu",
   intro: "Today’s briefing highlights pragmatic wins in AI ops, personalization, and product intelligence.",
   featured_story: {
     headline: "Realtime support copilots are earning trust",
@@ -87,6 +87,55 @@ const sampleContent = {
     },
   ],
   looking_ahead: "Next week we will cover onboarding flows for AI copilots and retention loops for newsletters.",
+  from_chefs_table: {
+    title: "This Week in the Kitchen",
+    body: "Hey Chefs! This week’s menu focuses on practical product moves: three stories shaping PM decisions, a handful of great reads, and one thing we are actively building in the lab.",
+  },
+  news: [
+    {
+      id: 1,
+      headline: "Realtime support copilots are earning trust",
+      why_this_matters: "Teams are proving that fast AI responses and human safeguards can coexist. PMs can now design support flows that cut response time while keeping quality high.",
+      source: "Cucina Labs",
+      link: "https://example.com/ai-agents",
+    },
+    {
+      id: 2,
+      headline: "Context-first personalization beats token tricks",
+      why_this_matters: "The strongest teams are personalizing around user state, not just names. That makes messaging more relevant without increasing operational drag.",
+      source: "Cucina Labs",
+      link: "https://example.com/email-personalization",
+    },
+    {
+      id: 3,
+      headline: "Weekly insight briefs are becoming a product ritual",
+      why_this_matters: "Teams are using short weekly summaries to align roadmap tradeoffs. This creates faster decisions across product, design, and engineering.",
+      source: "Cucina Labs",
+      link: "https://example.com/weekly-briefs",
+    },
+  ],
+  what_were_reading: [
+    {
+      title: "Designing better AI onboarding",
+      url: "https://example.com/ai-onboarding",
+      description: "A practical walkthrough of first-run experiences that reduce confusion and increase activation.",
+    },
+    {
+      title: "How PMs evaluate model changes",
+      url: "https://example.com/model-evals",
+      description: "A clear framework for balancing quality, speed, and reliability in model updates.",
+    },
+    {
+      title: "Shipping iteration loops that actually stick",
+      url: "https://example.com/iteration-loops",
+      description: "Concrete examples of feedback loops that improve weekly shipping confidence.",
+    },
+  ],
+  what_were_cooking: {
+    title: "AI-driven triage assistant",
+    url: "https://example.com/triage-assistant",
+    description: "We are testing a triage assistant that groups customer feedback into decision-ready themes for PM review.",
+  },
 }
 
 const variableHints = [
@@ -94,6 +143,10 @@ const variableHints = [
   "{{newsletter.intro}}",
   "{{newsletter.top_stories}}",
   "{{newsletter.featured_story}}",
+  "{{weekly.from_chefs_table}}",
+  "{{weekly.news}}",
+  "{{weekly.what_were_reading}}",
+  "{{weekly.what_were_cooking}}",
   "{{featured}}",
   "{{articles}}",
   "{{currentDate}}",

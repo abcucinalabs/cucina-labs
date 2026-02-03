@@ -21,7 +21,7 @@ create table if not exists public.api_keys (
   service text unique not null,
   key text not null,
   status text not null default 'disconnected',
-  gemini_model text default 'gemini-2.5-flash-preview-05-20',
+  gemini_model text default 'gemini-2.5-flash',
   resend_from_name text default 'Adrian & Jimmy from "AI Product Briefing"',
   resend_from_email text default 'hello@jimmy-iliohan.com',
   created_at timestamptz not null default now(),
@@ -165,6 +165,16 @@ create table if not exists public.sequence_prompt_configs (
 );
 
 -- ============================================================
+-- WEEKLY PROMPT CONFIG (global weekly update prompt)
+-- ============================================================
+create table if not exists public.weekly_prompt_configs (
+  id text primary key default gen_random_uuid()::text,
+  prompt_text text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- ============================================================
 -- SHORT LINKS (URL tracking)
 -- ============================================================
 create table if not exists public.short_links (
@@ -251,7 +261,7 @@ create table if not exists public.newsletter_components (
 -- ============================================================
 create table if not exists public.saved_content (
   id text primary key default gen_random_uuid()::text,
-  type text not null,
+  type text not null check (type in ('reading', 'cooking')),
   title text not null,
   url text,
   description text,
@@ -263,6 +273,29 @@ create table if not exists public.saved_content (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+update public.saved_content
+set type = 'reading'
+where type = 'recipe';
+
+update public.saved_content
+set type = 'reading'
+where type not in ('reading', 'cooking');
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'saved_content_type_check'
+      and conrelid = 'public.saved_content'::regclass
+  ) then
+    alter table public.saved_content
+      add constraint saved_content_type_check
+      check (type in ('reading', 'cooking'));
+  end if;
+end;
+$$;
+
 create index if not exists idx_saved_content_type on public.saved_content(type);
 create index if not exists idx_saved_content_used on public.saved_content(used);
 create index if not exists idx_saved_content_created_at on public.saved_content(created_at);
@@ -309,7 +342,7 @@ begin
     select unnest(array[
       'profiles', 'api_keys', 'rss_sources', 'sequences', 'subscribers',
       'newsletter_templates', 'email_templates', 'ingestion_configs',
-      'sequence_prompt_configs', 'short_links', 'push_subscriptions',
+      'sequence_prompt_configs', 'weekly_prompt_configs', 'short_links', 'push_subscriptions',
       'data_sources', 'newsletter_components', 'saved_content', 'weekly_newsletters'
     ])
   loop
@@ -332,7 +365,7 @@ begin
     select unnest(array[
       'profiles', 'api_keys', 'rss_sources', 'articles', 'sequences',
       'subscribers', 'newsletter_templates', 'email_templates',
-      'ingestion_configs', 'news_activity', 'sequence_prompt_configs',
+      'ingestion_configs', 'news_activity', 'sequence_prompt_configs', 'weekly_prompt_configs',
       'short_links', 'email_events', 'push_subscriptions',
       'data_sources', 'newsletter_components', 'saved_content', 'weekly_newsletters'
     ])

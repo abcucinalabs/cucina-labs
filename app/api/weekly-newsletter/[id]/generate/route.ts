@@ -4,10 +4,12 @@ import {
   updateWeeklyNewsletter,
   findApiKeyByService,
   updateApiKey,
+  findSavedContent,
   findSavedContentByIds,
 } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
+import { normalizeGeminiModel } from "@/lib/gemini-model"
 
 // POST - Generate Chef's Table content using AI
 export async function POST(
@@ -44,10 +46,22 @@ export async function POST(
       await updateApiKey(geminiConfig.id, { key: encrypt(apiKey) })
     }
 
-    // Get saved recipes for context
-    const recipes = newsletter.recipeIds.length > 0
-      ? await findSavedContentByIds(newsletter.recipeIds)
-      : []
+    const [savedRecipes, savedCooking, selectedRecipes] = await Promise.all([
+      findSavedContent({ type: "reading" }),
+      findSavedContent({ type: "cooking" }),
+      newsletter.recipeIds.length > 0 ? findSavedContentByIds(newsletter.recipeIds) : Promise.resolve([]),
+    ])
+
+    const recipePool = selectedRecipes.length > 0 ? selectedRecipes : savedRecipes
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const recipes = (recipePool || []).filter((item: any) => {
+      if (!item.createdAt) return false
+      return new Date(item.createdAt).getTime() >= weekAgo
+    }).slice(0, 5)
+
+    const cooking = Array.isArray(newsletter.cookingItems) && newsletter.cookingItems.length > 0
+      ? newsletter.cookingItems.slice(0, 1)
+      : (savedCooking || []).slice(0, 1)
 
     // Build context for AI
     const weekOf = newsletter.weekStart.toLocaleDateString('en-US', {
@@ -64,29 +78,29 @@ export async function POST(
       .map((r: any) => `- ${r.title}: ${r.description || ''}`)
       .join('\n')
 
-    const cookingContext = (newsletter.cookingItems as any[] || [])
+    const cookingContext = cooking
       .map((item: any) => `- ${item.title}: ${item.description || ''}`)
       .join('\n')
 
-    const systemPrompt = newsletter.systemPrompt || `You are a friendly AI newsletter curator for "cucina labs", a company focused on AI product development and experiments. Write in a warm, conversational tone that feels like a friend sharing interesting finds. Keep it concise but engaging.`
+    const systemPrompt = newsletter.systemPrompt || `You are the editor of cucina labs weekly newsletter. Write clearly for Product Managers and business operators exploring AI products. Keep the kitchen metaphor light and natural.`
 
-    const userPrompt = customPrompt || `Write an engaging intro paragraph (2-3 sentences) for our weekly newsletter dated ${weekOf}. This is the "Chef's Table" section - think of it as setting the table for what's to come.
+    const userPrompt = customPrompt || `Write the "From the Chef's Table" section for our weekly newsletter dated ${weekOf}. Return ONLY valid JSON with this exact shape: { "title": "optional short title", "body": "2-4 sentence intro paragraph" }.
 
 Here's what we have this week:
 
 NEWS FROM THE AI WORLD:
 ${newsContext || 'No news items yet'}
 
-RECIPES (Posts/Articles We Enjoyed):
-${recipesContext || 'No recipes saved yet'}
+WHAT WE'RE READING (Saved reading items):
+${recipesContext || 'No reading items saved yet'}
 
-WHAT WE'RE COOKING (Our Experiments):
+WHAT WE'RE COOKING:
 ${cookingContext || 'No experiments listed yet'}
 
-Write a brief, engaging intro that gives readers a taste of what's coming. Don't list everything - just tease the highlights and set the mood. Return JSON with format: { "title": "optional catchy title", "body": "the intro paragraph" }`
+Keep the intro warm, practical, and plain-language. Do not use hype or jargon.`
 
     const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: geminiConfig.geminiModel || "gemini-2.5-flash-preview-05-20" })
+    const model = genAI.getGenerativeModel({ model: normalizeGeminiModel(geminiConfig.geminiModel) })
 
     const result = await model.generateContent(`${systemPrompt}\n\n${userPrompt}`)
     const response = await result.response

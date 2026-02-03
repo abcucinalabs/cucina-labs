@@ -108,7 +108,7 @@ export function WeeklyNewsletterTab() {
 
   const loadSavedContent = async () => {
     try {
-      const res = await fetch("/api/saved-content?type=recipe&used=false")
+      const res = await fetch("/api/saved-content?type=reading&used=false")
       if (res.ok) {
         const data = await res.json()
         setSavedContent(data)
@@ -307,7 +307,7 @@ export function WeeklyNewsletterTab() {
 
   const newsItems = (newsletter.newsItems || []) as NewsItem[]
   const cookingItems = (newsletter.cookingItems || []) as CookingItem[]
-  const selectedRecipes = savedContent.filter((c) =>
+  const selectedReading = savedContent.filter((c) =>
     newsletter.recipeIds?.includes(c.id)
   )
 
@@ -468,12 +468,12 @@ export function WeeklyNewsletterTab() {
         </CardContent>
       </Card>
 
-      {/* Recipes Section */}
+      {/* What We're Reading Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <BookOpen className="h-4 w-4 text-green-500" />
-            Recipes
+            What We&apos;re Reading
           </CardTitle>
           <CardDescription>
             Posts and articles you&apos;ve saved to share
@@ -527,9 +527,9 @@ export function WeeklyNewsletterTab() {
               })}
             </div>
           )}
-          {selectedRecipes.length > 0 && (
+          {selectedReading.length > 0 && (
             <p className="text-sm text-muted-foreground mt-3">
-              {selectedRecipes.length} recipe(s) selected
+              {selectedReading.length} reading item(s) selected
             </p>
           )}
         </CardContent>

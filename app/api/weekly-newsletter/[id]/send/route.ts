@@ -4,6 +4,7 @@ import {
   updateWeeklyNewsletter,
   findApiKeyByService,
   updateApiKey,
+  findSavedContent,
   findSavedContentByIds,
   updateSavedContentByIds,
 } from "@/lib/dal"
@@ -47,10 +48,16 @@ export async function POST(
 
     const resend = new Resend(apiKey)
 
-    // Get saved recipes
-    const recipes = newsletter.recipeIds.length > 0
-      ? await findSavedContentByIds(newsletter.recipeIds)
-      : []
+    const [autoRecipes, autoCooking, selectedRecipes] = await Promise.all([
+      findSavedContent({ type: "reading" }),
+      findSavedContent({ type: "cooking" }),
+      newsletter.recipeIds.length > 0 ? findSavedContentByIds(newsletter.recipeIds) : Promise.resolve([]),
+    ])
+
+    const recipes = selectedRecipes.length > 0 ? selectedRecipes : autoRecipes
+    const cooking = Array.isArray(newsletter.cookingItems) && newsletter.cookingItems.length > 0
+      ? newsletter.cookingItems
+      : autoCooking
 
     // Build context and render
     const context = buildWeeklyNewsletterContext(
@@ -59,13 +66,19 @@ export async function POST(
         chefsTableTitle: newsletter.chefsTableTitle,
         chefsTableBody: newsletter.chefsTableBody,
         newsItems: newsletter.newsItems as any[] | null,
-        cookingItems: newsletter.cookingItems as any[] | null,
       },
       recipes.map((r: any) => ({
         title: r.title,
         url: r.url,
         description: r.description,
         source: r.source,
+        createdAt: r.createdAt,
+      })),
+      cooking.map((c: any) => ({
+        title: c.title,
+        url: c.url,
+        description: c.description,
+        createdAt: c.createdAt,
       })),
       origin
     )

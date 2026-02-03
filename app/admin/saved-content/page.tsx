@@ -43,7 +43,7 @@ export default function SavedContentAdminPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [activeTab, setActiveTab] = useState<"recipe" | "cooking">("recipe")
+  const [activeTab, setActiveTab] = useState<"reading" | "cooking">("reading")
 
   // Form state
   const [title, setTitle] = useState("")
@@ -152,14 +152,14 @@ export default function SavedContentAdminPage() {
       <div className="flex gap-2">
         <button
           className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-            activeTab === "recipe"
+            activeTab === "reading"
               ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
               : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border"
           }`}
-          onClick={() => setActiveTab("recipe")}
+          onClick={() => setActiveTab("reading")}
         >
           <BookOpen className="h-4 w-4" />
-          Recipe
+          Reading
         </button>
         <button
           className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
@@ -248,7 +248,7 @@ export default function SavedContentAdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent {activeTab === "recipe" ? "Recipes" : "Cooking Items"}</CardTitle>
+          <CardTitle>Recent {activeTab === "reading" ? "Reading Items" : "Cooking Items"}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (

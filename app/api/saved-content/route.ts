@@ -10,11 +10,13 @@ import {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get("type") // "recipe" or "cooking"
+    const typeParam = searchParams.get("type") // "reading" or "cooking" (legacy "recipe" accepted)
     const used = searchParams.get("used") // "true" or "false"
 
     const filters: any = {}
-    if (type) filters.type = type
+    if (typeParam) {
+      filters.type = typeParam === "recipe" ? "reading" : typeParam
+    }
     if (used !== null) filters.used = used === "true"
 
     const content = await findSavedContent(filters)
@@ -33,7 +35,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { type, title, url, description, imageUrl, source, notes } = body
+    const { type: rawType, title, url, description, imageUrl, source, notes } = body
+    const type = rawType === "recipe" ? "reading" : rawType
 
     if (!title) {
       return NextResponse.json(
@@ -42,9 +45,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (!type || !["recipe", "cooking"].includes(type)) {
+    if (!type || !["reading", "cooking"].includes(type)) {
       return NextResponse.json(
-        { error: "Type must be 'recipe' or 'cooking'" },
+        { error: "Type must be 'reading' or 'cooking'" },
         { status: 400 }
       )
     }

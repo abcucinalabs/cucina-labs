@@ -1,14 +1,13 @@
 import {
   findApiKeyByService,
-  updateApiKey,
   findRecentArticles,
   findSequenceById,
   updateSequence,
   findSequencePromptConfig,
   findNewsletterTemplateById,
   findDefaultNewsletterTemplate,
+  findSavedContent,
 } from "./dal"
-import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
 import {
@@ -23,6 +22,8 @@ import {
   defaultSequenceSystemPrompt,
   defaultSequenceUserPrompt,
 } from "./sequence-prompt-defaults"
+import { getServiceApiKey } from "./service-keys"
+import { normalizeGeminiModel } from "./gemini-model"
 
 // Flexible interface to handle different Gemini response structures
 interface NewsletterContent {
@@ -65,6 +66,46 @@ interface NewsletterContent {
   looking_ahead?: string
   subject?: string
   article_ids_selected?: number[]
+  from_chefs_table?: {
+    title?: string
+    body?: string
+  }
+  news?: Array<{
+    id?: number | string
+    headline?: string
+    why_this_matters?: string
+    source?: string
+    link?: string
+    url?: string
+  }>
+  what_were_reading?: Array<{
+    title?: string
+    description?: string
+    summary?: string
+    url?: string
+    link?: string
+  }>
+  what_were_cooking?: {
+    title?: string
+    description?: string
+    url?: string
+    link?: string
+  }
+}
+
+type SavedPromptReadingItem = {
+  title: string
+  url: string
+  description: string
+  source?: string
+  createdAt?: string
+}
+
+type SavedPromptCookingItem = {
+  title: string
+  url: string
+  description: string
+  createdAt?: string
 }
 
 async function getResendConfig(): Promise<{
@@ -72,16 +113,13 @@ async function getResendConfig(): Promise<{
   fromName: string
   fromEmail: string
 } | null> {
-  const apiKey = await findApiKeyByService("resend")
-  if (!apiKey || !apiKey.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
-  }
+  const apiKeyRecord = await findApiKeyByService("resend")
+  const plaintext = await getServiceApiKey("resend")
+  if (!plaintext) return null
   return {
     apiKey: plaintext,
-    fromName: apiKey.resendFromName || "cucina labs",
-    fromEmail: apiKey.resendFromEmail || "newsletter@cucinalabs.com",
+    fromName: apiKeyRecord?.resendFromName || "cucina labs",
+    fromEmail: apiKeyRecord?.resendFromEmail || "newsletter@cucinalabs.com",
   }
 }
 
@@ -249,16 +287,64 @@ export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] 
   }))
 }
 
+async function getSavedWeeklyPromptData(options?: {
+  readingItems?: SavedPromptReadingItem[]
+  cookingItem?: SavedPromptCookingItem | null
+}) {
+  if (options?.readingItems && options?.cookingItem !== undefined) {
+    return {
+      readingItems: options.readingItems,
+      cookingItem: options.cookingItem,
+    }
+  }
+
+  const [savedReading, savedCooking] = await Promise.all([
+    findSavedContent({ type: "reading" }).catch(() => []),
+    findSavedContent({ type: "cooking" }).catch(() => []),
+  ])
+
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const sortDesc = (a: any, b: any) =>
+    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+
+  const readingItems = (savedReading || [])
+    .filter((item: any) => {
+      if (!item?.createdAt) return false
+      return new Date(item.createdAt).getTime() >= sevenDaysAgo
+    })
+    .sort(sortDesc)
+    .slice(0, 5)
+    .map((item: any) => ({
+      title: item.title || "",
+      url: item.url || "",
+      description: item.description || "",
+      source: item.source || "",
+      createdAt: item.createdAt,
+    }))
+
+  const latestCooking = (savedCooking || [])
+    .sort(sortDesc)
+    .slice(0, 1)
+    .map((item: any) => ({
+      title: item.title || "",
+      url: item.url || "",
+      description: item.description || "",
+      createdAt: item.createdAt,
+    }))[0] || null
+
+  return {
+    readingItems,
+    cookingItem: latestCooking,
+  }
+}
+
 async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | null> {
   const config = await findApiKeyByService("gemini")
-  if (!config || !config.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
-  if (needsRotation) {
-    await updateApiKey(config.id, { key: encrypt(plaintext) })
-  }
+  const plaintext = await getServiceApiKey("gemini")
+  if (!plaintext) return null
   return {
     apiKey: plaintext,
-    model: config.geminiModel || "gemini-1.5-flash",
+    model: normalizeGeminiModel(config?.geminiModel),
   }
 }
 
@@ -349,6 +435,48 @@ export async function wrapNewsletterWithShortLinks(
     }
   }
 
+  // Weekly prompt support: create short links for weekly news
+  const weeklyNews = content.news || []
+  for (let i = 0; i < weeklyNews.length; i++) {
+    const story = weeklyNews[i]
+    if (!story) continue
+    const originalLink = story.link || story.url || ""
+    if (!originalLink) continue
+    const shortLink = isShortLink(originalLink)
+      ? originalLink
+      : await createShortLink(
+          originalLink,
+          story.id ? String(story.id) : null,
+          sequenceId || null
+        )
+    story.link = shortLink
+  }
+
+  // Weekly prompt support: create short links for reading and cooking links
+  const weeklyReading = content.what_were_reading || []
+  for (let i = 0; i < weeklyReading.length; i++) {
+    const item = weeklyReading[i]
+    if (!item) continue
+    const originalLink = item.link || item.url || ""
+    if (!originalLink) continue
+    const shortLink = isShortLink(originalLink)
+      ? originalLink
+      : await createShortLink(originalLink, null, sequenceId || null)
+    item.link = shortLink
+    item.url = shortLink
+  }
+
+  if (content.what_were_cooking) {
+    const originalLink = content.what_were_cooking.link || content.what_were_cooking.url || ""
+    if (originalLink) {
+      const shortLink = isShortLink(originalLink)
+        ? originalLink
+        : await createShortLink(originalLink, null, sequenceId || null)
+      content.what_were_cooking.link = shortLink
+      content.what_were_cooking.url = shortLink
+    }
+  }
+
   return content
 }
 
@@ -406,7 +534,11 @@ export async function generateNewsletterContent(
   articles: any[],
   systemPrompt: string,
   userPrompt: string,
-  options?: { contentSources?: string[] }
+  options?: {
+    contentSources?: string[]
+    readingItems?: SavedPromptReadingItem[]
+    cookingItem?: SavedPromptCookingItem | null
+  }
 ): Promise<NewsletterContent> {
   const geminiConfig = await getGeminiConfig()
   if (!geminiConfig) {
@@ -420,6 +552,9 @@ export async function generateNewsletterContent(
 
   // Use custom prompts if provided, otherwise use a default prompt
   let prompt: string
+  const weeklyPromptData = await getSavedWeeklyPromptData(options)
+  const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weekEnd = new Date().toISOString()
   if (systemPrompt || userPrompt) {
     // Replace template placeholders with actual data
     const contentSectionsText = buildContentSectionsText(options?.contentSources || [])
@@ -432,8 +567,14 @@ export async function generateNewsletterContent(
       .replace(/\{\{\s*JSON\.stringify\(\$json\.articles[^}]*\}\}/g, JSON.stringify(articles, null, 2))
       .replace(/\{\{\s*\$json\.day_start\s*\}\}/g, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .replace(/\{\{\s*\$json\.day_end\s*\}\}/g, new Date().toISOString())
+      .replace(/\{\{\s*\$json\.week_start\s*\}\}/g, weekStart)
+      .replace(/\{\{\s*\$json\.week_end\s*\}\}/g, weekEnd)
       .replace(/\{\{\s*\$json\.total_articles\s*\}\}/g, String(articles.length))
+      .replace(/\{\{\s*\$json\.reading_items\s*\}\}/g, JSON.stringify(weeklyPromptData.readingItems, null, 2))
+      .replace(/\{\{\s*\$json\.cooking_item\s*\}\}/g, JSON.stringify(weeklyPromptData.cookingItem || {}, null, 2))
       .replace(/\{\{\s*\$json\.content_sections\s*\}\}/g, contentSectionsText)
+      .replace(/\{\{\s*JSON\.stringify\(\$json\.reading_items[^}]*\}\}/g, JSON.stringify(weeklyPromptData.readingItems, null, 2))
+      .replace(/\{\{\s*JSON\.stringify\(\$json\.cooking_item[^}]*\}\}/g, JSON.stringify(weeklyPromptData.cookingItem || {}, null, 2))
 
     prompt = `${processedSystemPrompt ? processedSystemPrompt + "\n\n" : ""}${processedUserPrompt}`
   } else {
@@ -455,6 +596,24 @@ export async function generateNewsletterContent(
     }
 
     const parsed = JSON.parse(jsonMatch[0])
+    const shouldIncludeReading = !options?.contentSources || options.contentSources.length === 0 || options.contentSources.includes("recipes")
+    const shouldIncludeCooking = !options?.contentSources || options.contentSources.length === 0 || options.contentSources.includes("cooking")
+    if (shouldIncludeReading && (!Array.isArray(parsed.what_were_reading) || parsed.what_were_reading.length === 0)) {
+      parsed.what_were_reading = weeklyPromptData.readingItems.slice(0, 5).map((item) => ({
+        title: item.title,
+        url: item.url,
+        description: item.description,
+      }))
+    }
+    if (shouldIncludeCooking && (!parsed.what_were_cooking || !parsed.what_were_cooking.title)) {
+      parsed.what_were_cooking = weeklyPromptData.cookingItem
+        ? {
+            title: weeklyPromptData.cookingItem.title,
+            url: weeklyPromptData.cookingItem.url,
+            description: weeklyPromptData.cookingItem.description,
+          }
+        : { title: "", url: "", description: "" }
+    }
     console.log("Parsed Gemini response keys:", Object.keys(parsed))
     console.log("Featured story link:", parsed.featured_story?.link || parsed.featuredStory?.link || "MISSING")
     console.log("Top stories links:", (parsed.top_stories || parsed.topStories || []).map((s: any) => s.link || "MISSING"))
@@ -479,6 +638,28 @@ export function generateEmailHtml(
 }
 
 export function generatePlainText(content: NewsletterContent): string {
+  if (Array.isArray(content.news) && content.news.length > 0) {
+    const chefsTable = content.from_chefs_table?.body || content.intro || ""
+    const reading = content.what_were_reading || []
+    const cooking = content.what_were_cooking
+    return `
+CUCINA LABS - WEEKLY UPDATE
+
+${chefsTable}
+
+NEWS
+${content.news.map((item, index) => `${index + 1}. ${item.headline || ""}\n${item.why_this_matters || ""}\n${item.link || item.url || ""}`).join("\n\n")}
+
+${reading.length ? `WHAT WE'RE READING\n${reading.map((item) => `${item.title || ""}\n${item.description || item.summary || ""}\n${item.url || item.link || ""}`).join("\n\n")}` : ""}
+
+${cooking?.title ? `WHAT WE'RE COOKING\n${cooking.title}\n${cooking.description || ""}\n${cooking.url || cooking.link || ""}` : ""}
+
+---
+© ${new Date().getFullYear()} cucina labs
+Unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe
+  `.trim()
+  }
+
   // Handle different response structures from Gemini
   const featured = content.featuredStory || content.featured_story || {} as any
   const stories = content.topStories || content.top_stories || []

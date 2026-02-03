@@ -1,8 +1,61 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
 import { findAllNewsletterTemplates, createNewsletterTemplate, clearDefaultNewsletterTemplates, getSequenceCountsByTemplateId } from "@/lib/dal"
+import {
+  DEFAULT_NEWSLETTER_TEMPLATE,
+  SYSTEM_DAILY_TEMPLATE_ID,
+  SYSTEM_WEEKLY_TEMPLATE_ID,
+  WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
+} from "@/lib/newsletter-template"
 
 export const dynamic = 'force-dynamic'
+
+async function ensureSystemTemplates() {
+  const existing = await findAllNewsletterTemplates()
+  const hasDaily = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_DAILY_TEMPLATE_ID ||
+      template.name === "System Default - Daily Insights"
+  )
+  const hasWeekly = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_WEEKLY_TEMPLATE_ID ||
+      template.name === "System Default - Weekly Update"
+  )
+  const hasDefault = existing.some((template: any) => template.isDefault)
+
+  if (!hasDaily) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_DAILY_TEMPLATE_ID,
+        name: "System Default - Daily Insights",
+        description: "Built-in template for the Daily Insights format.",
+        html: DEFAULT_NEWSLETTER_TEMPLATE,
+        isDefault: !hasDefault,
+        includeFooter: true,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+
+  if (!hasWeekly) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_WEEKLY_TEMPLATE_ID,
+        name: "System Default - Weekly Update",
+        description: "Built-in template for the Weekly Update format.",
+        html: WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
+        isDefault: false,
+        includeFooter: true,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+}
 
 // GET - List all newsletter templates
 export async function GET(request: NextRequest) {
@@ -11,6 +64,8 @@ export async function GET(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    await ensureSystemTemplates()
 
     const templates = await findAllNewsletterTemplates()
 

@@ -1,7 +1,7 @@
 import Handlebars from "handlebars"
 
 export interface WeeklyNewsletterData {
-  weekOf: string // e.g., "January 27, 2025"
+  weekOf: string
   chefsTable: {
     title?: string
     body: string
@@ -12,7 +12,7 @@ export interface WeeklyNewsletterData {
     summary: string
     source?: string
   }>
-  recipes: Array<{
+  reading: Array<{
     title: string
     url?: string
     description: string
@@ -24,6 +24,7 @@ export interface WeeklyNewsletterData {
     url?: string
   }>
   unsubscribeUrl: string
+  bannerUrl: string
 }
 
 export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
@@ -46,33 +47,47 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
           <tr>
             <td>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); overflow: hidden;">
-
-                <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #0d0d0d 0%, #1a1a2e 100%); padding: 32px 40px 36px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                      <tr>
-                        <td align="left" style="font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">
-                          cucina <strong>labs</strong>
-                        </td>
-                        <td align="right" style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">
-                          Week of {{weekOf}}
-                        </td>
-                      </tr>
-                    </table>
-                    <p style="margin: 20px 0 10px; font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">Weekly Newsletter</p>
-                    <h1 style="margin: 0; font-size: 32px; font-weight: 600; color: #ffffff; line-height: 1.2; letter-spacing: -0.02em;">What's Cookin' This Week</h1>
+                  <td background="{{bannerUrl}}" style="background-image: url('{{bannerUrl}}'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 20px 20px 0 0;">
+                    <!--[if gte mso 9]>
+                    <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:220px;">
+                      <v:fill type="frame" src="{{bannerUrl}}" color="#0d0d0d" />
+                      <v:textbox inset="0,0,0,0">
+                    <![endif]-->
+                    <div>
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td bgcolor="#0d0d0d" style="padding: 32px 40px 36px; background-color: rgba(13, 13, 13, 0.55);">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td align="left" style="font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">
+                                  cucina <strong>labs</strong>
+                                </td>
+                                <td align="right" style="font-size: 12px; color: rgba(255, 255, 255, 0.7);">
+                                  Week of {{weekOf}}
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 20px 0 10px; font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">AI Product Briefing</p>
+                            <h1 style="margin: 0; font-size: 34px; font-weight: 600; color: #ffffff; line-height: 1.15; letter-spacing: -0.03em;">Weekly Menu</h1>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    <!--[if gte mso 9]>
+                      </v:textbox>
+                    </v:rect>
+                    <![endif]-->
                   </td>
                 </tr>
 
-                <!-- Chef's Table Section -->
                 <tr>
                   <td style="padding: 36px 40px 0;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td style="padding: 24px; background: linear-gradient(135deg, rgba(155, 242, 202, 0.2) 0%, rgba(155, 242, 202, 0.05) 100%); border-radius: 16px; border-left: 4px solid #9bf2ca;">
                           <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 12px;">
-                            Chef's Table
+                            From the Chef's Table
                           </div>
                           {{#if chefsTable.title}}
                           <h2 style="margin: 0 0 12px; font-size: 20px; font-weight: 600; color: #0d0d0d; line-height: 1.3;">{{chefsTable.title}}</h2>
@@ -84,14 +99,10 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                   </td>
                 </tr>
 
-                <!-- News Section -->
                 {{#if news.length}}
                 <tr>
                   <td style="padding: 32px 40px 0;">
-                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">
-                      News
-                    </div>
-                    <p style="margin: 0 0 20px; font-size: 13px; color: rgba(13, 13, 13, 0.6);">Top stories from the AI world this week</p>
+                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">News</div>
                     {{#each news}}
                     <div style="padding-bottom: {{#unless @last}}20px{{else}}0{{/unless}}; margin-bottom: {{#unless @last}}20px{{else}}0{{/unless}}; border-bottom: {{#unless @last}}1px solid rgba(0, 0, 0, 0.06){{else}}none{{/unless}};">
                       <div style="display: flex; align-items: flex-start;">
@@ -100,10 +111,10 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                           <h3 style="margin: 0 0 8px; font-size: 16px; font-weight: 600; color: #0d0d0d; line-height: 1.4;">
                             {{#if url}}<a href="{{url}}" style="color: #0d0d0d; text-decoration: none;">{{title}}</a>{{else}}{{title}}{{/if}}
                           </h3>
-                          <p style="margin: 0; font-size: 14px; color: rgba(13, 13, 13, 0.7); line-height: 1.6;">{{summary}}</p>
-                          {{#if url}}
-                          <a href="{{url}}" style="display: inline-block; margin-top: 8px; color: #4a51d9; text-decoration: none; font-weight: 600; font-size: 13px;">Read more &rarr;</a>
+                          {{#if source}}
+                          <p style="margin: 0 0 6px; font-size: 11px; color: rgba(13, 13, 13, 0.5); text-transform: uppercase; letter-spacing: 0.08em;">{{source}}</p>
                           {{/if}}
+                          <p style="margin: 0; font-size: 14px; color: rgba(13, 13, 13, 0.7); line-height: 1.6;">{{summary}}</p>
                         </div>
                       </div>
                     </div>
@@ -112,15 +123,11 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 </tr>
                 {{/if}}
 
-                <!-- Recipes Section (Social Posts/Articles) -->
-                {{#if recipes.length}}
+                {{#if reading.length}}
                 <tr>
                   <td style="padding: 32px 40px 0;">
-                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">
-                      Recipes
-                    </div>
-                    <p style="margin: 0 0 20px; font-size: 13px; color: rgba(13, 13, 13, 0.6);">Posts and articles we enjoyed this week</p>
-                    {{#each recipes}}
+                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">What We're Reading</div>
+                    {{#each reading}}
                     <div style="padding: 16px 18px; margin-bottom: {{#unless @last}}12px{{else}}0{{/unless}}; background: #fafafa; border-radius: 12px; border: 1px solid rgba(0, 0, 0, 0.04);">
                       <h4 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #0d0d0d; line-height: 1.4;">
                         {{#if url}}<a href="{{url}}" style="color: #0d0d0d; text-decoration: none;">{{title}}</a>{{else}}{{title}}{{/if}}
@@ -135,14 +142,10 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 </tr>
                 {{/if}}
 
-                <!-- What We're Cooking Section -->
                 {{#if cooking.length}}
                 <tr>
                   <td style="padding: 32px 40px 0;">
-                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">
-                      What We're Cooking
-                    </div>
-                    <p style="margin: 0 0 20px; font-size: 13px; color: rgba(13, 13, 13, 0.6);">Our experiments and projects this week</p>
+                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">What We're Cooking</div>
                     {{#each cooking}}
                     <div style="padding: 18px 20px; margin-bottom: {{#unless @last}}12px{{else}}0{{/unless}}; background: linear-gradient(135deg, rgba(74, 81, 217, 0.08) 0%, rgba(74, 81, 217, 0.02) 100%); border-radius: 12px; border: 1px solid rgba(74, 81, 217, 0.12);">
                       <h4 style="margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #0d0d0d; line-height: 1.4;">
@@ -158,7 +161,6 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 </tr>
                 {{/if}}
 
-                <!-- Footer -->
                 <tr>
                   <td style="padding: 36px 40px 40px;">
                     <div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent); margin: 0 0 24px;"></div>
@@ -166,7 +168,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                       <tr>
                         <td style="padding-bottom: 16px;">
                           <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 13px; line-height: 1.6;">
-                            You're receiving this because you subscribed to <strong>cucina labs</strong> weekly newsletter.
+                            You are receiving this email because you subscribed to the <strong>cucina labs</strong> weekly briefing.
                           </p>
                         </td>
                       </tr>
@@ -207,16 +209,20 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`
 
-// Register math helper for index + 1
-Handlebars.registerHelper('math', function(a: number, operator: string, b: number) {
-  a = Number(a)
-  b = Number(b)
+Handlebars.registerHelper("math", function (a: number, operator: string, b: number) {
+  const left = Number(a)
+  const right = Number(b)
   switch (operator) {
-    case '+': return a + b
-    case '-': return a - b
-    case '*': return a * b
-    case '/': return a / b
-    default: return a
+    case "+":
+      return left + right
+    case "-":
+      return left - right
+    case "*":
+      return left * right
+    case "/":
+      return left / right
+    default:
+      return left
   }
 })
 
@@ -228,54 +234,82 @@ export const renderWeeklyNewsletter = (data: WeeklyNewsletterData): string => {
   })
 }
 
+const isWithinLastDays = (value: string | undefined, days: number): boolean => {
+  if (!value) return false
+  const createdAt = new Date(value)
+  if (Number.isNaN(createdAt.getTime())) return false
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+  return createdAt >= cutoff
+}
+
+const sortByCreatedAtDesc = <T extends { createdAt?: string | null }>(items: T[]): T[] =>
+  [...items].sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0
+    return bTime - aTime
+  })
+
 export const buildWeeklyNewsletterContext = (
   newsletter: {
     weekStart: Date
     chefsTableTitle?: string | null
     chefsTableBody?: string | null
     newsItems?: any[] | null
-    cookingItems?: any[] | null
   },
   savedRecipes: Array<{
     title: string
     url?: string | null
     description?: string | null
     source?: string | null
+    createdAt?: string | null
+  }>,
+  savedCooking: Array<{
+    title: string
+    url?: string | null
+    description?: string | null
+    createdAt?: string | null
   }>,
   origin?: string
 ): WeeklyNewsletterData => {
-  const weekOf = newsletter.weekStart.toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+  const weekOf = newsletter.weekStart.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   })
 
-  const baseUrl = origin || ''
-  const unsubscribeUrl = baseUrl ? `${baseUrl}/unsubscribe` : '/unsubscribe'
+  const sortedRecipes = sortByCreatedAtDesc(savedRecipes || [])
+  const recentRecipes = sortedRecipes.filter((recipe) => isWithinLastDays(recipe.createdAt || undefined, 7))
+
+  const sortedCooking = sortByCreatedAtDesc(savedCooking || [])
+
+  const baseUrl = origin || ""
+  const unsubscribeUrl = baseUrl ? `${baseUrl}/unsubscribe` : "/unsubscribe"
+  const bannerUrl = `${baseUrl}/video-background-2-still.png`
 
   return {
     weekOf,
     chefsTable: {
       title: newsletter.chefsTableTitle || undefined,
-      body: newsletter.chefsTableBody || 'Welcome to this week\'s edition of our newsletter!',
+      body: newsletter.chefsTableBody || "Hey Chefs! Here's the weekly menu and the ideas worth bringing into your product work.",
     },
     news: (newsletter.newsItems || []).slice(0, 3).map((item: any) => ({
-      title: item.title || item.Title || '',
-      url: item.url || item.URL || item.Link || '',
-      summary: item.summary || item.Summary || item.Description || '',
+      title: item.title || item.Title || "",
+      url: item.url || item.URL || item.Link || "",
+      summary: item.summary || item.Summary || item.Description || "",
       source: item.source || item.Source || undefined,
     })),
-    recipes: savedRecipes.map((recipe) => ({
+    reading: recentRecipes.slice(0, 5).map((recipe) => ({
       title: recipe.title,
       url: recipe.url || undefined,
-      description: recipe.description || '',
+      description: recipe.description || "",
       source: recipe.source || undefined,
     })),
-    cooking: (newsletter.cookingItems || []).map((item: any) => ({
-      title: item.title || '',
-      description: item.description || '',
+    cooking: sortedCooking.slice(0, 1).map((item) => ({
+      title: item.title,
+      description: item.description || "",
       url: item.url || undefined,
     })),
     unsubscribeUrl,
+    bannerUrl,
   }
 }
