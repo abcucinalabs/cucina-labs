@@ -4,21 +4,21 @@ import { getSupabaseAdmin } from "./supabase"
 export async function getAuthSession() {
   const supabase = createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) return null
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error || !user) return null
 
   const { data: profile } = await getSupabaseAdmin()
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .single()
 
   return {
     user: {
-      id: session.user.id,
-      email: session.user.email!,
+      id: user.id,
+      email: user.email!,
       role: (profile?.role as string) || "admin",
     },
   }

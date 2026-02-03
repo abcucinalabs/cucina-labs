@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
@@ -15,21 +14,15 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKey = await findApiKeyByService("resend")
-
-    if (!apiKey?.key) {
+    const resendApiKey = await getServiceApiKey("resend")
+    if (!resendApiKey) {
       return NextResponse.json({ error: "Resend API key not configured" }, { status: 400 })
-    }
-
-    const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-    if (needsRotation) {
-      await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
     }
 
     const response = await fetch(`https://api.resend.com/audiences/${params.id}`, {
       method: "DELETE",
       headers: {
-        Authorization: `Bearer ${plaintext}`,
+        Authorization: `Bearer ${resendApiKey}`,
       },
     })
 

@@ -1,37 +1,56 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
 import { RotateCcw, Save } from "lucide-react"
 
+type PromptKey = "ingestion" | "daily_insights" | "weekly_update"
+
+type PromptResponse = {
+  key: PromptKey
+  label: string
+  description: string
+  prompt: string
+  isDefault: boolean
+  variables: string[]
+}
+
+const promptOptions: { key: PromptKey; label: string }[] = [
+  { key: "ingestion", label: "Ingestion Prompt" },
+  { key: "daily_insights", label: "Daily Insights Prompt" },
+  { key: "weekly_update", label: "Weekly Update Prompt" },
+]
+
 export function PromptsTab() {
-  const [systemPrompt, setSystemPrompt] = useState("")
-  const [userPrompt, setUserPrompt] = useState("")
+  const [selectedKey, setSelectedKey] = useState<PromptKey>("ingestion")
+  const [promptData, setPromptData] = useState<PromptResponse | null>(null)
+  const [promptText, setPromptText] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
-  const [isDefault, setIsDefault] = useState(true)
   const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
-    fetchConfig()
-  }, [])
+    fetchPrompt(selectedKey)
+  }, [selectedKey])
 
-  const fetchConfig = async () => {
+  const fetchPrompt = async (key: PromptKey) => {
     setIsLoading(true)
+    setSaveStatus(null)
     try {
-      const response = await fetch("/api/sequence-prompts")
-      if (response.ok) {
-        const data = await response.json()
-        setSystemPrompt(data.systemPrompt || "")
-        setUserPrompt(data.userPrompt || "")
-        setIsDefault(data.isDefault || false)
-      }
+      const response = await fetch(`/api/prompts?key=${key}`)
+      if (!response.ok) throw new Error("Failed to load prompt")
+      const data: PromptResponse = await response.json()
+      setPromptData(data)
+      setPromptText(data.prompt || "")
     } catch (error) {
-      console.error("Failed to fetch prompt config:", error)
+      console.error("Failed to fetch prompt:", error)
+      setSaveStatus({ type: "error", message: "Failed to load prompt." })
     } finally {
       setIsLoading(false)
     }
@@ -41,43 +60,50 @@ export function PromptsTab() {
     setIsSaving(true)
     setSaveStatus(null)
     try {
-      const response = await fetch("/api/sequence-prompts", {
+      const response = await fetch("/api/prompts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt, userPrompt }),
+        body: JSON.stringify({ key: selectedKey, prompt: promptText }),
       })
-      if (response.ok) {
-        setIsDefault(false)
-        setSaveStatus({ type: "success", message: "Prompts saved successfully." })
-      } else {
-        const data = await response.json()
-        setSaveStatus({ type: "error", message: data.error || "Failed to save." })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        setSaveStatus({ type: "error", message: data?.error || "Failed to save prompt." })
+        return
       }
+
+      await fetchPrompt(selectedKey)
+      setSaveStatus({ type: "success", message: "Prompt saved successfully." })
     } catch (error) {
-      console.error("Failed to save prompts:", error)
-      setSaveStatus({ type: "error", message: "Failed to save prompts." })
+      console.error("Failed to save prompt:", error)
+      setSaveStatus({ type: "error", message: "Failed to save prompt." })
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleReset = async () => {
-    if (!confirm("Reset prompts to defaults? This will overwrite your current prompts.")) return
+    if (!confirm("Restore this prompt to its default version? This will overwrite your current edits.")) return
     setIsResetting(true)
     setSaveStatus(null)
     try {
-      const response = await fetch("/api/sequence-prompts/reset", {
+      const response = await fetch("/api/prompts/reset", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: selectedKey }),
       })
-      if (response.ok) {
-        await fetchConfig()
-        setSaveStatus({ type: "success", message: "Prompts reset to defaults." })
-      } else {
-        setSaveStatus({ type: "error", message: "Failed to reset prompts." })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        setSaveStatus({ type: "error", message: data?.error || "Failed to restore default prompt." })
+        return
       }
+
+      await fetchPrompt(selectedKey)
+      setSaveStatus({ type: "success", message: "Default prompt restored." })
     } catch (error) {
-      console.error("Failed to reset prompts:", error)
-      setSaveStatus({ type: "error", message: "Failed to reset prompts." })
+      console.error("Failed to reset prompt:", error)
+      setSaveStatus({ type: "error", message: "Failed to restore default prompt." })
     } finally {
       setIsResetting(false)
     }
@@ -86,82 +112,90 @@ export function PromptsTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
       </div>
     )
   }
+
+  const variables = promptData?.variables || []
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>AI Prompt Configuration</CardTitle>
+          <CardTitle>Prompt Configuration</CardTitle>
           <CardDescription>
-            Configure the system and user prompts used by all sequences to generate newsletter content. Individual sequences will use these prompts unless overridden.
+            Manage the three critical prompts used for ingestion, daily insights generation, and weekly updates.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="system-prompt">System Prompt</Label>
-            <Textarea
-              id="system-prompt"
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              rows={12}
-              className="font-mono text-xs resize-y"
-              placeholder="System prompt for the AI model..."
-            />
-            <p className="text-[10px] text-muted-foreground">
-              {systemPrompt.length} characters
-            </p>
+            <Label htmlFor="prompt-type">Prompt Type</Label>
+            <Select value={selectedKey} onValueChange={(value) => setSelectedKey(value as PromptKey)}>
+              <SelectTrigger id="prompt-type" className="max-w-md">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {promptOptions.map((opt) => (
+                  <SelectItem key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {promptData?.description && (
+              <p className="text-xs text-muted-foreground">{promptData.description}</p>
+            )}
+            {promptData?.isDefault ? (
+              <Badge variant="outline">Using default prompt</Badge>
+            ) : (
+              <Badge variant="secondary">Customized</Badge>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="user-prompt">User Prompt</Label>
+            <Label htmlFor="prompt-text">Prompt</Label>
             <Textarea
-              id="user-prompt"
-              value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
-              rows={12}
-              className="font-mono text-xs resize-y"
-              placeholder="User prompt with template variables..."
+              id="prompt-text"
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              rows={20}
+              className="resize-y font-mono text-xs"
+              placeholder="Prompt text..."
             />
-            <p className="text-[10px] text-muted-foreground">
-              {userPrompt.length} characters
-            </p>
+            <p className="text-[10px] text-muted-foreground">{promptText.length} characters</p>
           </div>
 
           <Card className="bg-[var(--bg-subtle)]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Template Variables</CardTitle>
+              <CardTitle className="text-sm">Detected JSON Variables</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)]">
-                  {"{{ $json.day_start }}"} <span className="text-muted-foreground ml-1">- Lookback start date</span>
+              {variables.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No template variables detected in this prompt.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {variables.map((variable) => (
+                    <div
+                      key={variable}
+                      className="rounded border border-[var(--border-default)] bg-[var(--bg-surface)] px-2 py-1.5 font-mono text-xs"
+                    >
+                      {variable}
+                    </div>
+                  ))}
                 </div>
-                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)]">
-                  {"{{ $json.day_end }}"} <span className="text-muted-foreground ml-1">- Current date</span>
-                </div>
-                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)]">
-                  {"{{ $json.total_articles }}"} <span className="text-muted-foreground ml-1">- Article count</span>
-                </div>
-                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)]">
-                  {"{{ $json.articles }}"} <span className="text-muted-foreground ml-1">- Articles JSON</span>
-                </div>
-                <div className="font-mono bg-[var(--bg-surface)] px-2 py-1.5 rounded border border-[var(--border-default)] sm:col-span-2">
-                  {"{{ $json.content_sections }}"} <span className="text-muted-foreground ml-1">- Dynamic content sections (based on sequence settings)</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
           {saveStatus && (
-            <div className={`p-3 rounded-lg text-sm ${
-              saveStatus.type === "success"
-                ? "bg-[rgba(60,53,242,0.06)] text-[#3c35f2] border border-[rgba(60,53,242,0.2)]"
-                : "bg-red-50 text-red-800 border border-red-200"
-            }`}>
+            <div
+              className={`rounded-lg border p-3 text-sm ${
+                saveStatus.type === "success"
+                  ? "border-[rgba(60,53,242,0.2)] bg-[rgba(60,53,242,0.06)] text-[#3c35f2]"
+                  : "border-red-200 bg-red-50 text-red-800"
+              }`}
+            >
               {saveStatus.message}
             </div>
           )}
@@ -169,23 +203,19 @@ export function PromptsTab() {
           <div className="flex items-center gap-2">
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
               )}
-              Save Prompts
+              Save Prompt
             </Button>
-            <Button
-              variant="outline"
-              onClick={handleReset}
-              disabled={isResetting}
-            >
+            <Button variant="outline" onClick={handleReset} disabled={isResetting}>
               {isResetting ? (
-                <div className="w-4 h-4 border-2 border-primary/20 border-t-primary rounded-full animate-spin mr-2" />
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
               ) : (
-                <RotateCcw className="h-4 w-4 mr-2" />
+                <RotateCcw className="mr-2 h-4 w-4" />
               )}
-              Reset to Defaults
+              Restore Default
             </Button>
           </div>
         </CardContent>

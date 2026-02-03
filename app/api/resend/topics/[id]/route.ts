@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
 async function getResendKey() {
-  const apiKey = await findApiKeyByService("resend")
-  if (!apiKey?.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
-  }
-  return plaintext
+  return getServiceApiKey("resend")
 }
 
 export async function DELETE(

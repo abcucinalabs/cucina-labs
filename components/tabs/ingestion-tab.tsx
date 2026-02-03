@@ -1,18 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DayPicker } from "@/components/ui/day-picker"
-import { Plus, Trash2, Play, RotateCcw } from "lucide-react"
+import { Plus, Trash2, Play, Settings } from "lucide-react"
 
 const timezones = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -31,8 +31,7 @@ export function IngestionTab() {
     time: "09:00",
     timezone: "America/New_York",
     timeFrame: 72,
-    systemPrompt: "",
-    userPrompt: "",
+    promptKey: "ingestion",
   })
   const [newSource, setNewSource] = useState({ name: "", url: "", category: "" })
   const [openDialog, setOpenDialog] = useState(false)
@@ -67,8 +66,7 @@ export function IngestionTab() {
             time: data.time || "09:00",
             timezone: data.timezone || "America/New_York",
             timeFrame: data.timeFrame || 72,
-            systemPrompt: data.systemPrompt || "",
-            userPrompt: data.userPrompt || "",
+            promptKey: data.promptKey || "ingestion",
           })
         }
       }
@@ -142,26 +140,18 @@ export function IngestionTab() {
       await fetch("/api/ingestion/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          schedule: config.schedule,
+          time: config.time,
+          timezone: config.timezone,
+          timeFrame: config.timeFrame,
+        }),
       })
       alert("Configuration saved!")
     } catch (error) {
       console.error("Failed to save config:", error)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleResetPrompts = async () => {
-    if (!confirm("Reset prompts to default values? This will overwrite your current prompts.")) return
-    try {
-      const response = await fetch("/api/ingestion/config/reset", { method: "POST" })
-      if (response.ok) {
-        fetchConfig()
-        alert("Prompts reset to defaults!")
-      }
-    } catch (error) {
-      console.error("Failed to reset prompts:", error)
     }
   }
 
@@ -399,48 +389,39 @@ export function IngestionTab() {
         </CardContent>
       </Card>
 
-      {/* Prompt Configuration */}
+      {/* Prompt Source */}
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle>Prompt Configuration</CardTitle>
-              <CardDescription>Configure AI prompts for article selection and curation</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleResetPrompts}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset to Default
-            </Button>
-          </div>
+          <CardTitle>Prompt Selection</CardTitle>
+          <CardDescription>
+            This agent uses the Ingestion Prompt managed in Settings → Prompts.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="system-prompt">System Prompt</Label>
-            <Textarea
-              id="system-prompt"
-              value={config.systemPrompt}
-              onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
-              placeholder="You are an AI content curator..."
-              rows={8}
-              className="font-mono text-sm"
-            />
+            <Label>Active Prompt</Label>
+            <Select
+              value={config.promptKey}
+              onValueChange={(value) => setConfig({ ...config, promptKey: value })}
+            >
+              <SelectTrigger className="max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ingestion">Ingestion Prompt</SelectItem>
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
-              {config.systemPrompt.length} characters
+              To edit prompt content or restore defaults, open Settings → Prompts.
             </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-prompt">User Prompt</Label>
-            <Textarea
-              id="user-prompt"
-              value={config.userPrompt}
-              onChange={(e) => setConfig({ ...config, userPrompt: e.target.value })}
-              placeholder="Select articles relevant to AI product builders..."
-              rows={12}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              {config.userPrompt.length} characters • Use {"{{ variable }}"} for template variables
-            </p>
+          <div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Open Prompt Settings
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

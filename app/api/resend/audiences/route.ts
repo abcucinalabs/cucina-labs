@@ -1,18 +1,87 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
+let audiencesCache: { data: Array<{ id: string; name: string }>; fetchedAt: number } | null = null
+let audiencesInFlight: Promise<Array<{ id: string; name: string }>> | null = null
+
 async function getResendKey() {
-  const apiKey = await findApiKeyByService("resend")
-  if (!apiKey?.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
+  return getServiceApiKey("resend")
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function getRetryDelayMs(response: Response, attempt: number) {
+  const retryAfter = response.headers.get("retry-after")
+  if (retryAfter) {
+    const parsed = Number(retryAfter)
+    if (Number.isFinite(parsed) && parsed > 0) return parsed * 1000
   }
-  return plaintext
+  return 400 * (attempt + 1)
+}
+
+async function fetchAudiencesWithRetry(apiKey: string) {
+  const now = Date.now()
+  if (audiencesCache && now - audiencesCache.fetchedAt < 30_000) {
+    return audiencesCache.data
+  }
+  if (audiencesInFlight) {
+    return audiencesInFlight
+  }
+
+  audiencesInFlight = (async () => {
+    let lastError = "Failed to fetch audiences"
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await fetch("https://api.resend.com/audiences", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const audiences =
+          data.data?.map((audience: any) => ({
+            id: audience.id,
+            name: audience.name,
+          })) || []
+        audiencesCache = { data: audiences, fetchedAt: Date.now() }
+        return audiences
+      }
+
+      const errorText = await response.text()
+      lastError = errorText
+      if (response.status === 429 && attempt < 3) {
+        await sleep(getRetryDelayMs(response, attempt))
+        continue
+      }
+      break
+    }
+    throw new Error(lastError)
+  })()
+
+  try {
+    return await audiencesInFlight
+  } finally {
+    audiencesInFlight = null
+  }
+}
+
+function buildAudienceOptions(audiences: Array<{ id: string; name: string }>) {
+  const allContactsAudience = audiences.find(
+    (audience: { name?: string }) =>
+      audience.name?.toLowerCase() === "all contacts"
+  )
+  const otherAudiences = allContactsAudience
+    ? audiences.filter((audience: { id: string }) => audience.id !== allContactsAudience.id)
+    : audiences
+
+  return [
+    allContactsAudience
+      ? { ...allContactsAudience, name: "All Subscribers (Resend)" }
+      : { id: "resend_all", name: "All Subscribers (Resend)" },
+    ...otherAudiences,
+  ]
 }
 
 export async function GET(request: NextRequest) {
@@ -22,64 +91,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKey = await findApiKeyByService("resend")
-
-    if (!apiKey || !apiKey.key) {
+    const decryptedKey = await getResendKey()
+    if (!decryptedKey) {
       return NextResponse.json([])
     }
 
-    const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-    if (needsRotation) {
-      await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
-    }
-    const decryptedKey = plaintext
-
-    // Fetch audiences from Resend API
     try {
-      const response = await fetch("https://api.resend.com/audiences", {
-        headers: {
-          Authorization: `Bearer ${decryptedKey}`,
-        },
-      })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error("Failed to fetch audiences from Resend:", errorText)
-        console.error("Response status:", response.status)
-        // Return a default option if the API fails
-        return NextResponse.json([
-          { id: "resend_all", name: "All Subscribers (Resend)" },
-        ])
-      }
-
-      const data = await response.json()
-      console.log("Resend API response:", JSON.stringify(data, null, 2))
-
-      // Transform the response to match our expected format
-      const audiences = data.data?.map((audience: any) => ({
-        id: audience.id,
-        name: audience.name,
-      })) || []
+      const audiences = await fetchAudiencesWithRetry(decryptedKey)
 
       console.log(`Found ${audiences.length} audiences from Resend`)
 
-      const allContactsAudience = audiences.find(
-        (audience: { name?: string }) =>
-          audience.name?.toLowerCase() === "all contacts"
-      )
-      const otherAudiences = allContactsAudience
-        ? audiences.filter((audience: { id: string }) => audience.id !== allContactsAudience.id)
-        : audiences
-
-      // Add "All Subscribers" option for Resend contacts (prefer actual All Contacts audience)
-      return NextResponse.json([
-        allContactsAudience
-          ? { ...allContactsAudience, name: "All Subscribers (Resend)" }
-          : { id: "resend_all", name: "All Subscribers (Resend)" },
-        ...otherAudiences,
-      ])
+      return NextResponse.json(buildAudienceOptions(audiences))
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
+      if (audiencesCache?.data?.length) {
+        return NextResponse.json(buildAudienceOptions(audiencesCache.data))
+      }
       return NextResponse.json([
         { id: "resend_all", name: "All Subscribers (Resend)" },
       ])

@@ -73,11 +73,11 @@ export default async function middleware(request: NextRequest) {
     )
 
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+    } = await supabase.auth.getUser()
 
     // Only redirect to login for page routes, not API routes
-    if (!session && !pathname.startsWith("/api/")) {
+    if (!user && !pathname.startsWith("/api/")) {
       const loginUrl = new URL("/login", request.url)
       return NextResponse.redirect(loginUrl)
     }

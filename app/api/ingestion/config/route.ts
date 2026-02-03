@@ -5,6 +5,7 @@ import {
   upsertIngestionConfig,
 } from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
+import { DEFAULT_PROMPTS } from "@/lib/prompt-defaults"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -14,8 +15,6 @@ const configSchema = z.object({
   time: z.string(),
   timezone: z.string(),
   timeFrame: z.number(),
-  systemPrompt: z.string(),
-  userPrompt: z.string(),
 })
 
 export async function GET(request: NextRequest) {
@@ -37,8 +36,7 @@ export async function GET(request: NextRequest) {
       time: config.time,
       timezone: config.timezone,
       timeFrame: config.timeFrame,
-      systemPrompt: config.systemPrompt,
-      userPrompt: config.userPrompt,
+      promptKey: "ingestion",
     })
   } catch (error) {
     console.error("Failed to fetch config:", error)
@@ -58,14 +56,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const data = configSchema.parse(body)
+    const existingConfig = await findIngestionConfig()
 
     await upsertIngestionConfig({
       schedule: data.schedule,
       time: data.time,
       timezone: data.timezone,
       timeFrame: data.timeFrame,
-      systemPrompt: data.systemPrompt,
-      userPrompt: data.userPrompt,
+      ...(existingConfig
+        ? {}
+        : {
+            systemPrompt: "",
+            userPrompt: DEFAULT_PROMPTS.ingestion,
+          }),
     })
 
     await logNewsActivity({

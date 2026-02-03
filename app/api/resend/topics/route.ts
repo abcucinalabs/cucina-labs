@@ -1,18 +1,66 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
+let topicsCache: { data: any[]; fetchedAt: number } | null = null
+let topicsInFlight: Promise<any[]> | null = null
+
 async function getResendKey() {
-  const apiKey = await findApiKeyByService("resend")
-  if (!apiKey?.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
+  return getServiceApiKey("resend")
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function getRetryDelayMs(response: Response, attempt: number) {
+  const retryAfter = response.headers.get("retry-after")
+  if (retryAfter) {
+    const parsed = Number(retryAfter)
+    if (Number.isFinite(parsed) && parsed > 0) return parsed * 1000
   }
-  return plaintext
+  return 400 * (attempt + 1)
+}
+
+async function fetchTopicsWithRetry(apiKey: string) {
+  const now = Date.now()
+  if (topicsCache && now - topicsCache.fetchedAt < 30_000) {
+    return topicsCache.data
+  }
+  if (topicsInFlight) {
+    return topicsInFlight
+  }
+
+  topicsInFlight = (async () => {
+    let lastError = "Failed to fetch topics"
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const response = await fetch("https://api.resend.com/topics?limit=100", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const topics = data.data || []
+        topicsCache = { data: topics, fetchedAt: Date.now() }
+        return topics
+      }
+
+      const errorText = await response.text()
+      lastError = errorText
+      if (response.status === 429 && attempt < 3) {
+        await sleep(getRetryDelayMs(response, attempt))
+        continue
+      }
+      break
+    }
+    throw new Error(lastError)
+  })()
+
+  try {
+    return await topicsInFlight
+  } finally {
+    topicsInFlight = null
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -27,19 +75,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    const response = await fetch("https://api.resend.com/topics?limit=100", {
-      headers: { Authorization: `Bearer ${decryptedKey}` },
-    })
-
-    if (!response.ok) {
-      console.error("Failed to fetch topics:", await response.text())
-      return NextResponse.json([])
-    }
-
-    const data = await response.json()
-    return NextResponse.json(data.data || [])
+    const topics = await fetchTopicsWithRetry(decryptedKey)
+    return NextResponse.json(topics)
   } catch (error) {
     console.error("Failed to fetch topics:", error)
+    if (topicsCache?.data) {
+      return NextResponse.json(topicsCache.data)
+    }
     return NextResponse.json({ error: "Failed to fetch topics" }, { status: 500 })
   }
 }

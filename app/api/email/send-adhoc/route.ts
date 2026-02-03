@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { findApiKeyByService } from "@/lib/dal"
 import { Resend } from "resend"
 import { z } from "zod"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
@@ -18,16 +18,12 @@ const sendAdhocSchema = z.object({
 
 async function getResendConfig() {
   const apiKey = await findApiKeyByService("resend")
-  if (!apiKey || !apiKey.key) return null
-
-  const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-  if (needsRotation) {
-    await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
-  }
+  const plaintext = await getServiceApiKey("resend")
+  if (!plaintext) return null
   return {
     apiKey: plaintext,
-    fromName: apiKey.resendFromName || "cucina labs",
-    fromEmail: apiKey.resendFromEmail || "newsletter@cucinalabs.com",
+    fromName: apiKey?.resendFromName || "cucina labs",
+    fromEmail: apiKey?.resendFromEmail || "newsletter@cucinalabs.com",
   }
 }
 

@@ -1,14 +1,15 @@
 import {
   findApiKeyByService,
-  updateApiKey,
   upsertArticle,
   findEnabledRssSources,
   findIngestionConfig,
 } from "./dal"
-import { decryptWithMetadata, encrypt } from "./encryption"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import Parser from "rss-parser"
 import { logNewsActivity } from "@/lib/news-activity"
+import { DEFAULT_PROMPTS } from "@/lib/prompt-defaults"
+import { getServiceApiKey } from "./service-keys"
+import { normalizeGeminiModel } from "./gemini-model"
 
 const parser = new Parser({
   customFields: {
@@ -166,14 +167,11 @@ async function fetchRssFeed(url: string): Promise<Article[]> {
 
 async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | null> {
   const config = await findApiKeyByService("gemini")
-  if (!config || !config.key) return null
-  const { plaintext, needsRotation } = decryptWithMetadata(config.key)
-  if (needsRotation) {
-    await updateApiKey(config.id, { key: encrypt(plaintext) })
-  }
+  const plaintext = await getServiceApiKey("gemini")
+  if (!plaintext) return null
   return {
     apiKey: plaintext,
-    model: config.geminiModel || "gemini-2.5-flash-preview-05-20",
+    model: normalizeGeminiModel(config?.geminiModel),
   }
 }
 
@@ -197,15 +195,28 @@ async function selectArticlesWithGemini(
     const response = await result.response
     const text = response.text()
 
-    // Parse JSON response from Gemini
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    if (!jsonMatch) {
-      console.error("Failed to parse Gemini response:", text)
-      return []
+    // Parse JSON response from Gemini.
+    // Supports legacy array responses and object responses with an `items` array.
+    let selected: any[] = []
+    const objectMatch = text.match(/\{[\s\S]*\}/)
+    const arrayMatch = text.match(/\[[\s\S]*\]/)
+
+    if (objectMatch) {
+      const parsed = JSON.parse(objectMatch[0])
+      if (Array.isArray(parsed)) {
+        selected = parsed
+      } else if (Array.isArray(parsed?.items)) {
+        selected = parsed.items
+      }
+    } else if (arrayMatch) {
+      const parsed = JSON.parse(arrayMatch[0])
+      if (Array.isArray(parsed)) {
+        selected = parsed
+      }
     }
 
-    const selected = JSON.parse(jsonMatch[0])
-    if (!Array.isArray(selected)) {
+    if (!Array.isArray(selected) || selected.length === 0) {
+      console.error("Failed to parse structured Gemini selection response:", text)
       return []
     }
 
@@ -375,7 +386,7 @@ export async function runIngestion(
   const defaultUserPrompt =
     userPrompt ??
     config?.userPrompt ??
-    "Select articles relevant to AI product builders. Return a JSON array of selected articles."
+    DEFAULT_PROMPTS.ingestion
 
   // Select articles using Gemini
   const selectedArticles = await selectArticlesWithGemini(

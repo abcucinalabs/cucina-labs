@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -21,24 +21,34 @@ export default function SubscribersPage() {
   const [audiences, setAudiences] = useState<{ id: string; name: string }[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
-    fetchContacts()
+    const controller = new AbortController()
+    fetchContacts(controller.signal)
+    return () => controller.abort()
   }, [])
 
-  const fetchContacts = async () => {
+  const fetchContacts = async (signal?: AbortSignal) => {
+    const requestId = ++requestIdRef.current
     setIsLoading(true)
     try {
-      const response = await fetch("/api/resend/contacts")
+      const response = await fetch("/api/resend/contacts", { signal })
       if (response.ok) {
         const data = await response.json()
-        setContacts(data.contacts || [])
-        setAudiences(data.audiences || [])
+        if (requestId === requestIdRef.current) {
+          setContacts(data.contacts || [])
+          setAudiences(data.audiences || [])
+        }
       }
     } catch (error) {
-      console.error("Failed to fetch contacts:", error)
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        console.error("Failed to fetch contacts:", error)
+      }
     } finally {
-      setIsLoading(false)
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false)
+      }
     }
   }
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
-import { findApiKeyByService, updateApiKey } from "@/lib/dal"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 export const dynamic = 'force-dynamic'
 
@@ -75,22 +74,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKey = await findApiKeyByService("resend")
-
-    if (!apiKey?.key) {
+    const resendApiKey = await getServiceApiKey("resend")
+    if (!resendApiKey) {
       return NextResponse.json({ contacts: [], audiences: [] })
-    }
-
-    const { plaintext, needsRotation } = decryptWithMetadata(apiKey.key)
-    if (needsRotation) {
-      await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
     }
 
     // Fetch all audiences, but do not fail the endpoint if this call fails.
     // Contacts can exist globally without being assigned to an audience.
     let audiences: { id: string; name: string }[] = []
     const audiencesResponse = await fetch("https://api.resend.com/audiences", {
-      headers: { Authorization: `Bearer ${plaintext}` },
+      headers: { Authorization: `Bearer ${resendApiKey}` },
     })
     if (audiencesResponse.ok) {
       const audiencesData = await audiencesResponse.json()
@@ -109,7 +102,7 @@ export async function GET(request: NextRequest) {
     }>()
 
     // Try global /contacts endpoint first (returns all contacts)
-    const globalContacts = await fetchAllContactsGlobal(plaintext)
+    const globalContacts = await fetchAllContactsGlobal(resendApiKey)
     for (const contact of globalContacts) {
       if (!contact.email) continue
       contactMap.set(contact.email, {
@@ -127,7 +120,7 @@ export async function GET(request: NextRequest) {
     // (and pick up any contacts not returned by the global endpoint)
     if (audiences.length > 0) {
       for (const audience of audiences) {
-        const audienceContacts = await fetchContactsFromAudience(plaintext, audience.id)
+        const audienceContacts = await fetchContactsFromAudience(resendApiKey, audience.id)
         for (const contact of audienceContacts) {
           if (!contact.email) continue
           const existing = contactMap.get(contact.email)

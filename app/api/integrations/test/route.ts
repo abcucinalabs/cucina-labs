@@ -4,7 +4,7 @@ import { findApiKeyByService, updateApiKey, upsertApiKey } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { GoogleGenerativeAI } from "@google/generative-ai"
-import { Resend } from "resend"
+import { normalizeGeminiModel } from "@/lib/gemini-model"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -83,15 +83,21 @@ async function handleTestRequest(request: NextRequest) {
       switch (service) {
         case "gemini": {
           const genAI = new GoogleGenerativeAI(decryptedKey)
-          const modelName = providedModel || apiKey?.geminiModel || "gemini-2.5-flash-preview-05-20"
+          const modelName = normalizeGeminiModel(providedModel || apiKey?.geminiModel)
           const model = genAI.getGenerativeModel({ model: modelName })
           await model.generateContent("test")
           success = true
           break
         }
         case "resend": {
-          const resend = new Resend(decryptedKey)
-          // Just verify the key is valid by checking if we can access the API
+          // Verify key against Resend API (audiences endpoint is required by the app)
+          const response = await fetch("https://api.resend.com/audiences?limit=1", {
+            headers: { Authorization: `Bearer ${decryptedKey}` },
+          })
+          if (!response.ok) {
+            const errorText = await response.text()
+            throw new Error(`Resend API key validation failed (${response.status}): ${errorText}`)
+          }
           success = true
           break
         }
