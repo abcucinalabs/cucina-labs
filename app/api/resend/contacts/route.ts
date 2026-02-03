@@ -86,20 +86,15 @@ export async function GET(request: NextRequest) {
       await updateApiKey(apiKey.id, { key: encrypt(plaintext) })
     }
 
-    // Fetch all audiences
+    // Fetch all audiences, but do not fail the endpoint if this call fails.
+    // Contacts can exist globally without being assigned to an audience.
+    let audiences: { id: string; name: string }[] = []
     const audiencesResponse = await fetch("https://api.resend.com/audiences", {
       headers: { Authorization: `Bearer ${plaintext}` },
     })
-
-    if (!audiencesResponse.ok) {
-      return NextResponse.json({ contacts: [], audiences: [] })
-    }
-
-    const audiencesData = await audiencesResponse.json()
-    const audiences = (audiencesData.data || []) as { id: string; name: string }[]
-
-    if (audiences.length === 0) {
-      return NextResponse.json({ contacts: [], audiences })
+    if (audiencesResponse.ok) {
+      const audiencesData = await audiencesResponse.json()
+      audiences = (audiencesData.data || []) as { id: string; name: string }[]
     }
 
     // Build a map of all contacts, deduplicating by email
@@ -130,24 +125,26 @@ export async function GET(request: NextRequest) {
 
     // Fetch per-audience contacts to get audience membership info
     // (and pick up any contacts not returned by the global endpoint)
-    for (const audience of audiences) {
-      const audienceContacts = await fetchContactsFromAudience(plaintext, audience.id)
-      for (const contact of audienceContacts) {
-        if (!contact.email) continue
-        const existing = contactMap.get(contact.email)
-        if (existing) {
-          existing.audiences.push(audience.name)
-          if (!contact.unsubscribed) existing.unsubscribed = false
-        } else {
-          contactMap.set(contact.email, {
-            id: contact.id,
-            email: contact.email,
-            firstName: contact.first_name || null,
-            lastName: contact.last_name || null,
-            unsubscribed: contact.unsubscribed,
-            createdAt: contact.created_at,
-            audiences: [audience.name],
-          })
+    if (audiences.length > 0) {
+      for (const audience of audiences) {
+        const audienceContacts = await fetchContactsFromAudience(plaintext, audience.id)
+        for (const contact of audienceContacts) {
+          if (!contact.email) continue
+          const existing = contactMap.get(contact.email)
+          if (existing) {
+            existing.audiences.push(audience.name)
+            if (!contact.unsubscribed) existing.unsubscribed = false
+          } else {
+            contactMap.set(contact.email, {
+              id: contact.id,
+              email: contact.email,
+              firstName: contact.first_name || null,
+              lastName: contact.last_name || null,
+              unsubscribed: contact.unsubscribed,
+              createdAt: contact.created_at,
+              audiences: [audience.name],
+            })
+          }
         }
       }
     }
