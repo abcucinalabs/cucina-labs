@@ -530,6 +530,40 @@ export async function upsertSequencePromptConfig(values: Record<string, any>) {
 }
 
 // ─────────────────────────────────────────────
+// WeeklyPromptConfig
+// ─────────────────────────────────────────────
+
+export async function findWeeklyPromptConfig() {
+  const { data } = await supabaseAdmin
+    .from("weekly_prompt_configs")
+    .select("*")
+    .limit(1)
+    .maybeSingle()
+  return data ? toCamelCase<any>(data) : null
+}
+
+export async function upsertWeeklyPromptConfig(values: Record<string, any>) {
+  const existing = await findWeeklyPromptConfig()
+  if (existing) {
+    const { data, error } = await supabaseAdmin
+      .from("weekly_prompt_configs")
+      .update(toSnakeCase(values))
+      .eq("id", existing.id)
+      .select()
+      .single()
+    if (error) throw error
+    return toCamelCase<any>(data)
+  }
+  const { data, error } = await supabaseAdmin
+    .from("weekly_prompt_configs")
+    .insert(toSnakeCase(values))
+    .select()
+    .single()
+  if (error) throw error
+  return toCamelCase<any>(data)
+}
+
+// ─────────────────────────────────────────────
 // Subscriber
 // ─────────────────────────────────────────────
 
