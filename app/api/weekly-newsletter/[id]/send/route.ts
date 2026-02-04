@@ -96,11 +96,17 @@ export async function POST(
 
     if (testEmail) {
       // Send test email to specific address
+      const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || ""
+      const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(testEmail)}`
       const result = await resend.emails.send({
         from: `${fromName} <${fromEmail}>`,
         to: testEmail,
         subject: `[TEST] ${subject}`,
         html,
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       })
 
       return NextResponse.json({

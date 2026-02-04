@@ -32,12 +32,31 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no,address=no,email=no,date=no">
   <title>cucina labs Weekly - {{weekOf}}</title>
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+    u + #body a { color: inherit; text-decoration: none; }
+    .ExternalClass { width: 100%; }
+    .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
+    @media only screen and (max-width: 600px) {
+      .mobile-wrapper { padding: 12px 0 !important; }
+      .mobile-content { padding: 24px 16px !important; }
+      .mobile-header { padding: 24px 16px 28px !important; }
+      .mobile-footer { padding: 20px 16px 28px !important; }
+      .mobile-card { border-radius: 0 !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.7; color: #0d0d0d; background-color: #f5f5f5;">
+<body id="body" style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.7; color: #0d0d0d; background-color: #f5f5f5;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f5;">
     <tr>
-      <td align="center" style="padding: 40px 20px;">
+      <td align="center" class="mobile-wrapper" style="padding: 40px 20px;">
         <!--[if mso]>
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0">
           <tr>
@@ -46,9 +65,9 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
           <tr>
             <td>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); overflow: hidden;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="mobile-card" style="background: #ffffff; border-radius: 20px; border: 1px solid rgba(0, 0, 0, 0.06); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); overflow: hidden;">
                 <tr>
-                  <td background="{{bannerUrl}}" style="background-image: url('{{bannerUrl}}'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 20px 20px 0 0;">
+                  <td background="{{bannerUrl}}" class="mobile-card" style="background-image: url('{{bannerUrl}}'); background-size: cover; background-position: center; background-repeat: no-repeat; border-radius: 20px 20px 0 0;">
                     <!--[if gte mso 9]>
                     <v:rect xmlns:v="urn:schemas-microsoft-com:vml" fill="true" stroke="false" style="width:600px;height:220px;">
                       <v:fill type="frame" src="{{bannerUrl}}" color="#0d0d0d" />
@@ -57,7 +76,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                     <div>
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                         <tr>
-                          <td bgcolor="#0d0d0d" style="padding: 32px 40px 36px; background-color: rgba(13, 13, 13, 0.55);">
+                          <td bgcolor="#0d0d0d" class="mobile-header" style="padding: 32px 40px 36px; background-color: rgba(13, 13, 13, 0.55);">
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                               <tr>
                                 <td align="left" style="font-size: 11px; font-weight: 600; color: #9bf2ca; text-transform: uppercase; letter-spacing: 0.1em;">
@@ -82,7 +101,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 </tr>
 
                 <tr>
-                  <td style="padding: 36px 40px 0;">
+                  <td class="mobile-content" style="padding: 36px 40px 0;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td style="padding: 24px; background: linear-gradient(135deg, rgba(155, 242, 202, 0.2) 0%, rgba(155, 242, 202, 0.05) 100%); border-radius: 16px; border-left: 4px solid #9bf2ca;">
@@ -101,7 +120,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 
                 {{#if news.length}}
                 <tr>
-                  <td style="padding: 32px 40px 0;">
+                  <td class="mobile-content" style="padding: 32px 40px 0;">
                     <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">News</div>
                     {{#each news}}
                     <div style="padding-bottom: {{#unless @last}}20px{{else}}0{{/unless}}; margin-bottom: {{#unless @last}}20px{{else}}0{{/unless}}; border-bottom: {{#unless @last}}1px solid rgba(0, 0, 0, 0.06){{else}}none{{/unless}};">
@@ -125,7 +144,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 
                 {{#if reading.length}}
                 <tr>
-                  <td style="padding: 32px 40px 0;">
+                  <td class="mobile-content" style="padding: 32px 40px 0;">
                     <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">What We're Reading</div>
                     {{#each reading}}
                     <div style="padding: 16px 18px; margin-bottom: {{#unless @last}}12px{{else}}0{{/unless}}; background: #fafafa; border-radius: 12px; border: 1px solid rgba(0, 0, 0, 0.04);">
@@ -144,7 +163,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
 
                 {{#if cooking.length}}
                 <tr>
-                  <td style="padding: 32px 40px 0;">
+                  <td class="mobile-content" style="padding: 32px 40px 0;">
                     <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #4a51d9; margin-bottom: 16px;">What We're Cooking</div>
                     {{#each cooking}}
                     <div style="padding: 18px 20px; margin-bottom: {{#unless @last}}12px{{else}}0{{/unless}}; background: linear-gradient(135deg, rgba(74, 81, 217, 0.08) 0%, rgba(74, 81, 217, 0.02) 100%); border-radius: 12px; border: 1px solid rgba(74, 81, 217, 0.12);">
@@ -162,7 +181,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
                 {{/if}}
 
                 <tr>
-                  <td style="padding: 36px 40px 40px;">
+                  <td class="mobile-footer" style="padding: 36px 40px 40px;">
                     <div style="height: 1px; background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent); margin: 0 0 24px;"></div>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 480px; margin: 0 auto; text-align: center;">
                       <tr>

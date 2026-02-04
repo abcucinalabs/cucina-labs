@@ -113,12 +113,17 @@ export async function POST(request: NextRequest) {
 
     // Send test email
     console.log(`Sending test email to ${testEmail} from ${from}`)
+    const unsubscribeUrl = `${origin}/unsubscribe?email=${encodeURIComponent(testEmail)}`
     await resend.emails.send({
       from,
       to: testEmail,
       subject: `[TEST] ${resolvedSubject}`,
       html,
       text: plainText,
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      },
     })
 
     return NextResponse.json({ success: true })

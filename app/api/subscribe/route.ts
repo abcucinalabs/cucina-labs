@@ -90,11 +90,17 @@ export async function POST(request: NextRequest) {
             origin: process.env.NEXT_PUBLIC_BASE_URL,
           })
 
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+          const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}`
           const emailPayload = {
             from: `${fromName} <${fromEmail}>`,
             to: email,
             subject: welcomeTemplate.subject || "Welcome to cucina labs",
             html: htmlWithFooter,
+            headers: {
+              "List-Unsubscribe": `<${unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
           }
 
           for (let attempt = 0; attempt < 2; attempt += 1) {

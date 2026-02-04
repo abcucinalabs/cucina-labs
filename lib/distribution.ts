@@ -890,16 +890,24 @@ export async function runDistribution(
     const batchSize = 100
     let totalSent = 0
     let totalFailed = 0
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
 
     for (let i = 0; i < activeContacts.length; i += batchSize) {
       const batch = activeContacts.slice(i, i + batchSize)
-      const emails = batch.map((contact) => ({
-        from,
-        to: contact.email as string,
-        subject: finalSubject,
-        html,
-        text: plainText,
-      }))
+      const emails = batch.map((contact) => {
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(contact.email as string)}`
+        return {
+          from,
+          to: contact.email as string,
+          subject: finalSubject,
+          html,
+          text: plainText,
+          headers: {
+            "List-Unsubscribe": `<${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
+        }
+      })
 
       let attempts = 0
       let sent = false

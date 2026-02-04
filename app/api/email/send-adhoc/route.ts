@@ -62,15 +62,22 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(resendConfig.apiKey)
     const from = `${resendConfig.fromName} <${resendConfig.fromEmail}>`
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+
     // Send to specific email addresses
     if (emails && emails.length > 0) {
       if (emails.length === 1) {
         // Single email
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(emails[0])}`
         const result = await resend.emails.send({
           from,
           to: emails[0],
           subject,
           html,
+          headers: {
+            "List-Unsubscribe": `<${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
         })
 
         if (result.error) {
@@ -83,12 +90,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, count: 1 })
       } else {
         // Batch send for multiple emails
-        const emailPayloads = emails.map(email => ({
-          from,
-          to: email,
-          subject,
-          html,
-        }))
+        const emailPayloads = emails.map(email => {
+          const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}`
+          return {
+            from,
+            to: email,
+            subject,
+            html,
+            headers: {
+              "List-Unsubscribe": `<${unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          }
+        })
 
         const result = await resend.batch.send(emailPayloads)
 
