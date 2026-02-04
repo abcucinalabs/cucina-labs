@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,12 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DayPicker } from "@/components/ui/day-picker"
-import { RotateCcw, AlertCircle } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
   renderNewsletterTemplate,
 } from "@/lib/newsletter-template"
+import { computeScheduleRules } from "@/lib/schedule-rules"
 
 const timezones = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -39,15 +40,18 @@ export function SequenceWizard({
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     name: "",
+    subject: "",
     audienceId: "",
+    topicId: "",
+    contentSources: [] as string[],
     dayOfWeek: [] as string[],
     time: "09:00",
     timezone: "America/New_York",
-    systemPrompt: "",
-    userPrompt: "",
     templateId: "",
+    promptKey: "daily_insights",
   })
   const [audiences, setAudiences] = useState<any[]>([])
+  const [topics, setTopics] = useState<any[]>([])
   const [testEmail, setTestEmail] = useState("")
   const [testApproved, setTestApproved] = useState(false)
   const [preview, setPreview] = useState("")
@@ -56,10 +60,9 @@ export function SequenceWizard({
   const [customHtmlOpen, setCustomHtmlOpen] = useState(false)
   const [previewData, setPreviewData] = useState<{ content: any; articles: any[] } | null>(null)
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
-  const [isLoadingDefaults, setIsLoadingDefaults] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testEmailStatus, setTestEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const htmlTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const [prompts, setPrompts] = useState<{ key: string; label: string; description: string }[]>([])
   const [templates, setTemplates] = useState<any[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
   const systemDefaultValue = "system-default"
@@ -68,24 +71,29 @@ export function SequenceWizard({
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [isSendingNow, setIsSendingNow] = useState(false)
   const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [publishStatus, setPublishStatus] = useState<{ type: "error"; message: string } | null>(null)
   const normalizeAudienceId = (audienceId?: string) =>
     audienceId === "local_all" ? "resend_all" : audienceId || ""
 
   useEffect(() => {
     if (open) {
       fetchAudiences()
+      fetchTopics()
       fetchTemplates()
+      fetchPrompts()
       if (sequence) {
         // Load existing sequence data
         setFormData({
           name: sequence.name || "",
+          subject: sequence.subject || "",
           audienceId: normalizeAudienceId(sequence.audienceId),
+          topicId: sequence.topicId || "",
+          contentSources: sequence.contentSources || [],
           dayOfWeek: sequence.dayOfWeek || [],
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",
-          systemPrompt: sequence.systemPrompt || "",
-          userPrompt: sequence.userPrompt || "",
           templateId: sequence.templateId || "",
+          promptKey: sequence.promptKey || "daily_insights",
         })
         setSelectedTemplateId(sequence.templateId || "")
 
@@ -97,9 +105,8 @@ export function SequenceWizard({
           setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
         }
       } else {
-        // New sequence: use default template and load default prompts
+        // New sequence: use default template
         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-        loadDefaultPrompts()
       }
       setPreviewData(null)
     }
@@ -115,6 +122,36 @@ export function SequenceWizard({
       }
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
+    }
+  }
+
+  const fetchTopics = async () => {
+    try {
+      const response = await fetch("/api/resend/topics")
+      if (response.ok) {
+        const data = await response.json()
+        setTopics(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch topics:", error)
+    }
+  }
+
+  const fetchPrompts = async () => {
+    try {
+      const response = await fetch("/api/prompts")
+      if (response.ok) {
+        const data = await response.json()
+        setPrompts(
+          (data.prompts || []).map((p: any) => ({
+            key: p.key,
+            label: p.label,
+            description: p.description,
+          }))
+        )
+      }
+    } catch (error) {
+      console.error("Failed to fetch prompts:", error)
     }
   }
 
@@ -219,44 +256,6 @@ export function SequenceWizard({
     }
   }
 
-  const loadDefaultPrompts = async () => {
-    setIsLoadingDefaults(true)
-    try {
-      const response = await fetch("/api/sequences/defaults")
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({
-          ...prev,
-          systemPrompt: data.systemPrompt || "",
-          userPrompt: data.userPrompt || "",
-        }))
-      }
-    } catch (error) {
-      console.error("Failed to load default prompts:", error)
-    } finally {
-      setIsLoadingDefaults(false)
-    }
-  }
-
-  const handleResetPrompts = async () => {
-    setIsLoadingDefaults(true)
-    try {
-      const response = await fetch("/api/sequences/defaults")
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({
-          ...prev,
-          systemPrompt: data.systemPrompt || "",
-          userPrompt: data.userPrompt || "",
-        }))
-      }
-    } catch (error) {
-      console.error("Failed to reset prompts:", error)
-    } finally {
-      setIsLoadingDefaults(false)
-    }
-  }
-
   const handleNext = () => {
     if (step < 6) setStep(step + 1)
   }
@@ -275,8 +274,10 @@ export function SequenceWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
-          htmlTemplate: customHtml
+          dayOfWeek: formData.dayOfWeek,
+          contentSources: formData.contentSources,
+          subject: formData.subject,
+          htmlTemplate: customHtml,
         }),
       })
       
@@ -362,7 +363,12 @@ export function SequenceWizard({
       const response = await fetch("/api/sequences/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, testEmail, customHtml }),
+        body: JSON.stringify({
+          testEmail,
+          subject: formData.subject,
+          customHtml,
+          contentSources: formData.contentSources,
+        }),
       })
       
       const data = await response.json()
@@ -381,6 +387,7 @@ export function SequenceWizard({
   }
 
   const handlePublish = async () => {
+    setPublishStatus(null)
     try {
       const url = sequence ? `/api/sequences/${sequence.id}` : "/api/sequences"
       const method = sequence ? "PUT" : "POST"
@@ -391,9 +398,20 @@ export function SequenceWizard({
       })
       if (response.ok) {
         onClose()
+        return
       }
+
+      const data = await response.json().catch(() => null)
+      setPublishStatus({
+        type: "error",
+        message: data?.error || "Failed to publish sequence",
+      })
     } catch (error) {
       console.error("Failed to publish sequence:", error)
+      setPublishStatus({
+        type: "error",
+        message: "Failed to publish sequence. Please try again.",
+      })
     }
   }
 
@@ -410,6 +428,7 @@ export function SequenceWizard({
       const response = await fetch(`/api/sequences/${sequence.id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: formData.subject }),
       })
 
       const data = await response.json()
@@ -448,11 +467,11 @@ export function SequenceWizard({
   const [hours, minutes] = formData.time.split(":")
   const hour12 = parseInt(hours) % 12 || 12
   const ampm = parseInt(hours) >= 12 ? "PM" : "AM"
-  const canSave = Boolean(formData.name && formData.audienceId && formData.userPrompt)
+  const canSave = Boolean(formData.name && formData.audienceId)
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl w-[95vw] md:w-auto max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[540px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {sequence ? "Edit Sequence" : "Create New Sequence"} - Step {step} of 6
@@ -460,18 +479,18 @@ export function SequenceWizard({
           <DialogDescription>
             {step === 1 && "Basic information about your sequence"}
             {step === 2 && "When should this sequence run?"}
-            {step === 3 && "Configure AI prompts for content selection"}
+            {step === 3 && "Review content rules for this sequence"}
             {step === 4 && "Preview the generated newsletter"}
             {step === 5 && "Send a test email to verify"}
             {step === 6 && "Review and publish your sequence"}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-2 min-h-[320px]">
           {/* Step 1: Basic Info */}
           {step === 1 && (
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="name">Sequence Name</Label>
                 <Input
                   id="name"
@@ -480,7 +499,19 @@ export function SequenceWizard({
                   placeholder="Daily Digest"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="subject">Email Subject Line</Label>
+                <Input
+                  id="subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Building AI Products - Daily Insights"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional. If blank, AI-generated subject is used.
+                </p>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="audience">Resend Audience</Label>
                 <Select
                   value={formData.audienceId}
@@ -498,7 +529,61 @@ export function SequenceWizard({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Audiences are fetched from your Resend account. Create audiences in Resend to target specific segments.
+                  Audiences are fetched from your Resend account
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="topic">Resend Topic</Label>
+                <Select
+                  value={formData.topicId}
+                  onValueChange={(value) => setFormData({ ...formData, topicId: value === "__none__" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a topic (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No topic</SelectItem>
+                    {topics.map((topic) => (
+                      <SelectItem key={topic.id} value={topic.id}>
+                        {topic.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Topics allow subscribers to manage their email preferences
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Content Sources</Label>
+                <div className="space-y-2">
+                  {[
+                    { value: "news", label: "News", description: "AI-curated news articles" },
+                    { value: "chefs_table", label: "Chef's Table", description: "Editorial intro section" },
+                    { value: "recipes", label: "What We're Reading", description: "Saved social posts & articles" },
+                    { value: "cooking", label: "What We're Cooking", description: "Experiments & projects" },
+                  ].map((source) => (
+                    <label key={source.value} className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={formData.contentSources.includes(source.value)}
+                        onCheckedChange={(checked) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            contentSources: checked
+                              ? [...prev.contentSources, source.value]
+                              : prev.contentSources.filter(s => s !== source.value),
+                          }))
+                        }}
+                      />
+                      <div>
+                        <span className="text-sm font-medium">{source.label}</span>
+                        <p className="text-xs text-muted-foreground">{source.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select which content types to include in this sequence
                 </p>
               </div>
             </div>
@@ -506,11 +591,11 @@ export function SequenceWizard({
 
           {/* Step 2: Schedule */}
           {step === 2 && (
-            <div className="space-y-6">
-              <div className="p-3 rounded-md bg-zinc-50 border border-zinc-200 text-sm text-zinc-700">
-                <strong>Scheduling Info:</strong> Sequences are checked every hour on the hour. Your newsletter will be sent at the next matching hour based on your selected days and time.
+            <div className="space-y-4">
+              <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700">
+                Sequences are checked hourly. Newsletter sends at the next matching hour.
               </div>
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <Label>Select Days</Label>
                 <DayPicker
                   value={formData.dayOfWeek}
@@ -518,149 +603,148 @@ export function SequenceWizard({
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Time</Label>
-                  <div className="flex flex-wrap gap-2">
-                    <Select
-                      value={hour12.toString().padStart(2, "0")}
-                      onValueChange={(h) => {
-                        const newHour = ampm === "PM" && h !== "12" ? parseInt(h) + 12 : (ampm === "AM" && h === "12" ? 0 : parseInt(h))
-                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
-                      }}
-                    >
-                      <SelectTrigger className="w-[70px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                          <SelectItem key={h} value={h.toString().padStart(2, "0")}>
-                            {h.toString().padStart(2, "0")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="flex items-center text-muted-foreground">:</span>
-                    <Select
-                      value="00"
-                      disabled
-                    >
-                      <SelectTrigger className="w-[70px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="00">00</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={ampm}
-                      onValueChange={(ap) => {
-                        let newHour = parseInt(hours)
-                        if (ap === "PM" && newHour < 12) newHour += 12
-                        if (ap === "AM" && newHour >= 12) newHour -= 12
-                        setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
-                      }}
-                    >
-                      <SelectTrigger className="w-[70px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Timezone</Label>
+              <div className="space-y-1.5">
+                <Label>Time</Label>
+                <div className="flex items-center gap-2">
                   <Select
-                    value={formData.timezone}
-                    onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                    value={hour12.toString().padStart(2, "0")}
+                    onValueChange={(h) => {
+                      const newHour = ampm === "PM" && h !== "12" ? parseInt(h) + 12 : (ampm === "AM" && h === "12" ? 0 : parseInt(h))
+                      setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[72px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {timezones.map((tz) => (
-                        <SelectItem key={tz.value} value={tz.value}>
-                          {tz.label}
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                        <SelectItem key={h} value={h.toString().padStart(2, "0")}>
+                          {h.toString().padStart(2, "0")}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  <span className="text-muted-foreground">:</span>
+                  <Select value="00" disabled>
+                    <SelectTrigger className="w-[72px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="00">00</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={ampm}
+                    onValueChange={(ap) => {
+                      let newHour = parseInt(hours)
+                      if (ap === "PM" && newHour < 12) newHour += 12
+                      if (ap === "AM" && newHour >= 12) newHour -= 12
+                      setFormData({ ...formData, time: `${newHour.toString().padStart(2, "0")}:00` })
+                    }}
+                  >
+                    <SelectTrigger className="w-[72px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AM">AM</SelectItem>
+                      <SelectItem value="PM">PM</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Timezone</Label>
+                <Select
+                  value={formData.timezone}
+                  onValueChange={(value) => setFormData({ ...formData, timezone: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
 
-          {/* Step 3: Prompts */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <Label className="text-base">AI Prompts Configuration</Label>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleResetPrompts}
-                  disabled={isLoadingDefaults}
-                  isLoading={isLoadingDefaults}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset to Default
-                </Button>
+          {/* Step 3: Content Rules */}
+          {step === 3 && (() => {
+            const rules = computeScheduleRules(formData.dayOfWeek)
+            return (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Content Rules</Label>
+                <Card>
+                  <CardContent className="pt-4 space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Schedule Pattern</span>
+                      <span className="font-medium capitalize">{rules.schedulePattern}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Article Lookback</span>
+                      <span className="font-medium">{rules.timeFrameLabel}</span>
+                    </div>
+                    <div className="border-t border-[var(--border-default)] pt-3">
+                      <p className="text-xs text-muted-foreground">{rules.dayExplanation}</p>
+                    </div>
+                    {formData.contentSources.length > 0 && (
+                      <div className="border-t border-[var(--border-default)] pt-3">
+                        <span className="text-muted-foreground text-xs">Content Sources: </span>
+                        <span className="text-xs font-medium">
+                          {formData.contentSources.map(s => s.charAt(0).toUpperCase() + s.slice(1).replace("_", " ")).join(", ")}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="prompt-select">AI Prompt</Label>
+                  <Select
+                    value={formData.promptKey}
+                    onValueChange={(value) => setFormData({ ...formData, promptKey: value })}
+                  >
+                    <SelectTrigger id="prompt-select">
+                      <SelectValue placeholder="Select a prompt" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prompts.map((prompt) => (
+                        <SelectItem key={prompt.key} value={prompt.key}>
+                          {prompt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Prompts are managed in Settings &gt; Prompts
+                  </p>
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="system-prompt">System Prompt</Label>
-                <Textarea
-                  id="system-prompt"
-                  value={formData.systemPrompt}
-                  onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
-                  rows={8}
-                  className="font-mono text-sm"
-                  placeholder="You are the Editor of a daily digest..."
-                />
-                <p className="text-xs text-muted-foreground">
-                  {formData.systemPrompt.length} characters
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="user-prompt">User Prompt</Label>
-                <Textarea
-                  id="user-prompt"
-                  value={formData.userPrompt}
-                  onChange={(e) => setFormData({ ...formData, userPrompt: e.target.value })}
-                  rows={10}
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {formData.userPrompt.length} characters • Use {"{{ variable }}"} for template variables
-                </p>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Step 4: Preview */}
           {step === 4 && (
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Button onClick={handleGeneratePreview} disabled={isLoadingPreview} isLoading={isLoadingPreview}>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleGeneratePreview} disabled={isLoadingPreview} isLoading={isLoadingPreview}>
                   Generate Preview
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleOpenCustomHtml}
-                >
+                <Button size="sm" variant="outline" onClick={handleOpenCustomHtml}>
                   Customize HTML
                 </Button>
               </div>
 
               {/* Template Management */}
-              <div className="flex flex-col gap-4 md:flex-row md:items-end">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="template-select">Load Template</Label>
+              <div className="flex items-end gap-2">
+                <div className="flex-1 space-y-1.5">
+                  <Label htmlFor="template-select" className="text-xs">Template</Label>
                   <Select
                     value={selectedTemplateId || systemDefaultValue}
                     onValueChange={(value) => {
@@ -690,54 +774,52 @@ export function SequenceWizard({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="md:pt-8">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSaveTemplateDialogOpen(true)}
-                    disabled={!customHtml.trim()}
-                    className="w-full md:w-auto"
-                  >
-                    Save as Template
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSaveTemplateDialogOpen(true)}
+                  disabled={!customHtml.trim()}
+                >
+                  Save as Template
+                </Button>
               </div>
-              
+
               {previewError && (
-                <div className="flex items-start gap-3 p-4 bg-zinc-100 border border-zinc-200 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-zinc-600 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2 p-3 bg-zinc-100 border border-zinc-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-zinc-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-zinc-700 font-medium">Preview Unavailable</p>
-                    <p className="text-sm text-muted-foreground mt-1">{previewError}</p>
+                    <p className="text-xs text-zinc-700 font-medium">Preview Unavailable</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{previewError}</p>
                   </div>
                 </div>
               )}
-              
+
               {preview && (
                 <div className="border border-[var(--border-default)] rounded-lg overflow-hidden">
                   <iframe
                     srcDoc={preview}
-                    className="w-full h-[500px] bg-white"
+                    className="w-full h-[280px] bg-white"
                     title="Preview"
                   />
                 </div>
               )}
-              
+
               {!preview && !previewError && !isLoadingPreview && (
-                <div className="flex items-center justify-center h-64 border border-dashed border-[var(--border-default)] rounded-lg">
-                  <p className="text-muted-foreground">Click &quot;Generate Preview&quot; to see your newsletter</p>
+                <div className="flex items-center justify-center h-[200px] border border-dashed border-[var(--border-default)] rounded-lg">
+                  <p className="text-sm text-muted-foreground">Click &quot;Generate Preview&quot; to see your newsletter</p>
                 </div>
               )}
 
               <Dialog open={customHtmlOpen} onOpenChange={setCustomHtmlOpen}>
-                <DialogContent className="max-w-3xl w-[95vw] md:w-auto">
+                <DialogContent className="w-[95vw] max-w-[600px]">
                   <DialogHeader>
                     <DialogTitle>Customize HTML</DialogTitle>
-                    <DialogDescription>Edit the generated HTML and apply it to the preview.</DialogDescription>
+                    <DialogDescription>Edit the HTML template for your newsletter.</DialogDescription>
                   </DialogHeader>
                   <Textarea
                     value={customHtml}
                     onChange={(event) => setCustomHtml(event.target.value)}
-                    rows={18}
+                    rows={16}
                     className="font-mono text-xs"
                     placeholder="Paste or edit HTML here..."
                   />
@@ -754,13 +836,13 @@ export function SequenceWizard({
 
               {/* Save Template Dialog */}
               <Dialog open={saveTemplateDialogOpen} onOpenChange={setSaveTemplateDialogOpen}>
-                <DialogContent className="w-[95vw] md:w-auto">
+                <DialogContent className="w-[95vw] max-w-[400px]">
                   <DialogHeader>
                     <DialogTitle>Save Template</DialogTitle>
                     <DialogDescription>Save the current HTML as a reusable template.</DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
+                  <div className="space-y-3 py-2">
+                    <div className="space-y-1.5">
                       <Label htmlFor="template-name">Template Name</Label>
                       <Input
                         id="template-name"
@@ -775,7 +857,7 @@ export function SequenceWizard({
                         checked={saveAsDefault}
                         onCheckedChange={(checked) => setSaveAsDefault(checked as boolean)}
                       />
-                      <Label htmlFor="save-as-default">
+                      <Label htmlFor="save-as-default" className="text-sm">
                         Set as default template
                       </Label>
                     </div>
@@ -806,30 +888,33 @@ export function SequenceWizard({
           {/* Step 5: Test */}
           {step === 5 && (
             <div className="space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="test-email">Test Email Address</Label>
-                <Input
-                  id="test-email"
-                  type="email"
-                  value={testEmail}
-                  onChange={(e) => {
-                    setTestEmail(e.target.value)
-                    setTestEmailStatus(null)
-                  }}
-                  placeholder="test@example.com"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="test-email"
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => {
+                      setTestEmail(e.target.value)
+                      setTestEmailStatus(null)
+                    }}
+                    placeholder="test@example.com"
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSendTest} disabled={!testEmail || isSendingTest} isLoading={isSendingTest}>
+                    Send Test
+                  </Button>
+                </div>
               </div>
-              <Button onClick={handleSendTest} disabled={!testEmail || isSendingTest} isLoading={isSendingTest} className="w-full sm:w-auto">
-                Send Test Email
-              </Button>
-              
+
               {testEmailStatus && (
-                <div className={`flex items-start gap-3 p-4 rounded-lg ${
+                <div className={`flex items-start gap-2 p-3 rounded-lg ${
                   testEmailStatus.type === "success"
                     ? "bg-[rgba(60,53,242,0.06)] border border-[rgba(60,53,242,0.2)]"
                     : "bg-red-500/10 border border-red-500/20"
                 }`}>
-                  <AlertCircle className={`h-5 w-5 shrink-0 mt-0.5 ${
+                  <AlertCircle className={`h-4 w-4 shrink-0 mt-0.5 ${
                     testEmailStatus.type === "success" ? "text-[#3c35f2]" : "text-red-600"
                   }`} />
                   <p className={`text-sm ${
@@ -839,14 +924,14 @@ export function SequenceWizard({
                   </p>
                 </div>
               )}
-              
-              <div className="flex items-center space-x-2 pt-4">
+
+              <div className="flex items-center space-x-2 pt-2">
                 <Checkbox
                   id="test-approved"
                   checked={testApproved}
                   onCheckedChange={(checked) => setTestApproved(checked as boolean)}
                 />
-                <Label htmlFor="test-approved">
+                <Label htmlFor="test-approved" className="text-sm">
                   I&apos;ve received and approved the test email
                 </Label>
               </div>
@@ -855,15 +940,19 @@ export function SequenceWizard({
 
           {/* Step 6: Confirm */}
           {step === 6 && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Card>
-                <CardHeader>
-                  <CardTitle>Summary</CardTitle>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Summary</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 text-sm">
+                <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Name:</span>
                     <span className="font-medium">{formData.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subject:</span>
+                    <span className="font-medium">{formData.subject || "AI-generated"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Schedule:</span>
@@ -881,17 +970,25 @@ export function SequenceWizard({
                       {audiences.find(a => a.id === formData.audienceId)?.name || formData.audienceId}
                     </span>
                   </div>
+                  {formData.topicId && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Topic:</span>
+                      <span className="font-medium">
+                        {topics.find(t => t.id === formData.topicId)?.name || formData.topicId}
+                      </span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               {sequence?.id && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Send Newsletter Now</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Send Newsletter Now</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Manually trigger this newsletter to be sent to all subscribers immediately, regardless of the schedule.
+                  <CardContent className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Send to all subscribers immediately, regardless of schedule.
                     </p>
                     <Button
                       onClick={handleSendNow}
@@ -901,7 +998,7 @@ export function SequenceWizard({
                       {isSendingNow ? "Sending..." : "Send Now to All Subscribers"}
                     </Button>
                     {sendNowStatus && (
-                      <div className={`p-3 rounded-md text-sm ${
+                      <div className={`p-2 rounded-md text-xs ${
                         sendNowStatus.type === "success"
                           ? "bg-[rgba(60,53,242,0.06)] text-[#3c35f2] border border-[rgba(60,53,242,0.2)]"
                           : "bg-red-50 text-red-800 border border-red-200"
@@ -912,29 +1009,35 @@ export function SequenceWizard({
                   </CardContent>
                 </Card>
               )}
+
+              {publishStatus && (
+                <div className="p-2 rounded-md text-xs bg-red-50 text-red-800 border border-red-200">
+                  {publishStatus.message}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-          <Button variant="outline" onClick={step === 1 ? onClose : handleBack} className="w-full sm:w-auto">
+        <DialogFooter className="flex-row justify-between gap-2 sm:justify-between">
+          <Button variant="outline" onClick={step === 1 ? onClose : handleBack}>
             {step === 1 ? "Cancel" : "Back"}
           </Button>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button variant="outline" onClick={handleSaveDraft} disabled={!canSave} className="w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSaveDraft} disabled={!canSave}>
               Save as Draft
             </Button>
             {step < 6 ? (
-              <Button onClick={handleNext} disabled={step === 1 && !formData.name} className="w-full sm:w-auto">
+              <Button onClick={handleNext} disabled={step === 1 && !formData.name}>
                 Next
               </Button>
             ) : (
-              <Button onClick={handlePublish} disabled={!testApproved || !canSave} className="w-full sm:w-auto">
+              <Button onClick={handlePublish} disabled={!testApproved || !canSave}>
                 Publish Sequence
               </Button>
             )}
           </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

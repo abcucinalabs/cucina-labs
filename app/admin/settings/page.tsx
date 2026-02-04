@@ -2,7 +2,12 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { IntegrationsTab } from "@/components/tabs/integrations-tab"
+import { TemplatesTab } from "@/components/tabs/templates-tab"
 import { UsersTab } from "@/components/tabs/users-tab"
+import { AudiencesTab } from "@/components/tabs/audiences-tab"
+import { TopicsTab } from "@/components/tabs/topics-tab"
+import { PromptsTab } from "@/components/tabs/prompts-tab"
+import { LogTab } from "@/components/tabs/log-tab"
 
 export default function SettingsPage() {
   return (
@@ -10,22 +15,47 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-semibold text-foreground">Settings</h1>
         <p className="text-[color:var(--text-secondary)] mt-2">
-          Configure integrations and manage users
+          Configure integrations, templates, and team access
         </p>
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-6">
         <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="audiences">Audiences</TabsTrigger>
+          <TabsTrigger value="topics">Topics</TabsTrigger>
+          <TabsTrigger value="prompts">Prompts</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="log">Activity Log</TabsTrigger>
         </TabsList>
 
         <TabsContent value="integrations">
           <IntegrationsTab />
         </TabsContent>
 
+        <TabsContent value="templates">
+          <TemplatesTab />
+        </TabsContent>
+
+        <TabsContent value="audiences">
+          <AudiencesTab />
+        </TabsContent>
+
+        <TabsContent value="topics">
+          <TopicsTab />
+        </TabsContent>
+
+        <TabsContent value="prompts">
+          <PromptsTab />
+        </TabsContent>
+
         <TabsContent value="users">
           <UsersTab />
+        </TabsContent>
+
+        <TabsContent value="log">
+          <LogTab />
         </TabsContent>
       </Tabs>
     </div>

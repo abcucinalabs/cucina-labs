@@ -5,18 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Eye, EyeOff } from "lucide-react"
+
+type Template = {
+  id: string
+  name: string
+  description?: string | null
+  html: string
+}
 
 export function SettingsTab() {
   const [welcomeEmailEnabled, setWelcomeEmailEnabled] = useState(false)
-  const [welcomeEmailContent, setWelcomeEmailContent] = useState("")
   const [welcomeEmailSubject, setWelcomeEmailSubject] = useState("Welcome to cucina labs")
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [templates, setTemplates] = useState<Template[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isSavingToggle, setIsSavingToggle] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     fetchSettings()
+    fetchTemplates()
   }, [])
 
   const fetchSettings = async () => {
@@ -25,11 +36,47 @@ export function SettingsTab() {
       if (response.ok) {
         const data = await response.json()
         setWelcomeEmailEnabled(data.enabled)
-        setWelcomeEmailContent(data.html || "")
         setWelcomeEmailSubject(data.subject || "Welcome to cucina labs")
+        setSelectedTemplateId(data.templateId || null)
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error)
+    }
+  }
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await fetch("/api/newsletter-templates")
+      if (response.ok) {
+        const data = await response.json()
+        setTemplates(data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch templates:", error)
+    }
+  }
+
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId)
+
+  const handleToggleChange = async (enabled: boolean) => {
+    setWelcomeEmailEnabled(enabled)
+    setIsSavingToggle(true)
+    try {
+      await fetch("/api/email-templates/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enabled,
+          subject: welcomeEmailSubject,
+          html: selectedTemplate?.html || "",
+          templateId: selectedTemplateId,
+        }),
+      })
+    } catch (error) {
+      console.error("Failed to save toggle:", error)
+      setWelcomeEmailEnabled(!enabled)
+    } finally {
+      setIsSavingToggle(false)
     }
   }
 
@@ -41,8 +88,9 @@ export function SettingsTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           enabled: welcomeEmailEnabled,
-          html: welcomeEmailContent,
           subject: welcomeEmailSubject,
+          html: selectedTemplate?.html || "",
+          templateId: selectedTemplateId,
         }),
       })
       if (response.ok) {
@@ -57,10 +105,6 @@ export function SettingsTab() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handlePreview = () => {
-    setShowPreview((current) => !current)
   }
 
   return (
@@ -80,11 +124,17 @@ export function SettingsTab() {
                 Send a welcome email when users subscribe
               </p>
             </div>
-            <Switch
-              id="welcome-email"
-              checked={welcomeEmailEnabled}
-              onCheckedChange={setWelcomeEmailEnabled}
-            />
+            <div className="flex items-center gap-2">
+              {isSavingToggle && (
+                <span className="text-xs text-muted-foreground">Saving...</span>
+              )}
+              <Switch
+                id="welcome-email"
+                checked={welcomeEmailEnabled}
+                onCheckedChange={handleToggleChange}
+                disabled={isSavingToggle}
+              />
+            </div>
           </div>
 
           {welcomeEmailEnabled && (
@@ -103,46 +153,72 @@ export function SettingsTab() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email-content">Email Content (HTML)</Label>
-                <Textarea
-                  id="email-content"
-                  value={welcomeEmailContent}
-                  onChange={(e) => setWelcomeEmailContent(e.target.value)}
-                  rows={12}
-                  placeholder="<html>...</html>"
-                  className="font-mono text-sm"
-                />
+                <Label>Email Template</Label>
+                <Select
+                  value={selectedTemplateId || ""}
+                  onValueChange={(value) => setSelectedTemplateId(value || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-muted-foreground">
-                  Use HTML to format your welcome email. A CAN-SPAM compliant footer will be automatically added.
+                  Choose a template from the Templates tab to use as the welcome email
                 </p>
               </div>
-            </>
-          )}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Button variant="outline" onClick={handlePreview} type="button" className="w-full sm:w-auto">
-              {showPreview ? "Hide Preview" : "Preview"}
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading} isLoading={isLoading} className="w-full sm:w-auto">
-              Save Changes
-            </Button>
-          </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                {selectedTemplate && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPreview(!showPreview)}
+                    className="w-full sm:w-auto"
+                  >
+                    {showPreview ? (
+                      <>
+                        <EyeOff className="mr-2 h-4 w-4" />
+                        Hide Preview
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  className="w-full sm:w-auto"
+                >
+                  Save Changes
+                </Button>
+              </div>
 
-          {showPreview && (
-            <div className="rounded-[var(--radius-xl)] border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)] overflow-hidden">
-              {welcomeEmailContent.trim() ? (
-                <iframe
-                  title="Welcome email preview"
-                  className="w-full min-h-[520px] border-0 md:min-h-[620px]"
-                  sandbox=""
-                  srcDoc={welcomeEmailContent}
-                />
-              ) : (
-                <div className="p-6 text-sm text-[color:var(--text-secondary)]">
-                  No welcome email HTML to preview yet.
+              {showPreview && selectedTemplate && (
+                <div className="rounded-[var(--radius-xl)] border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)] overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-[var(--border-default)] bg-[var(--bg-muted)] px-4 py-2">
+                    <span className="text-sm font-medium">Email Preview</span>
+                    <span className="text-xs text-muted-foreground">Subject: {welcomeEmailSubject}</span>
+                  </div>
+                  <iframe
+                    title="Welcome email preview"
+                    className="w-full min-h-[520px] border-0 md:min-h-[620px]"
+                    sandbox=""
+                    srcDoc={selectedTemplate.html}
+                  />
                 </div>
               )}
-            </div>
+            </>
           )}
         </CardContent>
       </Card>

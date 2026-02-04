@@ -1,5 +1,9 @@
 import webpush from "web-push"
-import { prisma } from "@/lib/db"
+import {
+  upsertPushSubscriptionRecord,
+  deletePushSubscriptionByEndpoint,
+  findAllPushSubscriptions,
+} from "@/lib/dal"
 
 type PushPayload = {
   title: string
@@ -36,24 +40,16 @@ export const upsertPushSubscription = async (subscription: {
   keys: { p256dh: string; auth: string }
   userAgent?: string | null
 }) => {
-  await prisma.pushSubscription.upsert({
-    where: { endpoint: subscription.endpoint },
-    update: {
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-      userAgent: subscription.userAgent || null,
-    },
-    create: {
-      endpoint: subscription.endpoint,
-      p256dh: subscription.keys.p256dh,
-      auth: subscription.keys.auth,
-      userAgent: subscription.userAgent || null,
-    },
+  await upsertPushSubscriptionRecord({
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+    userAgent: subscription.userAgent || null,
   })
 }
 
 export const deletePushSubscription = async (endpoint: string) => {
-  await prisma.pushSubscription.delete({ where: { endpoint } })
+  await deletePushSubscriptionByEndpoint(endpoint)
 }
 
 export const sendPushNotificationToAll = async (payload: PushPayload) => {
@@ -62,7 +58,7 @@ export const sendPushNotificationToAll = async (payload: PushPayload) => {
     return { sent: 0, skipped: 0, error: "VAPID keys not configured" }
   }
 
-  const subscriptions = await prisma.pushSubscription.findMany()
+  const subscriptions = await findAllPushSubscriptions()
   if (!subscriptions.length) {
     return { sent: 0, skipped: 0 }
   }
@@ -91,7 +87,7 @@ export const sendPushNotificationToAll = async (payload: PushPayload) => {
         skipped += 1
         const statusCode = error?.statusCode
         if (statusCode === 404 || statusCode === 410) {
-          await prisma.pushSubscription.delete({ where: { endpoint: sub.endpoint } })
+          await deletePushSubscriptionByEndpoint(sub.endpoint)
         }
       }
     })

@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Instrument_Sans } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: "cucina labs",
   description: "Curated AI product content for builders",
   manifest: "/manifest.webmanifest",
-  themeColor: "#0d0d0d",
   icons: {
     icon: [
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -23,6 +22,10 @@ export const metadata: Metadata = {
     title: "Cucina Admin",
     statusBarStyle: "black-translucent",
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#0d0d0d",
 }
 
 export default function RootLayout({

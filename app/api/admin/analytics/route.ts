@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import {
+  findApiKeyByService,
+  findAllApiKeys,
+  updateApiKey,
+  findEmailEventsSince,
+  findEmailEventsInRange,
+  findEmailEventsInRangeGrouped,
+  findNewsActivityByEventSince,
+  findFirstNewsActivityByEventPrefix,
+  findNewsActivityByEvent,
+  findActiveSequences,
+  findTopClickedShortLinks,
+  findArticlesByIds,
+  countArticlesSince,
+  findLatestActiveSequence,
+} from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 
 export const dynamic = "force-dynamic"
@@ -116,7 +130,7 @@ const fetchResendContacts = async (apiKey: string, audienceId: string) => {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -134,8 +148,7 @@ export async function GET(request: NextRequest) {
 
     const [
       resendConfig,
-      topLinks,
-      emailEventCounts,
+      allEvents,
       recentNewsletters,
       lastIngestion,
       lastDistribution,
@@ -144,52 +157,30 @@ export async function GET(request: NextRequest) {
       scheduleChecks,
       topShortLinks,
     ] = await Promise.all([
-      prisma.apiKey.findUnique({ where: { service: "resend" } }),
-      prisma.emailEvent.groupBy({
-        by: ["clickUrl"],
-        where: { eventType: "email.clicked", createdAt: { gte: start }, clickUrl: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { clickUrl: "desc" } },
-        take: 10,
-      }),
-      prisma.emailEvent.groupBy({
-        by: ["eventType"],
-        where: { createdAt: { gte: start } },
-        _count: true,
-      }),
-      prisma.newsActivity.findMany({
-        where: { event: "distribution_completed", createdAt: { gte: start } },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-      }),
-      prisma.newsActivity.findFirst({
-        where: { event: { startsWith: "ingestion" } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.newsActivity.findFirst({
-        where: { event: { startsWith: "distribution" } },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.apiKey.findMany({
-        select: { service: true, status: true, updatedAt: true },
-      }),
-      prisma.sequence.findMany({
-        where: { status: "active" },
-        orderBy: { updatedAt: "desc" },
-        select: { id: true, name: true, schedule: true, time: true, timezone: true, dayOfWeek: true },
-      }),
-      prisma.newsActivity.findMany({
-        where: { event: "distribution_cron_schedule_check" },
-        orderBy: { createdAt: "desc" },
-        take: 8,
-      }),
-      prisma.shortLink.findMany({
-        where: { clicks: { gt: 0 } },
-        orderBy: { clicks: "desc" },
-        take: 10,
-        select: { id: true, targetUrl: true, clicks: true, articleId: true },
-      }),
+      findApiKeyByService("resend"),
+      findEmailEventsSince(start),
+      findNewsActivityByEventSince("distribution_completed", start, 8),
+      findFirstNewsActivityByEventPrefix("ingestion"),
+      findFirstNewsActivityByEventPrefix("distribution"),
+      findAllApiKeys(),
+      findActiveSequences(),
+      findNewsActivityByEvent("distribution_cron_schedule_check", 8),
+      findTopClickedShortLinks(10),
     ])
+
+    // Group click events from allEvents
+    const clickEvents = allEvents.filter((e: any) => e.eventType === "email.clicked" && e.clickUrl)
+    const clickCounts: Record<string, number> = {}
+    clickEvents.forEach((e: any) => { clickCounts[e.clickUrl] = (clickCounts[e.clickUrl] || 0) + 1 })
+    const topLinks = Object.entries(clickCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([clickUrl, count]) => ({ clickUrl, _count: { _all: count } }))
+
+    // Group all events by eventType
+    const eventCounts: Record<string, number> = {}
+    allEvents.forEach((e: any) => { eventCounts[e.eventType] = (eventCounts[e.eventType] || 0) + 1 })
+    const emailEventCounts = Object.entries(eventCounts).map(([eventType, count]) => ({ eventType, _count: count }))
 
     let activeSubscribers = 0
     let newSubscribers = 0
@@ -202,10 +193,7 @@ export async function GET(request: NextRequest) {
     if (resendConfig?.key) {
       const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
       if (needsRotation) {
-        await prisma.apiKey.update({
-          where: { id: resendConfig.id },
-          data: { key: encrypt(plaintext) },
-        })
+        await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
       }
       const apiKey = plaintext
       let allContacts = await fetchResendContactsFromContactsApi(apiKey)
@@ -300,18 +288,15 @@ export async function GET(request: NextRequest) {
 
     if (!articleStats.length && topShortLinks.length) {
       const articleIds = topShortLinks
-        .map((link) => link.articleId)
+        .map((link: any) => link.articleId)
         .filter(Boolean) as string[]
       const articles = articleIds.length
-        ? await prisma.article.findMany({
-            where: { id: { in: articleIds } },
-            select: { id: true, title: true, category: true, creator: true },
-          })
+        ? await findArticlesByIds(articleIds)
         : []
-      const articleMap = new Map(articles.map((article) => [article.id, article]))
-      const shortLinkTotalClicks = topShortLinks.reduce((sum, link) => sum + link.clicks, 0)
+      const articleMap = new Map(articles.map((article: any) => [article.id, article]))
+      const shortLinkTotalClicks = topShortLinks.reduce((sum: number, link: any) => sum + link.clicks, 0)
 
-      articleStats = topShortLinks.map((link) => {
+      articleStats = topShortLinks.map((link: any) => {
         const article = link.articleId ? articleMap.get(link.articleId) : null
         return {
           id: link.id,
@@ -325,7 +310,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const recentNewsletterItems = recentNewsletters.map((item) => {
+    const recentNewsletterItems = recentNewsletters.map((item: any) => {
       const metadata = (item.metadata || {}) as Record<string, unknown>
       return {
         id: item.id,
@@ -354,11 +339,9 @@ export async function GET(request: NextRequest) {
         contact.unsubscribed && contact.updatedAt && contact.updatedAt >= date && contact.updatedAt < nextDate
       ).length
 
-      const dayEmailEvents = await prisma.emailEvent.groupBy({
-          by: ["eventType"],
-          where: { createdAt: { gte: date, lt: nextDate } },
-          _count: true,
-        })
+      const dayEvents = await findEmailEventsInRange(date, nextDate)
+      const dayEventCounts: Record<string, number> = {}
+      dayEvents.forEach((e: any) => { dayEventCounts[e.eventType] = (dayEventCounts[e.eventType] || 0) + 1 })
 
       daily.push({
         date: date.toISOString().slice(0, 10),
@@ -367,7 +350,7 @@ export async function GET(request: NextRequest) {
       })
 
       // Build chart data
-      const dayEventMap = new Map<string, number>(dayEmailEvents.map((e: { eventType: string; _count: number }) => [e.eventType, e._count]))
+      const dayEventMap = new Map<string, number>(Object.entries(dayEventCounts))
       const daySent = dayEventMap.get("email.sent") || 0
       const dayDelivered = dayEventMap.get("email.delivered") || daySent
       const dayOpened = dayEventMap.get("email.opened") || 0
@@ -390,13 +373,11 @@ export async function GET(request: NextRequest) {
     const prevUnsubscribed = Array.from(contactsByEmail.values()).filter((contact) =>
       contact.unsubscribed && contact.updatedAt && contact.updatedAt >= prevStart && contact.updatedAt < start
     ).length
-    const prevEmailEvents = await prisma.emailEvent.groupBy({
-        by: ["eventType"],
-        where: { createdAt: { gte: prevStart, lt: start } },
-        _count: true,
-      })
+    const prevEvents = await findEmailEventsInRangeGrouped(prevStart, start)
+    const prevEventCounts: Record<string, number> = {}
+    prevEvents.forEach((e: any) => { prevEventCounts[e.eventType] = (prevEventCounts[e.eventType] || 0) + 1 })
 
-    const prevEventMap = new Map<string, number>(prevEmailEvents.map((e: { eventType: string; _count: number }) => [e.eventType, e._count]))
+    const prevEventMap = new Map<string, number>(Object.entries(prevEventCounts))
     const prevDelivered = prevEventMap.get("email.delivered") || 0
     const prevOpened = prevEventMap.get("email.opened") || 0
     const prevClicked = prevEventMap.get("email.clicked") || 0
@@ -414,12 +395,8 @@ export async function GET(request: NextRequest) {
 
     // Additional metrics
     const [totalArticles, topSequence] = await Promise.all([
-      prisma.article.count({ where: { ingestedAt: { gte: start } } }),
-      prisma.sequence.findFirst({
-        where: { status: "active" },
-        orderBy: { lastSent: "desc" },
-        select: { name: true },
-      }),
+      countArticlesSince(start),
+      findLatestActiveSequence(),
     ])
 
     const avgArticlesPerNewsletter = recentNewsletters.length > 0
@@ -498,13 +475,13 @@ export async function GET(request: NextRequest) {
               message: lastDistribution.message,
             }
           : null,
-        integrations: integrations.map((integration) => ({
+        integrations: integrations.map((integration: any) => ({
           service: integration.service,
           status: integration.status,
           updatedAt: integration.updatedAt,
         })),
         activeSequences,
-        scheduleChecks: scheduleChecks.map((check) => ({
+        scheduleChecks: scheduleChecks.map((check: any) => ({
           id: check.id,
           createdAt: check.createdAt,
           message: check.message,

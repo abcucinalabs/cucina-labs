@@ -1,47 +1,105 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findAllNewsletterTemplates, createNewsletterTemplate, clearDefaultNewsletterTemplates, getSequenceCountsByTemplateId } from "@/lib/dal"
+import {
+  DEFAULT_NEWSLETTER_TEMPLATE,
+  DEFAULT_WELCOME_TEMPLATE,
+  SYSTEM_DAILY_TEMPLATE_ID,
+  SYSTEM_WEEKLY_TEMPLATE_ID,
+  SYSTEM_WELCOME_TEMPLATE_ID,
+  WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
+} from "@/lib/newsletter-template"
 
 export const dynamic = 'force-dynamic'
+
+async function ensureSystemTemplates() {
+  const existing = await findAllNewsletterTemplates()
+  const hasDaily = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_DAILY_TEMPLATE_ID ||
+      template.name === "System Default - Daily Insights"
+  )
+  const hasWeekly = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_WEEKLY_TEMPLATE_ID ||
+      template.name === "System Default - Weekly Update"
+  )
+  const hasDefault = existing.some((template: any) => template.isDefault)
+
+  if (!hasDaily) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_DAILY_TEMPLATE_ID,
+        name: "System Default - Daily Insights",
+        description: "Built-in template for the Daily Insights format.",
+        html: DEFAULT_NEWSLETTER_TEMPLATE,
+        isDefault: !hasDefault,
+        includeFooter: true,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+
+  if (!hasWeekly) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_WEEKLY_TEMPLATE_ID,
+        name: "System Default - Weekly Update",
+        description: "Built-in template for the Weekly Update format.",
+        html: WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
+        isDefault: false,
+        includeFooter: true,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+
+  const hasWelcome = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_WELCOME_TEMPLATE_ID ||
+      template.name === "System Default - Welcome Email"
+  )
+
+  if (!hasWelcome) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_WELCOME_TEMPLATE_ID,
+        name: "System Default - Welcome Email",
+        description: "Built-in template for the Welcome Email sent to new subscribers.",
+        html: DEFAULT_WELCOME_TEMPLATE,
+        isDefault: false,
+        includeFooter: false,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+}
 
 // GET - List all newsletter templates
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const templates = await prisma.newsletterTemplate.findMany({
-      orderBy: [
-        { isDefault: 'desc' },
-        { createdAt: 'desc' }
-      ]
-    })
+    await ensureSystemTemplates()
 
-    const usage = await prisma.sequence.groupBy({
-      by: ["templateId"],
-      _count: { _all: true },
-      _max: { lastSent: true },
-      where: { templateId: { not: null } }
-    })
+    const templates = await findAllNewsletterTemplates()
 
-    const usageMap = new Map(
-      usage
-        .filter((item) => item.templateId)
-        .map((item) => [
-          item.templateId as string,
-          { count: item._count._all, lastSent: item._max.lastSent }
-        ])
-    )
+    const usageCounts = await getSequenceCountsByTemplateId()
 
-    const templatesWithUsage = templates.map((template) => {
-      const usageInfo = usageMap.get(template.id)
+    const templatesWithUsage = templates.map((template: any) => {
       return {
         ...template,
-        usageCount: usageInfo?.count ?? 0,
-        lastUsedAt: usageInfo?.lastSent ?? null,
+        usageCount: usageCounts[template.id] ?? 0,
+        lastUsedAt: null,
       }
     })
 
@@ -58,14 +116,14 @@ export async function GET(request: NextRequest) {
 // POST - Create a new newsletter template
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       console.error("Template creation failed: No session found")
       return NextResponse.json({ error: "Unauthorized - Please log in again" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { name, description, html, isDefault } = body
+    const { name, description, html, isDefault, includeFooter } = body
 
     console.log("Creating template:", { name, htmlLength: html?.length, isDefault })
 
@@ -80,19 +138,15 @@ export async function POST(request: NextRequest) {
     // If this template is set as default, unset all other defaults
     if (isDefault) {
       console.log("Unsetting other default templates")
-      await prisma.newsletterTemplate.updateMany({
-        where: { isDefault: true },
-        data: { isDefault: false }
-      })
+      await clearDefaultNewsletterTemplates()
     }
 
-    const template = await prisma.newsletterTemplate.create({
-      data: {
-        name,
-        description: description?.trim() || null,
-        html,
-        isDefault: isDefault || false
-      }
+    const template = await createNewsletterTemplate({
+      name,
+      description: description?.trim() || null,
+      html,
+      isDefault: isDefault || false,
+      includeFooter: includeFooter !== undefined ? includeFooter : true,
     })
 
     console.log("Template created successfully:", { id: template.id, name: template.name })

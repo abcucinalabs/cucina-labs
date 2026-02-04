@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import { encrypt, decrypt } from "@/lib/encryption"
+import { getAuthSession } from "@/lib/auth"
+import { findAllApiKeys, findApiKeyByService, upsertApiKey } from "@/lib/dal"
+import { encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
 const saveIntegrationSchema = z.object({
-  service: z.enum(["gemini", "airtable", "resend"]),
+  service: z.enum(["gemini", "resend"]),
   key: z.string().optional(),
   // Gemini fields
   geminiModel: z.string().optional(),
-  // Airtable fields
-  airtableBaseId: z.string().optional(),
-  airtableBaseName: z.string().optional(),
-  airtableTableId: z.string().optional(),
-  airtableTableName: z.string().optional(),
   // Resend fields
   resendFromName: z.string().optional(),
   resendFromEmail: z.string().email().optional(),
@@ -25,12 +19,12 @@ const saveIntegrationSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apiKeys = await prisma.apiKey.findMany()
+    const apiKeys = await findAllApiKeys()
 
     const result: Record<string, any> = {}
     for (const key of apiKeys) {
@@ -39,11 +33,6 @@ export async function GET(request: NextRequest) {
         hasKey: !!key.key,
         // Gemini fields
         geminiModel: key.geminiModel,
-        // Airtable fields
-        airtableBaseId: key.airtableBaseId,
-        airtableBaseName: key.airtableBaseName,
-        airtableTableId: key.airtableTableId,
-        airtableTableName: key.airtableTableName,
         // Resend fields
         resendFromName: key.resendFromName,
         resendFromEmail: key.resendFromEmail,
@@ -51,13 +40,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Add missing services
-    const services = ["gemini", "airtable", "resend"]
+    const services = ["gemini", "resend"]
     for (const service of services) {
       if (!result[service]) {
-        result[service] = { 
-          status: "disconnected", 
+        result[service] = {
+          status: "disconnected",
           hasKey: false,
-          geminiModel: service === "gemini" ? "gemini-2.0-flash-exp" : undefined,
+          geminiModel: service === "gemini" ? "gemini-2.5-flash" : undefined,
           resendFromName: service === "resend" ? 'Adrian & Jimmy from "AI Product Briefing"' : undefined,
           resendFromEmail: service === "resend" ? "hello@jimmy-iliohan.com" : undefined,
         }
@@ -76,7 +65,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -87,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Build update data
     const updateData: any = { ...configFields }
-    
+
     // Only update the key if one is provided
     if (key) {
       updateData.key = encrypt(key)
@@ -95,13 +84,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if we're updating an existing record or creating new
-    const existing = await prisma.apiKey.findUnique({ where: { service } })
-    
+    const existing = await findApiKeyByService(service)
+
     if (existing) {
-      await prisma.apiKey.update({
-        where: { service },
-        data: updateData,
-      })
+      await upsertApiKey(service, updateData)
     } else {
       // If creating new, a key is required
       if (!key) {
@@ -110,13 +96,10 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      await prisma.apiKey.create({
-        data: {
-          service,
-          key: encrypt(key),
-          status: "connected",
-          ...configFields,
-        },
+      await upsertApiKey(service, {
+        key: encrypt(key),
+        status: "connected",
+        ...configFields,
       })
     }
 

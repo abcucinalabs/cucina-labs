@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -37,13 +37,13 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const result = await signIn("credentials", {
+      const supabase = createSupabaseBrowserClient()
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
-        redirect: false,
       })
 
-      if (result?.error) {
+      if (authError) {
         setError("Invalid email or password")
       } else {
         router.push("/admin/dashboard")

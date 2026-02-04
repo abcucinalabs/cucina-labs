@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { Resend } from "resend"
-import { prisma } from "@/lib/db"
+import { findApiKeyByService, updateApiKey, findEmailTemplateByType } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { appendEmailFooter } from "@/lib/email-footer"
@@ -30,9 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     if (!resendConfig?.key) {
       return NextResponse.json(
@@ -46,10 +44,7 @@ export async function POST(request: NextRequest) {
 
     const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
     if (needsRotation) {
-      await prisma.apiKey.update({
-        where: { id: resendConfig.id },
-        data: { key: encrypt(plaintext) },
-      })
+      await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
     }
     const resend = new Resend(plaintext)
     const body = await request.json()
@@ -78,9 +73,7 @@ export async function POST(request: NextRequest) {
         console.log("Contact already exists:", email)
       }
 
-      const welcomeTemplate = await prisma.emailTemplate.findUnique({
-        where: { type: "welcome" },
-      })
+      const welcomeTemplate = await findEmailTemplateByType("welcome")
 
       if (welcomeTemplate?.enabled) {
         if (!welcomeTemplate.html) {
@@ -94,7 +87,7 @@ export async function POST(request: NextRequest) {
           const htmlWithFooter = appendEmailFooter(welcomeTemplate.html, {
             email,
             includeUnsubscribe: true,
-            origin: process.env.NEXTAUTH_URL,
+            origin: process.env.NEXT_PUBLIC_BASE_URL,
           })
 
           const emailPayload = {

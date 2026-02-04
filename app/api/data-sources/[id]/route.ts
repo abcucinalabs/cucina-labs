@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import { Prisma } from "@prisma/client"
+import { getAuthSession } from "@/lib/auth"
+import {
+  findDataSourceById,
+  updateDataSource,
+  deleteDataSource,
+} from "@/lib/dal"
 import { z } from "zod"
 
 const updateDataSourceSchema = z.object({
   name: z.string().min(1).optional(),
-  type: z.enum(["rss_airtable", "airtable"]).optional(),
+  type: z.enum(["rss", "custom"]).optional(),
   tableId: z.string().nullable().optional(),
   tableName: z.string().nullable().optional(),
   viewId: z.string().nullable().optional(),
@@ -21,16 +23,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = await params
 
-    const dataSource = await prisma.dataSource.findUnique({
-      where: { id },
-    })
+    const dataSource = await findDataSourceById(id)
 
     if (!dataSource) {
       return NextResponse.json(
@@ -54,7 +54,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -63,18 +63,7 @@ export async function PUT(
     const body = await request.json()
     const validatedData = updateDataSourceSchema.parse(body)
 
-    // Transform the data for Prisma - handle null JSON values properly
-    const updateData: Prisma.DataSourceUpdateInput = {
-      ...validatedData,
-      fieldMapping: validatedData.fieldMapping === null
-        ? Prisma.DbNull
-        : validatedData.fieldMapping,
-    }
-
-    const dataSource = await prisma.dataSource.update({
-      where: { id },
-      data: updateData,
-    })
+    const dataSource = await updateDataSource(id, validatedData)
 
     return NextResponse.json(dataSource)
   } catch (error) {
@@ -98,16 +87,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = await params
 
-    await prisma.dataSource.delete({
-      where: { id },
-    })
+    await deleteDataSource(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

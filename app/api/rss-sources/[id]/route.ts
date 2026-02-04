@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { updateRssSource, deleteRssSource } from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
@@ -16,7 +15,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -24,10 +23,7 @@ export async function PATCH(
     const body = await request.json()
     const data = updateRssSourceSchema.parse(body)
 
-    const source = await prisma.rssSource.update({
-      where: { id: params.id },
-      data,
-    })
+    const source = await updateRssSource(params.id, data)
 
     await logNewsActivity({
       event: "rss.source.updated",
@@ -64,14 +60,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await prisma.rssSource.delete({
-      where: { id: params.id },
-    })
+    await deleteRssSource(params.id)
 
     await logNewsActivity({
       event: "rss.source.deleted",

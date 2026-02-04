@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findAllRssSources, createRssSource } from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
 import { z } from "zod"
 
@@ -15,14 +14,12 @@ const createRssSourceSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const sources = await prisma.rssSource.findMany({
-      orderBy: { createdAt: "desc" },
-    })
+    const sources = await findAllRssSources()
 
     return NextResponse.json(sources, {
       headers: {
@@ -40,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -48,9 +45,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, url, category } = createRssSourceSchema.parse(body)
 
-    const source = await prisma.rssSource.create({
-      data: { name, url, category },
-    })
+    const source = await createRssSource({ name, url, category })
 
     await logNewsActivity({
       event: "rss.source.created",
