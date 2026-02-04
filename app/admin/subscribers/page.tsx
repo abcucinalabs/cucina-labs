@@ -21,6 +21,7 @@ export default function SubscribersPage() {
   const [audiences, setAudiences] = useState<{ id: string; name: string }[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export default function SubscribersPage() {
   const fetchContacts = async (signal?: AbortSignal) => {
     const requestId = ++requestIdRef.current
     setIsLoading(true)
+    setError(null)
     try {
       const response = await fetch("/api/resend/contacts", { signal })
       if (response.ok) {
@@ -39,11 +41,15 @@ export default function SubscribersPage() {
         if (requestId === requestIdRef.current) {
           setContacts(data.contacts || [])
           setAudiences(data.audiences || [])
+          if (data.error) {
+            setError(data.error)
+          }
         }
       }
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
         console.error("Failed to fetch contacts:", error)
+        setError("Failed to fetch contacts. Please try again.")
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -112,6 +118,10 @@ export default function SubscribersPage() {
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-destructive text-sm">
+              {error}
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">

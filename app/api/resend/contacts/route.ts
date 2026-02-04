@@ -76,7 +76,11 @@ export async function GET(request: NextRequest) {
 
     const resendApiKey = await getServiceApiKey("resend")
     if (!resendApiKey) {
-      return NextResponse.json({ contacts: [], audiences: [] })
+      return NextResponse.json({
+        contacts: [],
+        audiences: [],
+        error: "Resend API key not configured. Go to Settings to add your API key."
+      })
     }
 
     // Fetch all audiences, but do not fail the endpoint if this call fails.
@@ -88,6 +92,14 @@ export async function GET(request: NextRequest) {
     if (audiencesResponse.ok) {
       const audiencesData = await audiencesResponse.json()
       audiences = (audiencesData.data || []) as { id: string; name: string }[]
+    } else {
+      const errorText = await audiencesResponse.text()
+      console.error("Failed to fetch audiences from Resend:", audiencesResponse.status, errorText)
+      return NextResponse.json({
+        contacts: [],
+        audiences: [],
+        error: `Failed to fetch from Resend API: ${audiencesResponse.status}. Check your API key in Settings.`
+      })
     }
 
     // Build a map of all contacts, deduplicating by email
