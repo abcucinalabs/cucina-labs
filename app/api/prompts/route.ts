@@ -30,7 +30,7 @@ const defaultIngestionConfig = {
   timeFrame: 72,
 }
 
-async function loadPromptValue(key: PromptKey): Promise<{ prompt: string; isDefault: boolean }> {
+async function loadPromptValue(key: PromptKey): Promise<{ prompt: string | null; isDefault: boolean }> {
   if (key === "ingestion") {
     let config: any = null
     try {
@@ -38,8 +38,9 @@ async function loadPromptValue(key: PromptKey): Promise<{ prompt: string; isDefa
     } catch {
       // table may not exist yet
     }
-    const prompt = config?.userPrompt || DEFAULT_PROMPTS.ingestion
-    return { prompt, isDefault: !config || prompt === DEFAULT_PROMPTS.ingestion }
+    // Only return the prompt if it's been manually set (userPrompt exists)
+    const prompt = config?.userPrompt || null
+    return { prompt, isDefault: !prompt }
   }
 
   if (key === "daily_insights") {
@@ -49,8 +50,9 @@ async function loadPromptValue(key: PromptKey): Promise<{ prompt: string; isDefa
     } catch {
       // table may not exist yet
     }
-    const prompt = config?.userPrompt || DEFAULT_PROMPTS.daily_insights
-    return { prompt, isDefault: !config || prompt === DEFAULT_PROMPTS.daily_insights }
+    // Only return the prompt if it's been manually set (userPrompt exists)
+    const prompt = config?.userPrompt || null
+    return { prompt, isDefault: !prompt }
   }
 
   let config: any = null
@@ -59,8 +61,9 @@ async function loadPromptValue(key: PromptKey): Promise<{ prompt: string; isDefa
   } catch {
     // table may not exist yet
   }
-  const prompt = config?.promptText || DEFAULT_PROMPTS.weekly_update
-  return { prompt, isDefault: !config || prompt === DEFAULT_PROMPTS.weekly_update }
+  // Only return the prompt if it's been manually set (promptText exists)
+  const prompt = config?.promptText || null
+  return { prompt, isDefault: !prompt }
 }
 
 async function savePromptValue(key: PromptKey, prompt: string) {
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
         description: def.description,
         prompt,
         isDefault,
-        variables: extractPromptVariables(prompt),
+        variables: prompt ? extractPromptVariables(prompt) : [],
       })
     }
 
@@ -125,7 +128,7 @@ export async function GET(request: NextRequest) {
           description: def.description,
           prompt,
           isDefault,
-          variables: extractPromptVariables(prompt),
+          variables: prompt ? extractPromptVariables(prompt) : [],
         }
       })
     )

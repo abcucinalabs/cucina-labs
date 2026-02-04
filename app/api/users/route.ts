@@ -18,18 +18,41 @@ export async function GET(request: NextRequest) {
     }
 
     const supabaseAdmin = getSupabaseAdmin()
-    const { data: profiles, error } = await supabaseAdmin
+
+    // Fetch users directly from Supabase Auth
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.listUsers()
+
+    if (authError) throw authError
+
+    // Get profiles to merge role info
+    const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, role, created_at")
-      .order("created_at", { ascending: false })
+      .select("id, role")
 
-    if (error) throw error
+    const profileMap = new Map(
+      (profiles || []).map((p: any) => [p.id, p.role])
+    )
 
-    const users = (profiles || []).map((p: any) => ({
-      id: p.id,
-      email: p.email,
-      role: p.role,
-      createdAt: p.created_at,
+    // Sync any missing profiles
+    const authUsers = authData?.users || []
+    for (const authUser of authUsers) {
+      if (!profileMap.has(authUser.id)) {
+        // Create missing profile
+        await supabaseAdmin.from("profiles").insert({
+          id: authUser.id,
+          email: authUser.email,
+          role: "admin",
+        }).select().single()
+        profileMap.set(authUser.id, "admin")
+      }
+    }
+
+    const users = authUsers.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      role: profileMap.get(u.id) || "admin",
+      createdAt: u.created_at,
     }))
 
     return NextResponse.json(users)
