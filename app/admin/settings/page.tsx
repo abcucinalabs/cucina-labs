@@ -3,7 +3,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { IntegrationsTab } from "@/components/tabs/integrations-tab"
 import { TemplatesTab } from "@/components/tabs/templates-tab"
-import { SettingsTab } from "@/components/tabs/settings-tab"
 import { UsersTab } from "@/components/tabs/users-tab"
 import { AudiencesTab } from "@/components/tabs/audiences-tab"
 import { TopicsTab } from "@/components/tabs/topics-tab"
@@ -24,7 +23,6 @@ export default function SettingsPage() {
         <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="welcome">Welcome Email</TabsTrigger>
           <TabsTrigger value="audiences">Audiences</TabsTrigger>
           <TabsTrigger value="topics">Topics</TabsTrigger>
           <TabsTrigger value="prompts">Prompts</TabsTrigger>
@@ -38,10 +36,6 @@ export default function SettingsPage() {
 
         <TabsContent value="templates">
           <TemplatesTab />
-        </TabsContent>
-
-        <TabsContent value="welcome">
-          <SettingsTab />
         </TabsContent>
 
         <TabsContent value="audiences">

@@ -68,6 +68,7 @@ create table if not exists public.articles (
 create table if not exists public.sequences (
   id text primary key default gen_random_uuid()::text,
   name text not null,
+  subject text,
   audience_id text not null,
   schedule text not null,
   day_of_week text[] not null default '{}',
@@ -76,6 +77,7 @@ create table if not exists public.sequences (
   system_prompt text,
   user_prompt text,
   template_id text,
+  prompt_key text not null default 'daily_insights',
   topic_id text,
   content_sources text[] not null default '{}',
   layout jsonb,

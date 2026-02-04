@@ -712,7 +712,10 @@ Unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe
   `.trim()
 }
 
-export async function runDistribution(sequenceId: string, options: { skipArticleCheck?: boolean } = {}): Promise<void> {
+export async function runDistribution(
+  sequenceId: string,
+  options: { skipArticleCheck?: boolean; subjectOverride?: string } = {}
+): Promise<void> {
   const sequence = await findSequenceById(sequenceId)
 
   if (!sequence || sequence.status !== "active") {
@@ -800,6 +803,16 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   // Wrap URLs with branded short links
   content = await wrapNewsletterWithShortLinks(content, articles, sequenceId)
 
+  const hasSubjectOverride = options.subjectOverride !== undefined
+  const overrideSubject = hasSubjectOverride ? options.subjectOverride?.trim() || "" : ""
+  const savedSubject = typeof sequence.subject === "string" ? sequence.subject.trim() : ""
+  const generatedSubject = typeof content.subject === "string" ? content.subject.trim() : ""
+  const finalSubject = hasSubjectOverride
+    ? overrideSubject || generatedSubject || sequence.name
+    : savedSubject || generatedSubject || sequence.name
+
+  content.subject = finalSubject
+
   // Fetch the template if specified
   let template: string | undefined
   if (sequence.templateId) {
@@ -883,7 +896,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
       const emails = batch.map((contact) => ({
         from,
         to: contact.email as string,
-        subject: content.subject || sequence.name,
+        subject: finalSubject,
         html,
         text: plainText,
       }))
@@ -938,7 +951,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
       name: `${sequence.name} - ${new Date().toISOString()}`,
       audienceId: audienceId as string,
       from,
-      subject: content.subject || sequence.name,
+      subject: finalSubject,
       html,
       text: plainText,
       previewText: content.intro || undefined,

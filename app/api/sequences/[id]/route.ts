@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 
 const updateSequenceSchema = z.object({
   name: z.string().min(1).optional(),
+  subject: z.string().optional(),
   audienceId: z.string().min(1).optional(),
   topicId: z.string().optional(),
   dayOfWeek: z.array(z.string()).optional(),
@@ -15,10 +16,19 @@ const updateSequenceSchema = z.object({
   systemPrompt: z.string().optional(),
   userPrompt: z.string().optional(),
   templateId: z.string().optional(),
+  promptKey: z.string().optional(),
   contentSources: z.array(z.string()).optional(),
   status: z.enum(["draft", "active", "paused"]).optional(),
   schedule: z.string().optional(),
 })
+
+function isMissingSubjectColumnError(error: any) {
+  return (
+    error?.code === "PGRST204" &&
+    typeof error?.message === "string" &&
+    error.message.includes("'subject' column")
+  )
+}
 
 export async function PUT(
   request: NextRequest,
@@ -44,7 +54,17 @@ export async function PUT(
       }
     }
 
-    const sequence = await updateSequence(params.id, data)
+    let sequence: any
+    try {
+      sequence = await updateSequence(params.id, data)
+    } catch (error: any) {
+      if (isMissingSubjectColumnError(error) && "subject" in data) {
+        const { subject: _subject, ...fallbackData } = data
+        sequence = await updateSequence(params.id, fallbackData)
+      } else {
+        throw error
+      }
+    }
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -76,7 +96,17 @@ export async function PATCH(
     const body = await request.json()
     const data = updateSequenceSchema.parse(body)
 
-    const sequence = await updateSequence(params.id, data)
+    let sequence: any
+    try {
+      sequence = await updateSequence(params.id, data)
+    } catch (error: any) {
+      if (isMissingSubjectColumnError(error) && "subject" in data) {
+        const { subject: _subject, ...fallbackData } = data
+        sequence = await updateSequence(params.id, fallbackData)
+      } else {
+        throw error
+      }
+    }
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -138,4 +168,3 @@ function generateCronExpression(daysOfWeek: string[], time: string): string {
     return `${minutes} ${hours} * * ${dayNumbers}`
   }
 }
-

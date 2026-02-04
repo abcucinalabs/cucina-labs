@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    let { systemPrompt, userPrompt, htmlTemplate, dayOfWeek, contentSources } = body
+    let { systemPrompt, userPrompt, htmlTemplate, dayOfWeek, contentSources, subject } = body
 
     // Load global prompts if not provided
     if (!systemPrompt || !userPrompt) {
@@ -76,6 +76,10 @@ export async function POST(request: NextRequest) {
       userPrompt || "",
       { contentSources: contentSources || [] }
     )
+    const customSubject = typeof subject === "string" ? subject.trim() : ""
+    if (customSubject) {
+      content.subject = customSubject
+    }
 
     // Wrap URLs with branded short links (using undefined for preview - no sequenceId)
     content = await wrapNewsletterWithShortLinks(content, articles, undefined)

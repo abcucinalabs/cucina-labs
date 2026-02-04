@@ -3,8 +3,10 @@ import { getAuthSession } from "@/lib/auth"
 import { findAllNewsletterTemplates, createNewsletterTemplate, clearDefaultNewsletterTemplates, getSequenceCountsByTemplateId } from "@/lib/dal"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
+  DEFAULT_WELCOME_TEMPLATE,
   SYSTEM_DAILY_TEMPLATE_ID,
   SYSTEM_WEEKLY_TEMPLATE_ID,
+  SYSTEM_WELCOME_TEMPLATE_ID,
   WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
 } from "@/lib/newsletter-template"
 
@@ -49,6 +51,28 @@ async function ensureSystemTemplates() {
         html: WEEKLY_UPDATE_NEWSLETTER_TEMPLATE,
         isDefault: false,
         includeFooter: true,
+      })
+    } catch (error: any) {
+      const message = String(error?.message || "")
+      if (!message.toLowerCase().includes("duplicate")) throw error
+    }
+  }
+
+  const hasWelcome = existing.some(
+    (template: any) =>
+      template.id === SYSTEM_WELCOME_TEMPLATE_ID ||
+      template.name === "System Default - Welcome Email"
+  )
+
+  if (!hasWelcome) {
+    try {
+      await createNewsletterTemplate({
+        id: SYSTEM_WELCOME_TEMPLATE_ID,
+        name: "System Default - Welcome Email",
+        description: "Built-in template for the Welcome Email sent to new subscribers.",
+        html: DEFAULT_WELCOME_TEMPLATE,
+        isDefault: false,
+        includeFooter: false,
       })
     } catch (error: any) {
       const message = String(error?.message || "")

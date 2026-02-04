@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Mail, Settings, Users } from "lucide-react"
+import { LayoutDashboard, Newspaper, Settings, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 
 const mobileNavigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Emails", href: "/admin/emails", icon: Mail },
+  { name: "News", href: "/admin/news", icon: Newspaper },
   { name: "Subscribers", href: "/admin/subscribers", icon: Users },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ]

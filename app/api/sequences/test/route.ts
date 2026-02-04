@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { getAuthSession } from "@/lib/auth"
 import { generateNewsletterContent, generateEmailHtml, generatePlainText, getRecentArticles } from "@/lib/distribution"
 import { buildNewsletterTemplateContext, renderNewsletterTemplate } from "@/lib/newsletter-template"
-import { decryptWithMetadata, encrypt } from "@/lib/encryption"
-import { findSequencePromptConfig, findApiKeyByService, updateApiKey } from "@/lib/dal"
+import { findSequencePromptConfig, findApiKeyByService } from "@/lib/dal"
+import { getServiceApiKey } from "@/lib/service-keys"
 
 import { Resend } from "resend"
 import { z } from "zod"
@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic'
 
 const testSchema = z.object({
   testEmail: z.string().email(),
+  subject: z.string().optional(),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().optional(),
   customHtml: z.string().optional(),
@@ -68,6 +69,12 @@ export async function POST(request: NextRequest) {
       userPrompt || "",
       { contentSources: parsed.contentSources || [] }
     )
+    const customSubject = parsed.subject?.trim()
+    const generatedSubject =
+      typeof content.subject === "string" ? content.subject.trim() : ""
+    const resolvedSubject =
+      customSubject || generatedSubject || "AI Product Briefing - Daily Digest"
+    content.subject = resolvedSubject
 
     const origin = request.headers.get("origin") || request.nextUrl.origin || process.env.NEXT_PUBLIC_BASE_URL || ""
 
@@ -89,19 +96,15 @@ export async function POST(request: NextRequest) {
 
     // Get Resend API key
     const resendConfig = await findApiKeyByService("resend")
+    const apiKey = await getServiceApiKey("resend")
 
-    if (!resendConfig || !resendConfig.key) {
+    if (!apiKey) {
       return NextResponse.json(
         { error: "Resend API key not configured" },
         { status: 400 }
       )
     }
-
-    const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
-    if (needsRotation) {
-      await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
-    }
-    const resend = new Resend(plaintext)
+    const resend = new Resend(apiKey)
 
     // Build from address
     const fromName = resendConfig.resendFromName || "cucina labs"
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
     await resend.emails.send({
       from,
       to: testEmail,
-      subject: "[TEST] AI Product Briefing - Daily Digest",
+      subject: `[TEST] ${resolvedSubject}`,
       html,
       text: plainText,
     })

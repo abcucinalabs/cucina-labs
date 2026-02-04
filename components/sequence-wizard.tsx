@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DayPicker } from "@/components/ui/day-picker"
-import { AlertCircle, Plus } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
@@ -40,6 +40,7 @@ export function SequenceWizard({
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     name: "",
+    subject: "",
     audienceId: "",
     topicId: "",
     contentSources: [] as string[],
@@ -47,6 +48,7 @@ export function SequenceWizard({
     time: "09:00",
     timezone: "America/New_York",
     templateId: "",
+    promptKey: "daily_insights",
   })
   const [audiences, setAudiences] = useState<any[]>([])
   const [topics, setTopics] = useState<any[]>([])
@@ -60,6 +62,7 @@ export function SequenceWizard({
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testEmailStatus, setTestEmailStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [prompts, setPrompts] = useState<{ key: string; label: string; description: string }[]>([])
   const [templates, setTemplates] = useState<any[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("")
   const systemDefaultValue = "system-default"
@@ -68,9 +71,7 @@ export function SequenceWizard({
   const [saveAsDefault, setSaveAsDefault] = useState(false)
   const [isSendingNow, setIsSendingNow] = useState(false)
   const [sendNowStatus, setSendNowStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
-  const [showCreateAudience, setShowCreateAudience] = useState(false)
-  const [newAudienceName, setNewAudienceName] = useState("")
-  const [isCreatingAudience, setIsCreatingAudience] = useState(false)
+  const [publishStatus, setPublishStatus] = useState<{ type: "error"; message: string } | null>(null)
   const normalizeAudienceId = (audienceId?: string) =>
     audienceId === "local_all" ? "resend_all" : audienceId || ""
 
@@ -79,10 +80,12 @@ export function SequenceWizard({
       fetchAudiences()
       fetchTopics()
       fetchTemplates()
+      fetchPrompts()
       if (sequence) {
         // Load existing sequence data
         setFormData({
           name: sequence.name || "",
+          subject: sequence.subject || "",
           audienceId: normalizeAudienceId(sequence.audienceId),
           topicId: sequence.topicId || "",
           contentSources: sequence.contentSources || [],
@@ -90,6 +93,7 @@ export function SequenceWizard({
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",
           templateId: sequence.templateId || "",
+          promptKey: sequence.promptKey || "daily_insights",
         })
         setSelectedTemplateId(sequence.templateId || "")
 
@@ -133,26 +137,21 @@ export function SequenceWizard({
     }
   }
 
-  const handleCreateAudience = async () => {
-    if (!newAudienceName.trim()) return
-    setIsCreatingAudience(true)
+  const fetchPrompts = async () => {
     try {
-      const response = await fetch("/api/resend/audiences", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newAudienceName.trim() }),
-      })
+      const response = await fetch("/api/prompts")
       if (response.ok) {
-        const created = await response.json()
-        await fetchAudiences()
-        setFormData(prev => ({ ...prev, audienceId: created.id }))
-        setNewAudienceName("")
-        setShowCreateAudience(false)
+        const data = await response.json()
+        setPrompts(
+          (data.prompts || []).map((p: any) => ({
+            key: p.key,
+            label: p.label,
+            description: p.description,
+          }))
+        )
       }
     } catch (error) {
-      console.error("Failed to create audience:", error)
-    } finally {
-      setIsCreatingAudience(false)
+      console.error("Failed to fetch prompts:", error)
     }
   }
 
@@ -277,6 +276,7 @@ export function SequenceWizard({
         body: JSON.stringify({
           dayOfWeek: formData.dayOfWeek,
           contentSources: formData.contentSources,
+          subject: formData.subject,
           htmlTemplate: customHtml,
         }),
       })
@@ -363,7 +363,12 @@ export function SequenceWizard({
       const response = await fetch("/api/sequences/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ testEmail, customHtml, contentSources: formData.contentSources }),
+        body: JSON.stringify({
+          testEmail,
+          subject: formData.subject,
+          customHtml,
+          contentSources: formData.contentSources,
+        }),
       })
       
       const data = await response.json()
@@ -382,6 +387,7 @@ export function SequenceWizard({
   }
 
   const handlePublish = async () => {
+    setPublishStatus(null)
     try {
       const url = sequence ? `/api/sequences/${sequence.id}` : "/api/sequences"
       const method = sequence ? "PUT" : "POST"
@@ -392,9 +398,20 @@ export function SequenceWizard({
       })
       if (response.ok) {
         onClose()
+        return
       }
+
+      const data = await response.json().catch(() => null)
+      setPublishStatus({
+        type: "error",
+        message: data?.error || "Failed to publish sequence",
+      })
     } catch (error) {
       console.error("Failed to publish sequence:", error)
+      setPublishStatus({
+        type: "error",
+        message: "Failed to publish sequence. Please try again.",
+      })
     }
   }
 
@@ -411,6 +428,7 @@ export function SequenceWizard({
       const response = await fetch(`/api/sequences/${sequence.id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject: formData.subject }),
       })
 
       const data = await response.json()
@@ -482,6 +500,18 @@ export function SequenceWizard({
                 />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="subject">Email Subject Line</Label>
+                <Input
+                  id="subject"
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                  placeholder="Building AI Products - Daily Insights"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Optional. If blank, AI-generated subject is used.
+                </p>
+              </div>
+              <div className="space-y-1.5">
                 <Label htmlFor="audience">Resend Audience</Label>
                 <Select
                   value={formData.audienceId}
@@ -498,56 +528,30 @@ export function SequenceWizard({
                     ))}
                   </SelectContent>
                 </Select>
-                {!showCreateAudience && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowCreateAudience(true)}
-                    className="mt-1.5"
-                  >
-                    <Plus className="h-3.5 w-3.5 mr-1.5" />
-                    Create new audience
-                  </Button>
-                )}
-                {showCreateAudience && (
-                  <div className="flex gap-2 mt-2">
-                    <Input
-                      value={newAudienceName}
-                      onChange={(e) => setNewAudienceName(e.target.value)}
-                      placeholder="Audience name"
-                      className="flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleCreateAudience()
-                        if (e.key === "Escape") {
-                          setShowCreateAudience(false)
-                          setNewAudienceName("")
-                        }
-                      }}
-                      autoFocus
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleCreateAudience}
-                      disabled={!newAudienceName.trim() || isCreatingAudience}
-                      isLoading={isCreatingAudience}
-                    >
-                      Create
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCreateAudience(false)
-                        setNewAudienceName("")
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
                 <p className="text-xs text-muted-foreground">
                   Audiences are fetched from your Resend account
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="topic">Resend Topic</Label>
+                <Select
+                  value={formData.topicId}
+                  onValueChange={(value) => setFormData({ ...formData, topicId: value === "__none__" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a topic (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No topic</SelectItem>
+                    {topics.map((topic) => (
+                      <SelectItem key={topic.id} value={topic.id}>
+                        {topic.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Topics allow subscribers to manage their email preferences
                 </p>
               </div>
               <div className="space-y-1.5">
@@ -580,28 +584,6 @@ export function SequenceWizard({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Select which content types to include in this sequence
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="topic">Resend Topic</Label>
-                <Select
-                  value={formData.topicId}
-                  onValueChange={(value) => setFormData({ ...formData, topicId: value === "__none__" ? "" : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a topic (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No topic</SelectItem>
-                    {topics.map((topic) => (
-                      <SelectItem key={topic.id} value={topic.id}>
-                        {topic.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Topics allow subscribers to manage their email preferences
                 </p>
               </div>
             </div>
@@ -722,8 +704,26 @@ export function SequenceWizard({
                   </CardContent>
                 </Card>
 
-                <div className="p-2.5 rounded-md bg-zinc-50 border border-zinc-200 text-xs text-zinc-700">
-                  AI prompts are managed globally in Settings.
+                <div className="space-y-1.5">
+                  <Label htmlFor="prompt-select">AI Prompt</Label>
+                  <Select
+                    value={formData.promptKey}
+                    onValueChange={(value) => setFormData({ ...formData, promptKey: value })}
+                  >
+                    <SelectTrigger id="prompt-select">
+                      <SelectValue placeholder="Select a prompt" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {prompts.map((prompt) => (
+                        <SelectItem key={prompt.key} value={prompt.key}>
+                          {prompt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Prompts are managed in Settings &gt; Prompts
+                  </p>
                 </div>
               </div>
             )
@@ -951,6 +951,10 @@ export function SequenceWizard({
                     <span className="font-medium">{formData.name}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subject:</span>
+                    <span className="font-medium">{formData.subject || "AI-generated"}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-muted-foreground">Schedule:</span>
                     <span className="font-medium capitalize">
                       {formData.dayOfWeek.map(d => d.slice(0, 3)).join(", ")} at {formData.time}
@@ -1004,6 +1008,12 @@ export function SequenceWizard({
                     )}
                   </CardContent>
                 </Card>
+              )}
+
+              {publishStatus && (
+                <div className="p-2 rounded-md text-xs bg-red-50 text-red-800 border border-red-200">
+                  {publishStatus.message}
+                </div>
               )}
             </div>
           )}
