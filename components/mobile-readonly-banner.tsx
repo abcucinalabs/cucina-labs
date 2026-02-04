@@ -6,7 +6,7 @@ export function MobileReadonlyBanner() {
   const pathname = usePathname()
 
   // These routes are mobile-friendly, so hide the banner there
-  const mobileFriendlyRoutes = ["/admin/dashboard", "/admin/saved-content"]
+  const mobileFriendlyRoutes = ["/admin/dashboard", "/admin/saved-content", "/admin/emails"]
   if (mobileFriendlyRoutes.some((route) => pathname === route)) return null
 
   return (

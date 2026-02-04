@@ -7,7 +7,6 @@ const READONLY_API_PREFIXES = [
   "/api/integrations",
   "/api/rss-sources",
   "/api/ingestion",
-  "/api/sequences",
   "/api/newsletter-templates",
   "/api/email-templates",
   "/api/admin",
