@@ -32,9 +32,10 @@ function isMissingSubjectColumnError(error: any) {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -45,7 +46,7 @@ export async function PUT(
 
     // Regenerate cron if schedule changed
     if (data.dayOfWeek || data.time) {
-      const existing = await findSequenceById(params.id)
+      const existing = await findSequenceById(id)
       if (existing) {
         const dayOfWeek = data.dayOfWeek || existing.dayOfWeek
         const time = data.time || existing.time
@@ -56,11 +57,11 @@ export async function PUT(
 
     let sequence: any
     try {
-      sequence = await updateSequence(params.id, data)
+      sequence = await updateSequence(id, data)
     } catch (error: any) {
       if (isMissingSubjectColumnError(error) && "subject" in data) {
         const { subject: _subject, ...fallbackData } = data
-        sequence = await updateSequence(params.id, fallbackData)
+        sequence = await updateSequence(id, fallbackData)
       } else {
         throw error
       }
@@ -85,9 +86,10 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -98,11 +100,11 @@ export async function PATCH(
 
     let sequence: any
     try {
-      sequence = await updateSequence(params.id, data)
+      sequence = await updateSequence(id, data)
     } catch (error: any) {
       if (isMissingSubjectColumnError(error) && "subject" in data) {
         const { subject: _subject, ...fallbackData } = data
-        sequence = await updateSequence(params.id, fallbackData)
+        sequence = await updateSequence(id, fallbackData)
       } else {
         throw error
       }
@@ -127,15 +129,16 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await deleteSequence(params.id)
+    await deleteSequence(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

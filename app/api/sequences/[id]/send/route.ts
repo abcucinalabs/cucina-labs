@@ -11,15 +11,14 @@ const sendNowSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: sequenceId } = await params
     const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    const sequenceId = params.id
     const body = await request.json().catch(() => ({}))
     const { subject } = sendNowSchema.parse(body)
 

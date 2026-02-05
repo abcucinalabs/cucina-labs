@@ -45,7 +45,7 @@ export const WEEKLY_NEWSLETTER_TEMPLATE = `<!DOCTYPE html>
     .ExternalClass { width: 100%; }
     .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
     @media only screen and (max-width: 600px) {
-      .mobile-wrapper { padding: 12px 0 !important; }
+      .mobile-wrapper { padding: 0 !important; }
       .mobile-content { padding: 24px 16px !important; }
       .mobile-header { padding: 24px 16px 28px !important; }
       .mobile-footer { padding: 20px 16px 28px !important; }
