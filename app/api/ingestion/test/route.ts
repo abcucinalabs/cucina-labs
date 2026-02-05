@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { getAuthSession } from "@/lib/auth"
 import { runIngestion } from "@/lib/ingestion"
 import { logNewsActivity } from "@/lib/news-activity"
+import { sendPushNotificationToAll } from "@/lib/push-notifications"
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -30,6 +30,12 @@ export async function POST(request: NextRequest) {
       status: "success",
       message: `Test ingestion completed. Processed ${result.processed}, selected ${result.selected}, stored ${result.stored}.`,
       metadata: { timeFrame, processed: result.processed, selected: result.selected, stored: result.stored },
+    })
+
+    await sendPushNotificationToAll({
+      title: "Test ingestion complete",
+      body: `Processed ${result.processed} articles, selected ${result.selected}.`,
+      url: "/admin/news",
     })
 
     return NextResponse.json({

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db"
+import { createNewsActivity } from "@/lib/dal"
 
 type NewsActivityStatus = "info" | "success" | "warning" | "error"
 
@@ -16,19 +16,11 @@ export async function logNewsActivity({
   metadata,
 }: LogNewsActivityInput): Promise<void> {
   try {
-    const activityModel = (prisma as any).newsActivity
-    if (!activityModel) {
-      console.error("NewsActivity model not available; restart the server.")
-      return
-    }
-
-    await activityModel.create({
-      data: {
-        event,
-        status,
-        message,
-        metadata: metadata ? metadata : undefined,
-      },
+    await createNewsActivity({
+      event,
+      status,
+      message,
+      metadata: metadata ? metadata : undefined,
     })
   } catch (error) {
     console.error("Failed to write news activity log:", error)

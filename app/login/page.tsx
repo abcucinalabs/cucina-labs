@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -37,13 +37,13 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const result = await signIn("credentials", {
+      const supabase = createSupabaseBrowserClient()
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
-        redirect: false,
       })
 
-      if (result?.error) {
+      if (authError) {
         setError("Invalid email or password")
       } else {
         router.push("/admin/dashboard")
@@ -61,15 +61,11 @@ export default function LoginPage() {
       <div className="relative min-h-screen overflow-hidden">
         {/* Background Video */}
         <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover grayscale"
-          >
-            <source src="/Video-Background-2.mp4" type="video/mp4" />
-          </video>
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
+            style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+            aria-hidden="true"
+          />
         </div>
 
         {/* Content */}

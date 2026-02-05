@@ -1,30 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findSequenceById, updateSequence, deleteSequence } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
 const updateSequenceSchema = z.object({
   name: z.string().min(1).optional(),
+  subject: z.string().optional(),
   audienceId: z.string().min(1).optional(),
+  topicId: z.string().optional(),
   dayOfWeek: z.array(z.string()).optional(),
   time: z.string().optional(),
   timezone: z.string().optional(),
   systemPrompt: z.string().optional(),
-  userPrompt: z.string().min(1).optional(),
+  userPrompt: z.string().optional(),
   templateId: z.string().optional(),
+  promptKey: z.string().optional(),
+  contentSources: z.array(z.string()).optional(),
   status: z.enum(["draft", "active", "paused"]).optional(),
   schedule: z.string().optional(),
 })
 
+function isMissingSubjectColumnError(error: any) {
+  return (
+    error?.code === "PGRST204" &&
+    typeof error?.message === "string" &&
+    error.message.includes("'subject' column")
+  )
+}
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const { id } = await params
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -34,9 +46,7 @@ export async function PUT(
 
     // Regenerate cron if schedule changed
     if (data.dayOfWeek || data.time) {
-      const existing = await prisma.sequence.findUnique({
-        where: { id: params.id },
-      })
+      const existing = await findSequenceById(id)
       if (existing) {
         const dayOfWeek = data.dayOfWeek || existing.dayOfWeek
         const time = data.time || existing.time
@@ -45,10 +55,17 @@ export async function PUT(
       }
     }
 
-    const sequence = await prisma.sequence.update({
-      where: { id: params.id },
-      data,
-    })
+    let sequence: any
+    try {
+      sequence = await updateSequence(id, data)
+    } catch (error: any) {
+      if (isMissingSubjectColumnError(error) && "subject" in data) {
+        const { subject: _subject, ...fallbackData } = data
+        sequence = await updateSequence(id, fallbackData)
+      } else {
+        throw error
+      }
+    }
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -69,10 +86,11 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const { id } = await params
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -80,10 +98,17 @@ export async function PATCH(
     const body = await request.json()
     const data = updateSequenceSchema.parse(body)
 
-    const sequence = await prisma.sequence.update({
-      where: { id: params.id },
-      data,
-    })
+    let sequence: any
+    try {
+      sequence = await updateSequence(id, data)
+    } catch (error: any) {
+      if (isMissingSubjectColumnError(error) && "subject" in data) {
+        const { subject: _subject, ...fallbackData } = data
+        sequence = await updateSequence(id, fallbackData)
+      } else {
+        throw error
+      }
+    }
 
     return NextResponse.json(sequence)
   } catch (error) {
@@ -104,17 +129,16 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const { id } = await params
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    await prisma.sequence.delete({
-      where: { id: params.id },
-    })
+    await deleteSequence(id)
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -147,4 +171,3 @@ function generateCronExpression(daysOfWeek: string[], time: string): string {
     return `${minutes} ${hours} * * ${dayNumbers}`
   }
 }
-

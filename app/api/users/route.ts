@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { getAuthSession } from "@/lib/auth"
+import { getSupabaseAdmin } from "@/lib/supabase"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -14,22 +12,48 @@ const createUserSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    })
+    const supabaseAdmin = getSupabaseAdmin()
+
+    // Fetch users directly from Supabase Auth
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.listUsers()
+
+    if (authError) throw authError
+
+    // Get profiles to merge role info
+    const { data: profiles } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role")
+
+    const profileMap = new Map(
+      (profiles || []).map((p: any) => [p.id, p.role])
+    )
+
+    // Sync any missing profiles
+    const authUsers = authData?.users || []
+    for (const authUser of authUsers) {
+      if (!profileMap.has(authUser.id)) {
+        // Create missing profile
+        await supabaseAdmin.from("profiles").insert({
+          id: authUser.id,
+          email: authUser.email,
+          role: "admin",
+        }).select().single()
+        profileMap.set(authUser.id, "admin")
+      }
+    }
+
+    const users = authUsers.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      role: profileMap.get(u.id) || "admin",
+      createdAt: u.created_at,
+    }))
 
     return NextResponse.json(users)
   } catch (error) {
@@ -43,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -51,34 +75,46 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password } = createUserSchema.parse(body)
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    })
+    const supabaseAdmin = getSupabaseAdmin()
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 400 }
-      )
+    // Create auth user via Supabase Admin API
+    const { data: authData, error: authError } =
+      await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      })
+
+    if (authError) {
+      if (authError.message?.includes("already been registered")) {
+        return NextResponse.json(
+          { error: "User already exists" },
+          { status: 400 }
+        )
+      }
+      throw authError
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10)
-
-    const user = await prisma.user.create({
-      data: {
+    // Create profile
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .insert({
+        id: authData.user.id,
         email,
-        password: hashedPassword,
         role: "admin",
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    })
+      })
 
-    return NextResponse.json(user, { status: 201 })
+    if (profileError) throw profileError
+
+    return NextResponse.json(
+      {
+        id: authData.user.id,
+        email,
+        role: "admin",
+        createdAt: authData.user.created_at,
+      },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -94,4 +130,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

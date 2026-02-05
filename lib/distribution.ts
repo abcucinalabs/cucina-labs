@@ -1,8 +1,15 @@
-import { prisma } from "./db"
-import { decrypt } from "./encryption"
+import {
+  findApiKeyByService,
+  findRecentArticles,
+  findSequenceById,
+  updateSequence,
+  findSequencePromptConfig,
+  findNewsletterTemplateById,
+  findDefaultNewsletterTemplate,
+  findSavedContent,
+} from "./dal"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { Resend } from "resend"
-import Airtable from "airtable"
 import {
   DEFAULT_NEWSLETTER_TEMPLATE,
   buildNewsletterTemplateContext,
@@ -10,6 +17,13 @@ import {
 } from "./newsletter-template"
 import { logNewsActivity } from "./news-activity"
 import { createShortLink } from "./short-links"
+import { computeTimeFrameHours } from "./schedule-rules"
+import {
+  defaultSequenceSystemPrompt,
+  defaultSequenceUserPrompt,
+} from "./sequence-prompt-defaults"
+import { getServiceApiKey } from "./service-keys"
+import { normalizeGeminiModel } from "./gemini-model"
 
 // Flexible interface to handle different Gemini response structures
 interface NewsletterContent {
@@ -52,6 +66,46 @@ interface NewsletterContent {
   looking_ahead?: string
   subject?: string
   article_ids_selected?: number[]
+  from_chefs_table?: {
+    title?: string
+    body?: string
+  }
+  news?: Array<{
+    id?: number | string
+    headline?: string
+    why_this_matters?: string
+    source?: string
+    link?: string
+    url?: string
+  }>
+  what_were_reading?: Array<{
+    title?: string
+    description?: string
+    summary?: string
+    url?: string
+    link?: string
+  }>
+  what_were_cooking?: {
+    title?: string
+    description?: string
+    url?: string
+    link?: string
+  }
+}
+
+type SavedPromptReadingItem = {
+  title: string
+  url: string
+  description: string
+  source?: string
+  createdAt?: string
+}
+
+type SavedPromptCookingItem = {
+  title: string
+  url: string
+  description: string
+  createdAt?: string
 }
 
 async function getResendConfig(): Promise<{
@@ -59,14 +113,13 @@ async function getResendConfig(): Promise<{
   fromName: string
   fromEmail: string
 } | null> {
-  const apiKey = await prisma.apiKey.findUnique({
-    where: { service: "resend" },
-  })
-  if (!apiKey || !apiKey.key) return null
+  const apiKeyRecord = await findApiKeyByService("resend")
+  const plaintext = await getServiceApiKey("resend")
+  if (!plaintext) return null
   return {
-    apiKey: decrypt(apiKey.key),
-    fromName: apiKey.resendFromName || "cucina labs",
-    fromEmail: apiKey.resendFromEmail || "newsletter@cucinalabs.com",
+    apiKey: plaintext,
+    fromName: apiKeyRecord?.resendFromName || "cucina labs",
+    fromEmail: apiKeyRecord?.resendFromEmail || "newsletter@cucinalabs.com",
   }
 }
 
@@ -210,60 +263,18 @@ async function fetchResendAllContacts(apiKey: string) {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function getAirtableConfig(): Promise<{
-  apiKey: string
-  baseId: string
-  tableIdOrName: string
-} | null> {
-  const config = await prisma.apiKey.findUnique({
-    where: { service: "airtable" },
-  })
-  const baseId = config?.airtableBaseId || process.env.AIRTABLE_BASE_ID
-  const tableIdOrName =
-    config?.airtableTableId ||
-    config?.airtableTableName ||
-    process.env.AIRTABLE_TABLE_ID ||
-    process.env.AIRTABLE_TABLE_NAME
+export async function getRecentArticles(scheduleContext?: { dayOfWeek: string[] }) {
+  // Compute lookback hours based on schedule
+  const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+  const currentDay = DAY_NAMES[new Date().getDay()]
+  const lookbackHours = scheduleContext?.dayOfWeek?.length
+    ? computeTimeFrameHours(scheduleContext.dayOfWeek, currentDay)
+    : 24
 
-  if (!config || !config.key || !baseId || !tableIdOrName) {
-    return null
-  }
-  return {
-    apiKey: decrypt(config.key),
-    baseId,
-    tableIdOrName,
-  }
-}
+  const cutoffDate = new Date(Date.now() - lookbackHours * 60 * 60 * 1000)
+  const articles = await findRecentArticles(cutoffDate)
 
-export async function getRecentArticles() {
-  // First try to fetch from Airtable
-  const airtableConfig = await getAirtableConfig()
-  
-  if (airtableConfig) {
-    try {
-      const articles = await getArticlesFromAirtable(airtableConfig)
-      if (articles.length > 0) {
-        return articles
-      }
-    } catch (error) {
-      console.error("Failed to fetch from Airtable, falling back to local DB:", error)
-    }
-  }
-
-  // Fallback to local database
-  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const articles = await prisma.article.findMany({
-    where: {
-      ingestedAt: { gte: cutoffDate },
-      isRecent: true,
-    },
-    orderBy: {
-      publishedDate: "desc",
-    },
-    take: 20,
-  })
-
-  return articles.map((article) => ({
+  return articles.map((article: any) => ({
     id: article.id,
     title: article.title,
     summary: article.aiSummary || "",
@@ -276,74 +287,64 @@ export async function getRecentArticles() {
   }))
 }
 
-async function getArticlesFromAirtable(config: { apiKey: string; baseId: string; tableIdOrName: string }) {
-  const airtable = new Airtable({ apiKey: config.apiKey })
-  const base = airtable.base(config.baseId)
-  
-  // Get articles from the last 24 hours
-  const cutoffDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  
-  const records = await base(config.tableIdOrName)
-    .select({
-      maxRecords: 20,
-      sort: [{ field: "published_date", direction: "desc" }],
-      // Filter for recent articles - adjust field names based on your Airtable schema
-      filterByFormula: `IS_AFTER({published_date}, '${cutoffDate.toISOString().split('T')[0]}')`,
-    })
-    .all()
-
-  return records.map((record) => ({
-    id: record.id,
-    title: record.get("title") as string || "",
-    summary: record.get("ai_generated_summary") as string || "",
-    link: record.get("source_link") as string || "",
-    imageUrl: record.get("image_link") as string || "",
-    category: record.get("category") as string || "",
-    whyItMatters: record.get("why_it_matters") as string || "",
-    businessValue: record.get("business_value") as string || "",
-    creator: record.get("creator") as string || "",
-  }))
-}
-
-// Export for use in preview when no filter is needed
-export async function getAllArticlesFromAirtable(limit: number = 20) {
-  const airtableConfig = await getAirtableConfig()
-  
-  if (!airtableConfig) {
-    throw new Error("Airtable not configured. Please set up Airtable integration first.")
+async function getSavedWeeklyPromptData(options?: {
+  readingItems?: SavedPromptReadingItem[]
+  cookingItem?: SavedPromptCookingItem | null
+}) {
+  if (options?.readingItems && options?.cookingItem !== undefined) {
+    return {
+      readingItems: options.readingItems,
+      cookingItem: options.cookingItem,
+    }
   }
 
-  const airtable = new Airtable({ apiKey: airtableConfig.apiKey })
-  const base = airtable.base(airtableConfig.baseId)
-  
-  const records = await base(airtableConfig.tableIdOrName)
-    .select({
-      maxRecords: limit,
-      sort: [{ field: "published_date", direction: "desc" }],
-    })
-    .all()
+  const [savedReading, savedCooking] = await Promise.all([
+    findSavedContent({ type: "reading" }).catch(() => []),
+    findSavedContent({ type: "cooking" }).catch(() => []),
+  ])
 
-  return records.map((record) => ({
-    id: record.id,
-    title: record.get("title") as string || "",
-    summary: record.get("ai_generated_summary") as string || "",
-    link: record.get("source_link") as string || "",
-    imageUrl: record.get("image_link") as string || "",
-    category: record.get("category") as string || "",
-    whyItMatters: record.get("why_it_matters") as string || "",
-    businessValue: record.get("business_value") as string || "",
-    creator: record.get("creator") as string || "",
-  }))
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const sortDesc = (a: any, b: any) =>
+    new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+
+  const readingItems = (savedReading || [])
+    .filter((item: any) => {
+      if (!item?.createdAt) return false
+      return new Date(item.createdAt).getTime() >= sevenDaysAgo
+    })
+    .sort(sortDesc)
+    .slice(0, 5)
+    .map((item: any) => ({
+      title: item.title || "",
+      url: item.url || "",
+      description: item.description || "",
+      source: item.source || "",
+      createdAt: item.createdAt,
+    }))
+
+  const latestCooking = (savedCooking || [])
+    .sort(sortDesc)
+    .slice(0, 1)
+    .map((item: any) => ({
+      title: item.title || "",
+      url: item.url || "",
+      description: item.description || "",
+      createdAt: item.createdAt,
+    }))[0] || null
+
+  return {
+    readingItems,
+    cookingItem: latestCooking,
+  }
 }
 
 async function getGeminiConfig(): Promise<{ apiKey: string; model: string } | null> {
-  const config = await prisma.apiKey.findUnique({
-    where: { service: "gemini" },
-  })
-  if (!config || !config.key) return null
+  const config = await findApiKeyByService("gemini")
+  const plaintext = await getServiceApiKey("gemini")
+  if (!plaintext) return null
   return {
-    apiKey: decrypt(config.key),
-    model: config.geminiModel || "gemini-1.5-flash",
+    apiKey: plaintext,
+    model: normalizeGeminiModel(config?.geminiModel),
   }
 }
 
@@ -434,13 +435,110 @@ export async function wrapNewsletterWithShortLinks(
     }
   }
 
+  // Weekly prompt support: create short links for weekly news
+  const weeklyNews = content.news || []
+  for (let i = 0; i < weeklyNews.length; i++) {
+    const story = weeklyNews[i]
+    if (!story) continue
+    const originalLink = story.link || story.url || ""
+    if (!originalLink) continue
+    const shortLink = isShortLink(originalLink)
+      ? originalLink
+      : await createShortLink(
+          originalLink,
+          story.id ? String(story.id) : null,
+          sequenceId || null
+        )
+    story.link = shortLink
+  }
+
+  // Weekly prompt support: create short links for reading and cooking links
+  const weeklyReading = content.what_were_reading || []
+  for (let i = 0; i < weeklyReading.length; i++) {
+    const item = weeklyReading[i]
+    if (!item) continue
+    const originalLink = item.link || item.url || ""
+    if (!originalLink) continue
+    const shortLink = isShortLink(originalLink)
+      ? originalLink
+      : await createShortLink(originalLink, null, sequenceId || null)
+    item.link = shortLink
+    item.url = shortLink
+  }
+
+  if (content.what_were_cooking) {
+    const originalLink = content.what_were_cooking.link || content.what_were_cooking.url || ""
+    if (originalLink) {
+      const shortLink = isShortLink(originalLink)
+        ? originalLink
+        : await createShortLink(originalLink, null, sequenceId || null)
+      content.what_were_cooking.link = shortLink
+      content.what_were_cooking.url = shortLink
+    }
+  }
+
   return content
+}
+
+const CONTENT_SOURCE_DESCRIPTIONS: Record<string, { label: string; jsonFields: string; instruction: string }> = {
+  news: {
+    label: "News",
+    jsonFields: '"featured_story" and "top_stories"',
+    instruction: "Select the most impactful articles as a featured story and top stories with headlines and insights.",
+  },
+  chefs_table: {
+    label: "Chef's Table",
+    jsonFields: '"intro"',
+    instruction: 'Write a 2-3 sentence editorial intro ("Chef\'s Table") about today\'s most important developments.',
+  },
+  recipes: {
+    label: "Recipes",
+    jsonFields: '"recipes"',
+    instruction: "If any saved social posts or curated articles are provided, include them in a recipes array with title, summary, and link.",
+  },
+  cooking: {
+    label: "What We're Cooking",
+    jsonFields: '"looking_ahead"',
+    instruction: 'Write a "Looking Ahead" / "What We\'re Cooking" section with 2-3 sentences about upcoming trends or things to watch.',
+  },
+}
+
+function buildContentSectionsText(contentSources: string[]): string {
+  if (!contentSources || contentSources.length === 0) {
+    // All sections when none specified
+    return Object.values(CONTENT_SOURCE_DESCRIPTIONS)
+      .map((s) => `- ${s.label}: ${s.instruction}`)
+      .join("\n")
+  }
+
+  const included = contentSources
+    .filter((s) => CONTENT_SOURCE_DESCRIPTIONS[s])
+    .map((s) => {
+      const desc = CONTENT_SOURCE_DESCRIPTIONS[s]
+      return `- ${desc.label} (${desc.jsonFields}): ${desc.instruction}`
+    })
+
+  const excluded = Object.entries(CONTENT_SOURCE_DESCRIPTIONS)
+    .filter(([key]) => !contentSources.includes(key))
+    .map(([, desc]) => desc.jsonFields)
+
+  let text = `INCLUDE these sections:\n${included.join("\n")}`
+  if (excluded.length > 0) {
+    text += `\n\nDO NOT include these fields in your JSON output: ${excluded.join(", ")}. Omit them entirely.`
+  }
+
+  return text
 }
 
 export async function generateNewsletterContent(
   articles: any[],
   systemPrompt: string,
-  userPrompt: string
+  userPrompt: string,
+  options?: {
+    contentSources?: string[]
+    readingItems?: SavedPromptReadingItem[]
+    cookingItem?: SavedPromptCookingItem | null
+  }
 ): Promise<NewsletterContent> {
   const geminiConfig = await getGeminiConfig()
   if (!geminiConfig) {
@@ -448,22 +546,37 @@ export async function generateNewsletterContent(
   }
 
   console.log("Using Gemini model:", geminiConfig.model)
-  
+
   const genAI = new GoogleGenerativeAI(geminiConfig.apiKey)
   const model = genAI.getGenerativeModel({ model: geminiConfig.model })
 
   // Use custom prompts if provided, otherwise use a default prompt
   let prompt: string
+  const weeklyPromptData = await getSavedWeeklyPromptData(options)
+  const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const weekEnd = new Date().toISOString()
   if (systemPrompt || userPrompt) {
     // Replace template placeholders with actual data
+    const contentSectionsText = buildContentSectionsText(options?.contentSources || [])
+
+    const processedSystemPrompt = systemPrompt
+      .replace(/\{\{\s*\$json\.content_sections\s*\}\}/g, contentSectionsText)
+
     const processedUserPrompt = userPrompt
       .replace(/\{\{\s*\$json\.articles\s*\}\}/g, JSON.stringify(articles, null, 2))
       .replace(/\{\{\s*JSON\.stringify\(\$json\.articles[^}]*\}\}/g, JSON.stringify(articles, null, 2))
       .replace(/\{\{\s*\$json\.day_start\s*\}\}/g, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
       .replace(/\{\{\s*\$json\.day_end\s*\}\}/g, new Date().toISOString())
+      .replace(/\{\{\s*\$json\.week_start\s*\}\}/g, weekStart)
+      .replace(/\{\{\s*\$json\.week_end\s*\}\}/g, weekEnd)
       .replace(/\{\{\s*\$json\.total_articles\s*\}\}/g, String(articles.length))
-    
-    prompt = `${systemPrompt ? systemPrompt + "\n\n" : ""}${processedUserPrompt}`
+      .replace(/\{\{\s*\$json\.reading_items\s*\}\}/g, JSON.stringify(weeklyPromptData.readingItems, null, 2))
+      .replace(/\{\{\s*\$json\.cooking_item\s*\}\}/g, JSON.stringify(weeklyPromptData.cookingItem || {}, null, 2))
+      .replace(/\{\{\s*\$json\.content_sections\s*\}\}/g, contentSectionsText)
+      .replace(/\{\{\s*JSON\.stringify\(\$json\.reading_items[^}]*\}\}/g, JSON.stringify(weeklyPromptData.readingItems, null, 2))
+      .replace(/\{\{\s*JSON\.stringify\(\$json\.cooking_item[^}]*\}\}/g, JSON.stringify(weeklyPromptData.cookingItem || {}, null, 2))
+
+    prompt = `${processedSystemPrompt ? processedSystemPrompt + "\n\n" : ""}${processedUserPrompt}`
   } else {
     prompt = `Generate a newsletter from these articles:\n\n${JSON.stringify(articles, null, 2)}\n\nReturn a JSON object with: featuredStory (title, summary, link, imageUrl, category), topStories (array of 3-4 items with title, summary, link, category), intro (string), lookingAhead (string).`
   }
@@ -483,6 +596,24 @@ export async function generateNewsletterContent(
     }
 
     const parsed = JSON.parse(jsonMatch[0])
+    const shouldIncludeReading = !options?.contentSources || options.contentSources.length === 0 || options.contentSources.includes("recipes")
+    const shouldIncludeCooking = !options?.contentSources || options.contentSources.length === 0 || options.contentSources.includes("cooking")
+    if (shouldIncludeReading && (!Array.isArray(parsed.what_were_reading) || parsed.what_were_reading.length === 0)) {
+      parsed.what_were_reading = weeklyPromptData.readingItems.slice(0, 5).map((item) => ({
+        title: item.title,
+        url: item.url,
+        description: item.description,
+      }))
+    }
+    if (shouldIncludeCooking && (!parsed.what_were_cooking || !parsed.what_were_cooking.title)) {
+      parsed.what_were_cooking = weeklyPromptData.cookingItem
+        ? {
+            title: weeklyPromptData.cookingItem.title,
+            url: weeklyPromptData.cookingItem.url,
+            description: weeklyPromptData.cookingItem.description,
+          }
+        : { title: "", url: "", description: "" }
+    }
     console.log("Parsed Gemini response keys:", Object.keys(parsed))
     console.log("Featured story link:", parsed.featured_story?.link || parsed.featuredStory?.link || "MISSING")
     console.log("Top stories links:", (parsed.top_stories || parsed.topStories || []).map((s: any) => s.link || "MISSING"))
@@ -507,12 +638,34 @@ export function generateEmailHtml(
 }
 
 export function generatePlainText(content: NewsletterContent): string {
+  if (Array.isArray(content.news) && content.news.length > 0) {
+    const chefsTable = content.from_chefs_table?.body || content.intro || ""
+    const reading = content.what_were_reading || []
+    const cooking = content.what_were_cooking
+    return `
+CUCINA LABS - WEEKLY UPDATE
+
+${chefsTable}
+
+NEWS
+${content.news.map((item, index) => `${index + 1}. ${item.headline || ""}\n${item.why_this_matters || ""}\n${item.link || item.url || ""}`).join("\n\n")}
+
+${reading.length ? `WHAT WE'RE READING\n${reading.map((item) => `${item.title || ""}\n${item.description || item.summary || ""}\n${item.url || item.link || ""}`).join("\n\n")}` : ""}
+
+${cooking?.title ? `WHAT WE'RE COOKING\n${cooking.title}\n${cooking.description || ""}\n${cooking.url || cooking.link || ""}` : ""}
+
+---
+© ${new Date().getFullYear()} cucina labs
+Unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe
+  `.trim()
+  }
+
   // Handle different response structures from Gemini
   const featured = content.featuredStory || content.featured_story || {} as any
   const stories = content.topStories || content.top_stories || []
   const intro = content.intro || ""
   const lookingAhead = content.lookingAhead || content.looking_ahead || ""
-  
+
   const featuredCategory = featured.category || ""
   const featuredTitle = featured.title || featured.headline || ""
   const featuredSummary = featured.summary || featured.why_this_matters || ""
@@ -525,7 +678,7 @@ export function generatePlainText(content: NewsletterContent): string {
       return storyTitle ? `- ${storyTitle}${storySummary ? ` — ${storySummary}` : ""}` : ""
     }),
   ].filter(Boolean)
-  
+
   return `
 CUCINA LABS - AI Product Newsletter
 
@@ -555,14 +708,15 @@ ${lookingAhead}` : ""}
 
 ---
 © ${new Date().getFullYear()} cucina labs
-Unsubscribe: ${process.env.NEXTAUTH_URL}/unsubscribe
+Unsubscribe: ${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe
   `.trim()
 }
 
-export async function runDistribution(sequenceId: string, options: { skipArticleCheck?: boolean } = {}): Promise<void> {
-  const sequence = await prisma.sequence.findUnique({
-    where: { id: sequenceId },
-  })
+export async function runDistribution(
+  sequenceId: string,
+  options: { skipArticleCheck?: boolean; subjectOverride?: string } = {}
+): Promise<void> {
+  const sequence = await findSequenceById(sequenceId)
 
   if (!sequence || sequence.status !== "active") {
     await logNewsActivity({
@@ -591,8 +745,8 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     throw new Error("Sequence audience ID not configured")
   }
 
-  // Get recent articles
-  const articles = await getRecentArticles()
+  // Get recent articles with schedule-aware lookback
+  const articles = await getRecentArticles({ dayOfWeek: sequence.dayOfWeek })
 
   if (articles.length === 0 && !options.skipArticleCheck) {
     await logNewsActivity({
@@ -612,11 +766,31 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     metadata: { sequenceId, sequenceName: sequence.name, articleCount: articles.length },
   })
 
+  // Load prompts: sequence-level overrides → global config → hardcoded defaults
+  let systemPrompt = sequence.systemPrompt || ""
+  let userPrompt = sequence.userPrompt || ""
+
+  if (!systemPrompt || !userPrompt) {
+    let globalConfig: { systemPrompt?: string; userPrompt?: string } | null = null
+    try {
+      globalConfig = await findSequencePromptConfig()
+    } catch {
+      // Table may not exist yet if migration hasn't run
+    }
+    if (!systemPrompt) {
+      systemPrompt = globalConfig?.systemPrompt || defaultSequenceSystemPrompt
+    }
+    if (!userPrompt) {
+      userPrompt = globalConfig?.userPrompt || defaultSequenceUserPrompt
+    }
+  }
+
   // Generate newsletter content
   let content = await generateNewsletterContent(
     articles,
-    sequence.systemPrompt || "",
-    sequence.userPrompt
+    systemPrompt,
+    userPrompt,
+    { contentSources: sequence.contentSources || [] }
   )
 
   await logNewsActivity({
@@ -629,27 +803,32 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   // Wrap URLs with branded short links
   content = await wrapNewsletterWithShortLinks(content, articles, sequenceId)
 
+  const hasSubjectOverride = options.subjectOverride !== undefined
+  const overrideSubject = hasSubjectOverride ? options.subjectOverride?.trim() || "" : ""
+  const savedSubject = typeof sequence.subject === "string" ? sequence.subject.trim() : ""
+  const generatedSubject = typeof content.subject === "string" ? content.subject.trim() : ""
+  const finalSubject = hasSubjectOverride
+    ? overrideSubject || generatedSubject || sequence.name
+    : savedSubject || generatedSubject || sequence.name
+
+  content.subject = finalSubject
+
   // Fetch the template if specified
   let template: string | undefined
   if (sequence.templateId) {
-    const newsletterTemplate = await prisma.newsletterTemplate.findUnique({
-      where: { id: sequence.templateId },
-    })
+    const newsletterTemplate = await findNewsletterTemplateById(sequence.templateId)
     if (newsletterTemplate) {
       template = newsletterTemplate.html
     }
   } else {
-    const defaultTemplate = await prisma.newsletterTemplate.findFirst({
-      where: { isDefault: true },
-      orderBy: { updatedAt: "desc" },
-    })
+    const defaultTemplate = await findDefaultNewsletterTemplate()
     if (defaultTemplate) {
       template = defaultTemplate.html
     }
   }
 
   // Generate email HTML and plain text
-  const html = generateEmailHtml(content, { articles, origin: process.env.NEXTAUTH_URL || "", template })
+  const html = generateEmailHtml(content, { articles, origin: process.env.NEXT_PUBLIC_BASE_URL || "", template })
   const plainText = generatePlainText(content)
 
   // Get Resend API key
@@ -711,16 +890,24 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
     const batchSize = 100
     let totalSent = 0
     let totalFailed = 0
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
 
     for (let i = 0; i < activeContacts.length; i += batchSize) {
       const batch = activeContacts.slice(i, i + batchSize)
-      const emails = batch.map((contact) => ({
-        from,
-        to: contact.email as string,
-        subject: content.subject || sequence.name,
-        html,
-        text: plainText,
-      }))
+      const emails = batch.map((contact) => {
+        const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(contact.email as string)}`
+        return {
+          from,
+          to: contact.email as string,
+          subject: finalSubject,
+          html,
+          text: plainText,
+          headers: {
+            "List-Unsubscribe": `<${unsubscribeUrl}>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
+        }
+      })
 
       let attempts = 0
       let sent = false
@@ -772,7 +959,7 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
       name: `${sequence.name} - ${new Date().toISOString()}`,
       audienceId: audienceId as string,
       from,
-      subject: content.subject || sequence.name,
+      subject: finalSubject,
       html,
       text: plainText,
       previewText: content.intro || undefined,
@@ -830,8 +1017,5 @@ export async function runDistribution(sequenceId: string, options: { skipArticle
   }
 
   // Update sequence last sent time
-  await prisma.sequence.update({
-    where: { id: sequenceId },
-    data: { lastSent: new Date() },
-  })
+  await updateSequence(sequenceId, { lastSent: new Date() })
 }

@@ -48,7 +48,7 @@ export function DayPicker({ value, onChange, className }: DayPickerProps) {
             className={cn(
               "relative w-[60px] h-10 rounded-[var(--radius-md)] border font-medium text-sm transition-all duration-200",
               value.includes(day.value)
-                ? "bg-[var(--accent-primary)] border-[var(--accent-primary)] text-[color:var(--text-primary)]"
+                ? "bg-[var(--accent-primary)] border-[var(--accent-primary)] !text-white"
                 : "bg-[var(--bg-subtle)] border-[var(--border-default)] text-muted-foreground hover:border-[var(--border-hover)]"
             )}
           >

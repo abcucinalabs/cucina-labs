@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findNewsActivity } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -16,18 +15,7 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get("limit")
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 200) : 50
 
-    const activityModel = (prisma as any).newsActivity
-    if (!activityModel) {
-      return NextResponse.json(
-        { error: "NewsActivity model not available. Restart the dev server." },
-        { status: 500 }
-      )
-    }
-
-    const logs = await activityModel.findMany({
-      orderBy: { createdAt: "desc" },
-      take: limit,
-    })
+    const logs = await findNewsActivity(limit)
 
     return NextResponse.json(logs, {
       headers: {
@@ -36,13 +24,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Failed to fetch news logs:", error)
-    const errorCode = (error as { code?: string })?.code
-    if (errorCode === "P2021" || errorCode === "P2022") {
-      return NextResponse.json(
-        { error: "NewsActivity table missing. Run prisma db push and restart the server." },
-        { status: 500 }
-      )
-    }
     return NextResponse.json(
       { error: "Failed to fetch news logs" },
       { status: 500 }

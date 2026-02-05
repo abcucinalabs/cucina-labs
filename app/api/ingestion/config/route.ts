@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import {
+  findIngestionConfig,
+  upsertIngestionConfig,
+} from "@/lib/dal"
 import { logNewsActivity } from "@/lib/news-activity"
+import { DEFAULT_PROMPTS } from "@/lib/prompt-defaults"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -12,19 +15,17 @@ const configSchema = z.object({
   time: z.string(),
   timezone: z.string(),
   timeFrame: z.number(),
-  systemPrompt: z.string(),
-  userPrompt: z.string(),
 })
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Get the first (and should be only) config
-    const config = await prisma.ingestionConfig.findFirst()
+    const config = await findIngestionConfig()
 
     if (!config) {
       return NextResponse.json(null)
@@ -35,8 +36,7 @@ export async function GET(request: NextRequest) {
       time: config.time,
       timezone: config.timezone,
       timeFrame: config.timeFrame,
-      systemPrompt: config.systemPrompt,
-      userPrompt: config.userPrompt,
+      promptKey: "ingestion",
     })
   } catch (error) {
     console.error("Failed to fetch config:", error)
@@ -49,41 +49,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
     const data = configSchema.parse(body)
+    const existingConfig = await findIngestionConfig()
 
-    // Get existing config or create new one
-    const existing = await prisma.ingestionConfig.findFirst()
-
-    if (existing) {
-      await prisma.ingestionConfig.update({
-        where: { id: existing.id },
-        data: {
-          schedule: data.schedule,
-          time: data.time,
-          timezone: data.timezone,
-          timeFrame: data.timeFrame,
-          systemPrompt: data.systemPrompt,
-          userPrompt: data.userPrompt,
-        },
-      })
-    } else {
-      await prisma.ingestionConfig.create({
-        data: {
-          schedule: data.schedule,
-          time: data.time,
-          timezone: data.timezone,
-          timeFrame: data.timeFrame,
-          systemPrompt: data.systemPrompt,
-          userPrompt: data.userPrompt,
-        },
-      })
-    }
+    await upsertIngestionConfig({
+      schedule: data.schedule,
+      time: data.time,
+      timezone: data.timezone,
+      timeFrame: data.timeFrame,
+      ...(existingConfig
+        ? {}
+        : {
+            systemPrompt: "",
+            userPrompt: DEFAULT_PROMPTS.ingestion,
+          }),
+    })
 
     await logNewsActivity({
       event: "ingestion.config.saved",

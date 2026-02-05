@@ -78,15 +78,11 @@ function UnsubscribeContent() {
       <div className="relative min-h-screen overflow-hidden">
         {/* Background Video */}
         <div className="absolute inset-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover grayscale"
-          >
-            <source src="/Video-Background-2.mp4" type="video/mp4" />
-          </video>
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
+            style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+            aria-hidden="true"
+          />
         </div>
 
         {/* Content */}
@@ -252,15 +248,11 @@ export default function UnsubscribePage() {
       <div className="min-h-screen bg-[var(--bg-primary)]">
         <div className="relative min-h-screen overflow-hidden">
           <div className="absolute inset-0">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover grayscale"
-            >
-              <source src="/Video-Background-2.mp4" type="video/mp4" />
-            </video>
+            <div
+              className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
+              style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+              aria-hidden="true"
+            />
           </div>
           <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
             <div className="rounded-[var(--radius-2xl)] border border-white/15 bg-[#0d0d0d]/56 p-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-2xl">

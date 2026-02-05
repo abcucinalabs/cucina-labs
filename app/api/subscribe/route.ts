@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { Resend } from "resend"
-import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { findApiKeyByService, updateApiKey, findEmailTemplateByType } from "@/lib/dal"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { appendEmailFooter } from "@/lib/email-footer"
+
+// Handle GET requests (e.g., from prefetch, crawlers) with proper error
+export async function GET() {
+  return NextResponse.json(
+    { error: "Method not allowed. Use POST to subscribe." },
+    { status: 405 }
+  )
+}
 
 const REQUEST_SPACING_MS = 650
 const WELCOME_EMAIL_RETRY_DELAY_MS = 1200
@@ -22,9 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     if (!resendConfig?.key) {
       return NextResponse.json(
@@ -36,7 +42,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const resend = new Resend(decrypt(resendConfig.key))
+    const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+    if (needsRotation) {
+      await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
+    }
+    const resend = new Resend(plaintext)
     const body = await request.json()
     const subscribeSchema = z.object({
       email: z.string().trim().email(),
@@ -47,31 +57,23 @@ export async function POST(request: NextRequest) {
     let welcomeEmailError: string | null = null
 
     try {
-      const audienceName = "Website Subscribers"
-      const audiences = await resend.audiences.list()
-      if (audiences.error || !audiences.data?.data) {
-        throw new Error("Failed to fetch audiences from Resend")
-      }
+      // Create contact in Resend without adding to a specific segment
+      // Resend's new contacts API (2024) allows creating contacts without an audienceId
+      const contactResult = await resend.contacts.create({ email })
 
-      let audienceId =
-        audiences.data.data.find((audience) => audience.name === audienceName)?.id ||
-        audiences.data.data[0]?.id
-
-      if (!audienceId) {
-        await sleep(REQUEST_SPACING_MS)
-        const createdAudience = await resend.audiences.create({ name: audienceName })
-        if (createdAudience.error || !createdAudience.data?.id) {
-          throw new Error("Failed to create Resend audience")
+      // Check if contact creation failed (but not for "already exists" which is OK)
+      if (contactResult.error) {
+        const errorMessage = contactResult.error.message?.toLowerCase() || ""
+        // If contact already exists, that's fine - continue to welcome email
+        if (!errorMessage.includes("already") && !errorMessage.includes("exists") && !errorMessage.includes("duplicate")) {
+          console.error("Failed to create contact:", contactResult.error)
+          throw new Error(contactResult.error.message || "Failed to add contact")
         }
-        audienceId = createdAudience.data.id
+        // Contact already exists - this is OK, user might just want another welcome email
+        console.log("Contact already exists:", email)
       }
 
-      await sleep(REQUEST_SPACING_MS)
-      await resend.contacts.create({ email, audienceId })
-
-      const welcomeTemplate = await prisma.emailTemplate.findUnique({
-        where: { type: "welcome" },
-      })
+      const welcomeTemplate = await findEmailTemplateByType("welcome")
 
       if (welcomeTemplate?.enabled) {
         if (!welcomeTemplate.html) {
@@ -85,14 +87,20 @@ export async function POST(request: NextRequest) {
           const htmlWithFooter = appendEmailFooter(welcomeTemplate.html, {
             email,
             includeUnsubscribe: true,
-            origin: process.env.NEXTAUTH_URL,
+            origin: process.env.NEXT_PUBLIC_BASE_URL,
           })
 
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || ""
+          const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}`
           const emailPayload = {
             from: `${fromName} <${fromEmail}>`,
             to: email,
             subject: welcomeTemplate.subject || "Welcome to cucina labs",
             html: htmlWithFooter,
+            headers: {
+              "List-Unsubscribe": `<${unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
           }
 
           for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -134,7 +142,11 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      console.error("Failed to add to Resend:", resendError)
+      console.error("Failed to add to Resend:", {
+        error: resendError,
+        message,
+        email,
+      })
       return NextResponse.json(
         {
           error: "We couldn't add you right now. Please try again in a minute.",

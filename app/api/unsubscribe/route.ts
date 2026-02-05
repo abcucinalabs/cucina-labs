@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
-import { decrypt } from "@/lib/encryption"
+import { findApiKeyByService, updateApiKey, updateSubscribersByEmail } from "@/lib/dal"
+import { decryptWithMetadata, encrypt } from "@/lib/encryption"
 import { Resend } from "resend"
 import crypto from "crypto"
 import { z } from "zod"
@@ -25,8 +25,7 @@ export async function POST(request: NextRequest) {
     const normalizedEmail = email.trim().toLowerCase()
 
     if (token) {
-      // Use UNSUBSCRIBE_SECRET if available, fallback to NEXTAUTH_SECRET
-      const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+      const secret = process.env.UNSUBSCRIBE_SECRET || ""
 
       // Verify token with expiration check
       let expectedToken: string
@@ -67,15 +66,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Get Resend API key from database
-    const resendConfig = await prisma.apiKey.findUnique({
-      where: { service: "resend" },
-    })
+    const resendConfig = await findApiKeyByService("resend")
 
     let unsubscribedInResend = false
 
     if (resendConfig && resendConfig.key) {
       try {
-        const resendApiKey = decrypt(resendConfig.key)
+        const { plaintext, needsRotation } = decryptWithMetadata(resendConfig.key)
+        if (needsRotation) {
+          await updateApiKey(resendConfig.id, { key: encrypt(plaintext) })
+        }
+        const resendApiKey = plaintext
         const resend = new Resend(resendApiKey)
 
         // Get all audiences to find the contact
@@ -127,10 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update local database status
-    await prisma.subscriber.updateMany({
-      where: { email },
-      data: { status: "unsubscribed" },
-    })
+    await updateSubscribersByEmail(email, { status: "unsubscribed" })
 
     return NextResponse.json({
       success: true,

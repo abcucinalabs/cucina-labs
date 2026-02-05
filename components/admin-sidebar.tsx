@@ -2,77 +2,148 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut } from "next-auth/react"
-import { LayoutDashboard, Newspaper, Users, LogOut } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser"
+import { LayoutDashboard, Mail, Database, Settings, LogOut, Bookmark, ChevronsUpDown, Users } from "lucide-react"
 
-const navigation = [
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
+const navGroups = [
   {
-    name: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
+    label: "Newsletter",
+    items: [
+      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Emails", href: "/admin/emails", icon: Mail },
+      { name: "Subscribers", href: "/admin/subscribers", icon: Users },
+    ],
   },
   {
-    name: "News",
-    href: "/admin/news",
-    icon: Newspaper,
+    label: "Content",
+    items: [
+      { name: "Saved Content", href: "/admin/saved-content", icon: Bookmark },
+      { name: "Content Sources", href: "/admin/content-sources", icon: Database },
+    ],
   },
   {
-    name: "Users",
-    href: "/admin/users",
-    icon: Users,
+    label: "Configuration",
+    items: [
+      { name: "Settings", href: "/admin/settings", icon: Settings },
+    ],
   },
 ]
 
-export function AdminSidebar() {
+export function AdminSidebar({ email }: { email: string }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const initials = email
+    .split("@")[0]
+    .split(/[._-]/)
+    .map((s) => s[0]?.toUpperCase())
+    .join("")
+    .slice(0, 2)
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 border-r border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)]">
-      <div className="flex h-full flex-col">
-        {/* Logo area */}
-        <div className="flex h-16 items-center border-b border-[var(--border-default)] px-6">
-          <span className="text-lg text-foreground">
+    <Sidebar collapsible="icon" variant="inset">
+      <SidebarHeader className="p-0">
+        <div className="flex h-12 items-center px-4 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+          <span className="text-base group-data-[collapsible=icon]:hidden" style={{ fontFamily: 'Arial, sans-serif' }}>
             cucina <span className="font-bold">labs</span>
           </span>
+          <span className="text-base hidden group-data-[collapsible=icon]:inline" style={{ fontFamily: 'Arial, sans-serif' }}>
+            c<span className="font-bold">l</span>
+          </span>
         </div>
+      </SidebarHeader>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1">
-          {navigation.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
-            
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-[var(--radius-lg)] px-4 py-3 text-sm font-medium transition-all",
-                  isActive
-                    ? "bg-[var(--accent-primary-light)] text-[#0D0D0D] border border-[rgba(155,242,202,0.8)]"
-                    : "text-[color:var(--text-secondary)] hover:text-foreground hover:bg-[var(--bg-muted)]"
-                )}
+      <SidebarContent>
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))
+
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                        <Link href={item.href}>
+                          <item.icon />
+                          <span>{item.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarFallback className="rounded-lg bg-primary text-primary-foreground text-xs">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate text-xs text-muted-foreground">{email}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                side="bottom"
+                align="end"
+                sideOffset={4}
               >
-                <item.icon className="h-5 w-5" />
-                {item.name}
-              </Link>
-            )
-          })}
-        </nav>
-
-        {/* Logout */}
-        <div className="border-t border-[var(--border-default)] p-4">
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-3 w-full rounded-[var(--radius-lg)] px-4 py-3 text-sm font-medium text-[color:var(--text-secondary)] hover:text-foreground hover:bg-[var(--bg-muted)] transition-all"
-          >
-            <LogOut className="h-5 w-5" />
-            Logout
-          </button>
-        </div>
-      </div>
-    </div>
+                <DropdownMenuItem
+                  className="focus:bg-[rgba(60,53,242,0.10)] focus:text-[#3c35f2]"
+                  onClick={async () => {
+                    const supabase = createSupabaseBrowserClient()
+                    await supabase.auth.signOut()
+                    router.push("/login")
+                    router.refresh()
+                  }}
+                >
+                  <LogOut />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </Sidebar>
   )
 }

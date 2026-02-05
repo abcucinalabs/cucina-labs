@@ -22,7 +22,7 @@ export function MetricCard({
 }) {
   const getTrendColor = (direction?: TrendDirection) => {
     if (!direction || direction === "neutral") return "text-[color:var(--text-secondary)]"
-    return direction === "up" ? "text-emerald-600" : "text-rose-500"
+    return direction === "up" ? "text-foreground" : "text-red-500/80"
   }
 
   const getTrendIcon = (direction?: TrendDirection) => {

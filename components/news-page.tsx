@@ -19,7 +19,7 @@ export function NewsPage() {
       </div>
 
       <Tabs defaultValue="integrations" className="space-y-6">
-        <TabsList>
+        <TabsList className="w-full flex-wrap gap-2 overflow-x-auto sm:flex-nowrap sm:gap-1">
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="ingestion">Ingestion</TabsTrigger>
           <TabsTrigger value="sequences">Sequences</TabsTrigger>

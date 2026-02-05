@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findNewsletterTemplateById, updateNewsletterTemplate, deleteNewsletterTemplate, clearDefaultNewsletterTemplates, countSequencesByTemplateId } from "@/lib/dal"
 
 export const dynamic = 'force-dynamic'
 
@@ -10,14 +9,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.newsletterTemplate.findUnique({
-      where: { id: params.id },
-    })
+    const template = await findNewsletterTemplateById(params.id)
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
@@ -38,13 +35,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { name, description, html, isDefault } = body
+    const { name, description, html, isDefault, includeFooter } = body
 
     if (!name || !html) {
       return NextResponse.json(
@@ -54,10 +51,7 @@ export async function PUT(
     }
 
     if (isDefault === true) {
-      await prisma.newsletterTemplate.updateMany({
-        where: { isDefault: true, id: { not: params.id } },
-        data: { isDefault: false }
-      })
+      await clearDefaultNewsletterTemplates(params.id)
     }
 
     const data: {
@@ -65,6 +59,7 @@ export async function PUT(
       description?: string | null
       html: string
       isDefault?: boolean
+      includeFooter?: boolean
     } = {
       name,
       html,
@@ -75,10 +70,11 @@ export async function PUT(
       data.isDefault = isDefault
     }
 
-    const template = await prisma.newsletterTemplate.update({
-      where: { id: params.id },
-      data,
-    })
+    if (typeof includeFooter === "boolean") {
+      data.includeFooter = includeFooter
+    }
+
+    const template = await updateNewsletterTemplate(params.id, data)
 
     return NextResponse.json(template)
   } catch (error) {
@@ -95,14 +91,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.newsletterTemplate.findUnique({
-      where: { id: params.id },
-    })
+    const template = await findNewsletterTemplateById(params.id)
 
     if (!template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
@@ -115,9 +109,7 @@ export async function DELETE(
       )
     }
 
-    const usageCount = await prisma.sequence.count({
-      where: { templateId: params.id },
-    })
+    const usageCount = await countSequencesByTemplateId(params.id)
 
     if (usageCount > 0) {
       return NextResponse.json(
@@ -130,9 +122,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.newsletterTemplate.delete({
-      where: { id: params.id },
-    })
+    await deleteNewsletterTemplate(params.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

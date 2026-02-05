@@ -1,18 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { DayPicker } from "@/components/ui/day-picker"
-import { Plus, Trash2, Play, RotateCcw } from "lucide-react"
+import { Plus, Trash2, Play, Settings } from "lucide-react"
 
 const timezones = [
   { value: "America/New_York", label: "Eastern Time (ET)" },
@@ -31,8 +31,7 @@ export function IngestionTab() {
     time: "09:00",
     timezone: "America/New_York",
     timeFrame: 72,
-    systemPrompt: "",
-    userPrompt: "",
+    promptKey: "ingestion",
   })
   const [newSource, setNewSource] = useState({ name: "", url: "", category: "" })
   const [openDialog, setOpenDialog] = useState(false)
@@ -67,8 +66,7 @@ export function IngestionTab() {
             time: data.time || "09:00",
             timezone: data.timezone || "America/New_York",
             timeFrame: data.timeFrame || 72,
-            systemPrompt: data.systemPrompt || "",
-            userPrompt: data.userPrompt || "",
+            promptKey: data.promptKey || "ingestion",
           })
         }
       }
@@ -142,26 +140,18 @@ export function IngestionTab() {
       await fetch("/api/ingestion/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          schedule: config.schedule,
+          time: config.time,
+          timezone: config.timezone,
+          timeFrame: config.timeFrame,
+        }),
       })
       alert("Configuration saved!")
     } catch (error) {
       console.error("Failed to save config:", error)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleResetPrompts = async () => {
-    if (!confirm("Reset prompts to default values? This will overwrite your current prompts.")) return
-    try {
-      const response = await fetch("/api/ingestion/config/reset", { method: "POST" })
-      if (response.ok) {
-        fetchConfig()
-        alert("Prompts reset to defaults!")
-      }
-    } catch (error) {
-      console.error("Failed to reset prompts:", error)
     }
   }
 
@@ -175,14 +165,14 @@ export function IngestionTab() {
       {/* RSS Sources Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle>RSS Sources</CardTitle>
               <CardDescription>Manage your RSS feed sources for article ingestion</CardDescription>
             </div>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="w-full sm:w-auto">
                   <Plus className="mr-2 h-4 w-4" />
                   Add RSS Source
                 </Button>
@@ -244,48 +234,50 @@ export function IngestionTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rssSources.map((source) => (
-                <TableRow key={source.id}>
-                  <TableCell className="font-medium">
-                    {source.name}
-                    {source.isDefault && (
-                      <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{source.category || "Uncategorized"}</Badge>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-muted-foreground">{source.url}</TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={source.enabled}
-                      onCheckedChange={(checked) => handleToggle(source.id, checked)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(source.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>URL</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rssSources.map((source) => (
+                  <TableRow key={source.id}>
+                    <TableCell className="font-medium">
+                      {source.name}
+                      {source.isDefault && (
+                        <Badge variant="outline" className="ml-2 text-xs">Default</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{source.category || "Uncategorized"}</Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground">{source.url}</TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={source.enabled}
+                        onCheckedChange={(checked) => handleToggle(source.id, checked)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(source.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -298,16 +290,16 @@ export function IngestionTab() {
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <Label>Select Days</Label>
-            <DayPicker 
-              value={config.schedule} 
-              onChange={(days) => setConfig({ ...config, schedule: days })} 
+            <DayPicker
+              value={config.schedule}
+              onChange={(days) => setConfig({ ...config, schedule: days })}
             />
           </div>
-          
-          <div className="grid grid-cols-3 gap-4">
+
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <Label>Time</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Select
                   value={hour12.toString().padStart(2, "0")}
                   onValueChange={(h) => {
@@ -359,14 +351,14 @@ export function IngestionTab() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Timezone</Label>
               <Select
                 value={config.timezone}
                 onValueChange={(tz) => setConfig({ ...config, timezone: tz })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -379,11 +371,11 @@ export function IngestionTab() {
 
             <div className="space-y-2">
               <Label>Time Frame</Label>
-              <Select 
-                value={config.timeFrame.toString()} 
+              <Select
+                value={config.timeFrame.toString()}
                 onValueChange={(v) => setConfig({ ...config, timeFrame: parseInt(v) })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -397,48 +389,39 @@ export function IngestionTab() {
         </CardContent>
       </Card>
 
-      {/* Prompt Configuration */}
+      {/* Prompt Source */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Prompt Configuration</CardTitle>
-              <CardDescription>Configure AI prompts for article selection and curation</CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleResetPrompts}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset to Default
-            </Button>
-          </div>
+          <CardTitle>Prompt Selection</CardTitle>
+          <CardDescription>
+            This agent uses the Ingestion Prompt managed in Settings → Prompts.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="system-prompt">System Prompt</Label>
-            <Textarea
-              id="system-prompt"
-              value={config.systemPrompt}
-              onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
-              placeholder="You are an AI content curator..."
-              rows={8}
-              className="font-mono text-sm"
-            />
+            <Label>Active Prompt</Label>
+            <Select
+              value={config.promptKey}
+              onValueChange={(value) => setConfig({ ...config, promptKey: value })}
+            >
+              <SelectTrigger className="max-w-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ingestion">Ingestion Prompt</SelectItem>
+              </SelectContent>
+            </Select>
             <p className="text-xs text-muted-foreground">
-              {config.systemPrompt.length} characters
+              To edit prompt content or restore defaults, open Settings → Prompts.
             </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="user-prompt">User Prompt</Label>
-            <Textarea
-              id="user-prompt"
-              value={config.userPrompt}
-              onChange={(e) => setConfig({ ...config, userPrompt: e.target.value })}
-              placeholder="Select articles relevant to AI product builders..."
-              rows={12}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              {config.userPrompt.length} characters • Use {"{{ variable }}"} for template variables
-            </p>
+          <div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Open Prompt Settings
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -449,12 +432,12 @@ export function IngestionTab() {
           <CardTitle>Test & Save</CardTitle>
           <CardDescription>Test the ingestion workflow or save your configuration</CardDescription>
         </CardHeader>
-        <CardContent className="flex gap-4">
-          <Button onClick={handleTestIngestion} variant="outline" disabled={isTesting} isLoading={isTesting}>
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          <Button onClick={handleTestIngestion} variant="outline" disabled={isTesting} isLoading={isTesting} className="w-full sm:w-auto">
             <Play className="mr-2 h-4 w-4" />
             Run Test Ingestion
           </Button>
-          <Button onClick={handleSaveConfig} disabled={isLoading} isLoading={isLoading}>
+          <Button onClick={handleSaveConfig} disabled={isLoading} isLoading={isLoading} className="w-full sm:w-auto">
             Save Configuration
           </Button>
         </CardContent>

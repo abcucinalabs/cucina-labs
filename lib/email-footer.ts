@@ -29,10 +29,6 @@ export function generateEmailFooter(options: FooterOptions): string {
   const { email, includeUnsubscribe = true, origin } = options
 
   const currentYear = new Date().getFullYear()
-  const businessAddress = process.env.BUSINESS_ADDRESS || "123 Main Street"
-  const businessCity = process.env.BUSINESS_CITY || "San Francisco"
-  const businessState = process.env.BUSINESS_STATE || "CA"
-  const businessZip = process.env.BUSINESS_ZIP || "94102"
 
   let unsubscribeSection = ""
 
@@ -41,22 +37,23 @@ export function generateEmailFooter(options: FooterOptions): string {
     const normalizedEmail = email.trim().toLowerCase()
     const expirationDate = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
     const timestamp = Math.floor(expirationDate.getTime() / 1000)
-    const secret = process.env.UNSUBSCRIBE_SECRET || process.env.NEXTAUTH_SECRET || ""
+    const secret = process.env.UNSUBSCRIBE_SECRET || ""
     const payload = `${normalizedEmail}:${timestamp}`
     const token = crypto.createHmac("sha256", secret).update(payload).digest("hex")
 
-    const baseUrl = origin || process.env.NEXTAUTH_URL || ""
+    const baseUrl = origin || process.env.NEXT_PUBLIC_BASE_URL || ""
     const unsubscribeUrl = `${baseUrl}/unsubscribe?email=${encodeURIComponent(email)}&token=${token}&exp=${timestamp}`
 
+    const preferencesUrl = `${baseUrl}/preferences?email=${encodeURIComponent(email)}&token=${token}&exp=${timestamp}`
+
     unsubscribeSection = `
-      <tr>
-        <td style="padding-bottom: 16px;">
-          <a href="${unsubscribeUrl}" style="display: inline-block; color: #ffffff; background-color: #3c35f2; text-decoration: none; font-weight: 600; font-size: 13px; padding: 10px 24px; border-radius: 8px; margin-bottom: 8px;">Unsubscribe</a>
-          <p style="margin: 8px 0 0; color: rgba(13, 13, 13, 0.5); font-size: 11px;">
-            You can unsubscribe at any time by clicking the link above.
-          </p>
-        </td>
-      </tr>`
+            <tr>
+              <td>
+                <a href="${preferencesUrl}" style="color: rgba(13, 13, 13, 0.5); text-decoration: underline; font-size: 12px;">Update preferences</a>
+                <span style="color: rgba(13, 13, 13, 0.3); font-size: 12px;">&nbsp;&middot;&nbsp;</span>
+                <a href="${unsubscribeUrl}" style="color: rgba(13, 13, 13, 0.5); text-decoration: underline; font-size: 12px;">Unsubscribe</a>
+              </td>
+            </tr>`
   }
 
   return `
@@ -66,22 +63,17 @@ export function generateEmailFooter(options: FooterOptions): string {
         <td style="padding: 24px 0; text-align: center;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 480px; margin: 0 auto;">
             <tr>
-              <td style="padding-bottom: 16px;">
-                <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 13px; line-height: 1.6;">
+              <td style="padding-bottom: 8px;">
+                <p style="margin: 0; color: rgba(13, 13, 13, 0.5); font-size: 12px; line-height: 1.6;">
                   You are receiving this email because you subscribed to <strong>cucina labs</strong>.
                 </p>
               </td>
             </tr>
             ${unsubscribeSection}
             <tr>
-              <td style="padding-top: 12px; border-top: 1px solid rgba(0, 0, 0, 0.06);">
-                <p style="margin: 0 0 8px; color: rgba(13, 13, 13, 0.6); font-size: 12px; line-height: 1.6;">
-                  <strong>cucina labs</strong><br>
-                  ${businessAddress}<br>
-                  ${businessCity}, ${businessState} ${businessZip}
-                </p>
-                <p style="margin: 8px 0 0; color: rgba(13, 13, 13, 0.5); font-size: 11px;">
-                  © ${currentYear} cucina labs. All rights reserved.
+              <td style="padding-top: 8px;">
+                <p style="margin: 0; color: rgba(13, 13, 13, 0.4); font-size: 11px;">
+                  &copy; ${currentYear} cucina labs
                 </p>
               </td>
             </tr>
@@ -132,16 +124,6 @@ export function validateEmailCompliance(html: string): string[] {
   // Check for unsubscribe link
   if (!lowerHtml.includes("unsubscribe")) {
     missing.push("Unsubscribe link")
-  }
-
-  // Check for physical address indicators
-  const hasAddress =
-    lowerHtml.includes("street") ||
-    lowerHtml.includes("address") ||
-    /\d{5}(-\d{4})?/.test(html) // ZIP code pattern
-
-  if (!hasAddress) {
-    missing.push("Physical business address")
   }
 
   // Check for sender identification

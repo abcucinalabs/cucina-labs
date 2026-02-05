@@ -1,33 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findAllSequences, createSequence } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
 const createSequenceSchema = z.object({
   name: z.string().min(1),
+  subject: z.string().optional(),
   audienceId: z.string().min(1),
+  topicId: z.string().optional(),
   dayOfWeek: z.array(z.string()),
   time: z.string(),
   timezone: z.string(),
   systemPrompt: z.string().optional(),
-  userPrompt: z.string().min(1),
+  userPrompt: z.string().optional(),
   templateId: z.string().optional(),
+  promptKey: z.string().optional(),
+  contentSources: z.array(z.string()).optional().default([]),
   status: z.enum(["draft", "active", "paused"]).default("draft"),
 })
 
+function isMissingSubjectColumnError(error: any) {
+  return (
+    error?.code === "PGRST204" &&
+    typeof error?.message === "string" &&
+    error.message.includes("'subject' column")
+  )
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const sequences = await prisma.sequence.findMany({
-      orderBy: { createdAt: "desc" },
-    })
+    const sequences = await findAllSequences()
 
     return NextResponse.json(sequences)
   } catch (error) {
@@ -41,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -52,12 +61,23 @@ export async function POST(request: NextRequest) {
     // Generate cron expression
     const schedule = generateCronExpression(data.dayOfWeek, data.time)
 
-    const sequence = await prisma.sequence.create({
-      data: {
+    let sequence: any
+    try {
+      sequence = await createSequence({
         ...data,
         schedule,
-      },
-    })
+      })
+    } catch (error: any) {
+      if (isMissingSubjectColumnError(error) && "subject" in data) {
+        const { subject: _subject, ...fallbackData } = data
+        sequence = await createSequence({
+          ...fallbackData,
+          schedule,
+        })
+      } else {
+        throw error
+      }
+    }
 
     return NextResponse.json(sequence, { status: 201 })
   } catch (error) {
@@ -98,4 +118,3 @@ function generateCronExpression(daysOfWeek: string[], time: string): string {
     return `${minutes} ${hours} * * ${dayNumbers}`
   }
 }
-

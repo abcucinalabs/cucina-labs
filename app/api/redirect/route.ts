@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
-import { prisma } from "@/lib/db"
+import { findAllRssSourceUrls, findAllArticleLinks, findAllShortLinkTargets } from "@/lib/dal"
 import Parser from "rss-parser"
 
 // Allowlist of domains that are permitted for redirects
@@ -61,16 +61,14 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
 
   const domains = new Set<string>()
 
-  const rssSources = await prisma.rssSource.findMany({
-    select: { url: true },
-  })
+  const rssSourceUrls = await findAllRssSourceUrls()
 
   const rssFeedUrls: string[] = []
-  for (const source of rssSources) {
+  for (const url of rssSourceUrls) {
     try {
-      const hostname = new URL(source.url).hostname
+      const hostname = new URL(url).hostname
       domains.add(normalizeHostname(hostname))
-      rssFeedUrls.push(source.url)
+      rssFeedUrls.push(url)
     } catch {
       // Ignore invalid URLs stored in DB
     }
@@ -99,10 +97,7 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
 
   // Include ALL article link domains (covers feeds that point to other domains).
   // Since all articles come from trusted RSS sources, we trust their domains.
-  const allArticles = await prisma.article.findMany({
-    select: { sourceLink: true, imageLink: true },
-    where: { sourceLink: { not: "" } },
-  })
+  const allArticles = await findAllArticleLinks()
 
   for (const article of allArticles) {
     const candidates = [article.sourceLink, article.imageLink].filter(Boolean) as string[]
@@ -117,13 +112,11 @@ async function getDynamicAllowedDomains(): Promise<Set<string>> {
   }
 
   // Include short link target domains (all short links are for trusted content).
-  const shortLinks = await prisma.shortLink.findMany({
-    select: { targetUrl: true },
-  })
+  const shortLinkTargets = await findAllShortLinkTargets()
 
-  for (const link of shortLinks) {
+  for (const targetUrl of shortLinkTargets) {
     try {
-      const hostname = new URL(link.targetUrl).hostname
+      const hostname = new URL(targetUrl).hostname
       domains.add(normalizeHostname(hostname))
     } catch {
       // Ignore invalid URLs
@@ -162,8 +155,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Security check: Only allow HTTPS (no HTTP, javascript:, data:, etc.)
-    if (urlObj.protocol !== 'https:' && urlObj.protocol !== 'http:') {
-      console.warn(`Blocked redirect to non-HTTP(S) protocol: ${urlObj.protocol}`)
+    if (urlObj.protocol !== 'https:') {
+      console.warn(`Blocked redirect to non-HTTPS protocol: ${urlObj.protocol}`)
       return NextResponse.json({ error: "Invalid URL protocol" }, { status: 400 })
     }
 

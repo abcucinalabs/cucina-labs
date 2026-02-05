@@ -1,40 +1,42 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { getAuthSession } from "@/lib/auth"
+import { findEmailTemplateWithNewsletterTemplate, upsertEmailTemplate } from "@/lib/dal"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
 
 const updateTemplateSchema = z.object({
-  html: z.string(),
   enabled: z.boolean(),
   subject: z.string().optional(),
+  html: z.string().optional(),
+  templateId: z.string().nullable().optional(),
 })
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const template = await prisma.emailTemplate.findUnique({
-      where: { type: "welcome" },
-    })
+    const template = await findEmailTemplateWithNewsletterTemplate("welcome")
 
     if (!template) {
       return NextResponse.json({
-        html: "",
         enabled: false,
         subject: "Welcome to cucina labs",
+        html: "",
+        templateId: null,
+        templateName: null,
       })
     }
 
     return NextResponse.json({
-      html: template.html,
       enabled: template.enabled,
       subject: template.subject || "Welcome to cucina labs",
+      html: template.html || "",
+      templateId: template.templateId,
+      templateName: template.template?.name || null,
     })
   } catch (error) {
     console.error("Failed to fetch template:", error)
@@ -47,23 +49,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getAuthSession()
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { html, enabled, subject } = updateTemplateSchema.parse(body)
+    const { enabled, subject, html, templateId } = updateTemplateSchema.parse(body)
 
-    const template = await prisma.emailTemplate.upsert({
-      where: { type: "welcome" },
-      update: { html, enabled, subject },
-      create: {
-        type: "welcome",
-        html,
-        enabled,
-        subject,
-      },
+    const template = await upsertEmailTemplate("welcome", {
+      enabled,
+      subject,
+      html: html || "",
+      templateId: templateId ?? undefined,
     })
 
     return NextResponse.json(template)
@@ -77,9 +75,8 @@ export async function POST(request: NextRequest) {
 
     console.error("Failed to save template:", error)
     return NextResponse.json(
-      { error: "Failed to save template" },
+      { error: "Failed to save template", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
 }
-

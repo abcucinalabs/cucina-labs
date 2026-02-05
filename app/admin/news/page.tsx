@@ -1,5 +1,6 @@
-import { NewsPage } from "@/components/news-page"
+import { redirect } from "next/navigation"
 
 export default function AdminNewsPage() {
-  return <NewsPage />
+  // Keep legacy /admin/news URL working by sending users to current emails workspace.
+  redirect("/admin/emails")
 }

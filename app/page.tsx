@@ -4,11 +4,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <div className="relative min-h-screen overflow-hidden">
-        {/* Background Still */}
-        <div
-          className="absolute inset-0 bg-cover bg-center grayscale"
-          style={{ backgroundImage: "url('/video-background-2-still.png')" }}
-        />
+        {/* Background Video */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
+            style={{ backgroundImage: "url('/video-background-2-still.png')" }}
+            aria-hidden="true"
+          />
+        </div>
 
         {/* Content */}
         <div className="relative z-10 min-h-screen flex flex-col">
@@ -34,12 +37,9 @@ export default function Home() {
               <p className="text-white/60 text-xs sm:text-sm">
                 © {new Date().getFullYear()} cucina <span className="font-bold">labs</span>
               </p>
-              <a
-                href="/login"
-                className="text-white/60 hover:text-[color:var(--accent-primary)] text-xs sm:text-sm transition-colors"
-              >
-                Admin
-              </a>
+              <span className="text-white/60 text-xs sm:text-sm">
+                All rights reserved
+              </span>
             </div>
           </footer>
         </div>
