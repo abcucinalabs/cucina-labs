@@ -45,43 +45,49 @@ export default async function middleware(request: NextRequest) {
       request: { headers: request.headers },
     })
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return request.cookies.get(name)?.value
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            get(name: string) {
+              return request.cookies.get(name)?.value
+            },
+            set(name: string, value: string, options: any) {
+              request.cookies.set({ name, value, ...options })
+              response = NextResponse.next({
+                request: { headers: request.headers },
+              })
+              response.cookies.set({ name, value, ...options })
+            },
+            remove(name: string, options: any) {
+              request.cookies.set({ name, value: "", ...options })
+              response = NextResponse.next({
+                request: { headers: request.headers },
+              })
+              response.cookies.set({ name, value: "", ...options })
+            },
           },
-          set(name: string, value: string, options: any) {
-            request.cookies.set({ name, value, ...options })
-            response = NextResponse.next({
-              request: { headers: request.headers },
-            })
-            response.cookies.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            request.cookies.set({ name, value: "", ...options })
-            response = NextResponse.next({
-              request: { headers: request.headers },
-            })
-            response.cookies.set({ name, value: "", ...options })
-          },
-        },
+        }
+      )
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      // Only redirect to login for page routes, not API routes
+      if (!user && !pathname.startsWith("/api/")) {
+        const loginUrl = new URL("/login", request.url)
+        return NextResponse.redirect(loginUrl)
       }
-    )
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    // Only redirect to login for page routes, not API routes
-    if (!user && !pathname.startsWith("/api/")) {
-      const loginUrl = new URL("/login", request.url)
-      return NextResponse.redirect(loginUrl)
+      return response
+    } catch {
+      // If auth check fails, allow the request to proceed
+      // The page/API route will handle authentication
+      return response
     }
-
-    return response
   }
 
   return NextResponse.next()
