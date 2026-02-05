@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { rateLimit, RateLimitPresets } from "@/lib/rate-limit"
 import { findAllRssSourceUrls, findAllArticleLinks, findAllShortLinkTargets } from "@/lib/dal"

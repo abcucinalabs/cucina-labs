@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { NextRequest, NextResponse } from "next/server"
 import { findApiKeyByService, updateApiKey, updateSubscribersByEmail } from "@/lib/dal"
 import { decryptWithMetadata, encrypt } from "@/lib/encryption"
