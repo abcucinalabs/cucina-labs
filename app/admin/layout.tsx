@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation"
 import { getAuthSession } from "@/lib/auth"
+
+export const dynamic = "force-dynamic"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin-header"
 import { MobileReadonlyBanner } from "@/components/mobile-readonly-banner"
