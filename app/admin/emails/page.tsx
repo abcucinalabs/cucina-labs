@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SequencesTab } from "@/components/tabs/sequences-tab"
 import { AdHocEmailTab } from "@/components/tabs/adhoc-email-tab"

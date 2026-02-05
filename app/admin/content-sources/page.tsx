@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic"
+
 import Link from "next/link"
 import { IngestionTab } from "@/components/tabs/ingestion-tab"
 import { Button } from "@/components/ui/button"
