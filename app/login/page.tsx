@@ -44,13 +44,22 @@ export default function LoginPage() {
       })
 
       if (authError) {
-        setError("Invalid email or password")
+        // Provide more specific error messages
+        if (authError.message?.includes("Invalid login credentials")) {
+          setError("Invalid email or password")
+        } else if (authError.message?.includes("Email not confirmed")) {
+          setError("Please confirm your email address")
+        } else {
+          setError(authError.message || "Authentication failed")
+        }
       } else {
         router.push("/admin/dashboard")
         router.refresh()
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      console.error("Login error:", err)
+      const message = err instanceof Error ? err.message : "Unknown error"
+      setError(`Connection error: ${message}`)
     } finally {
       setIsLoading(false)
     }
