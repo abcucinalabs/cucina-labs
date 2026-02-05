@@ -3,6 +3,7 @@ import { getAuthSession } from "@/lib/auth"
 import { findAllApiKeys, findApiKeyByService, upsertApiKey } from "@/lib/dal"
 import { encrypt } from "@/lib/encryption"
 import { logNewsActivity } from "@/lib/news-activity"
+import { getServiceApiKey } from "@/lib/service-keys"
 import { z } from "zod"
 
 export const dynamic = 'force-dynamic'
@@ -26,31 +27,31 @@ export async function GET(request: NextRequest) {
 
     const apiKeys = await findAllApiKeys()
 
+    // Check if valid API keys exist using the same method as health check
+    const [geminiKey, resendKey] = await Promise.all([
+      getServiceApiKey("gemini"),
+      getServiceApiKey("resend"),
+    ])
+
+    const keysByService = new Map(apiKeys.map((k) => [k.service, k]))
+
     const result: Record<string, any> = {}
-    for (const key of apiKeys) {
-      result[key.service] = {
-        status: key.status,
-        hasKey: !!key.key,
-        // Gemini fields
-        geminiModel: key.geminiModel,
-        // Resend fields
-        resendFromName: key.resendFromName,
-        resendFromEmail: key.resendFromEmail,
-      }
+
+    // Gemini
+    const geminiRecord = keysByService.get("gemini")
+    result.gemini = {
+      status: geminiKey ? "connected" : "disconnected",
+      hasKey: !!geminiKey,
+      geminiModel: geminiRecord?.geminiModel || "gemini-2.5-flash",
     }
 
-    // Add missing services
-    const services = ["gemini", "resend"]
-    for (const service of services) {
-      if (!result[service]) {
-        result[service] = {
-          status: "disconnected",
-          hasKey: false,
-          geminiModel: service === "gemini" ? "gemini-2.5-flash" : undefined,
-          resendFromName: service === "resend" ? 'Adrian & Jimmy from "AI Product Briefing"' : undefined,
-          resendFromEmail: service === "resend" ? "hello@jimmy-iliohan.com" : undefined,
-        }
-      }
+    // Resend
+    const resendRecord = keysByService.get("resend")
+    result.resend = {
+      status: resendKey ? "connected" : "disconnected",
+      hasKey: !!resendKey,
+      resendFromName: resendRecord?.resendFromName || 'Adrian & Jimmy from "AI Product Briefing"',
+      resendFromEmail: resendRecord?.resendFromEmail || "hello@jimmy-iliohan.com",
     }
 
     return NextResponse.json(result)
