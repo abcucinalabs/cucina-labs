@@ -6,7 +6,6 @@ import { CTA } from "@/components/home/cta"
 import { SiteFooter } from "@/components/home/site-footer"
 
 export default function Home() {
-  console.log("[v0] Home page rendering — new design")
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
