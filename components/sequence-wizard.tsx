@@ -162,7 +162,7 @@ export function SequenceWizard({
         const data = await response.json()
         setTemplates(data)
         const defaultTemplate = data.find((template: any) => template.isDefault)
-        if (!selectedTemplateId) {
+        if (!selectedTemplateId && !sequence?.templateId) {
           if (defaultTemplate) {
             setSelectedTemplateId(defaultTemplate.id)
             setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
