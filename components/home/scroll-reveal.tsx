@@ -9,7 +9,7 @@ const defaultTitleClass =
 const defaultDescriptionClass =
   "text-base md:text-lg font-medium mb-2 text-muted-foreground max-w-[400px] leading-relaxed"
 const imageClass =
-  "absolute top-0 right-0 ml-auto w-auto h-full object-cover rounded-2xl transition-opacity duration-500 grayscale"
+  "absolute inset-0 h-full w-full object-cover transition-opacity duration-500 grayscale"
 
 export interface ItemContent {
   title: string
@@ -44,6 +44,7 @@ export default function ScrollRevealContent({
     const totalHeight = containerRef.current.scrollHeight - window.innerHeight
     const scrolled = -rect.top
     const progress = Math.max(0, Math.min(1, scrolled / totalHeight))
+    console.log("[v0] scroll progress:", progress, "rect.top:", rect.top, "totalHeight:", totalHeight)
     setScrollProgress(progress)
   }, [])
 
@@ -54,76 +55,72 @@ export default function ScrollRevealContent({
   }, [handleScroll])
 
   return (
-    <div className={cn("bg-background", className)} ref={containerRef} {...props}>
-      <div className="mx-auto max-w-[90vw]">
-        <div className="relative z-20 mx-auto flex w-full">
-          <div
-            className={cn(
-              "sticky top-0 flex h-screen w-[90%] max-w-[1340px] mx-auto flex-col items-start justify-center"
-            )}
-          >
-            <div className="flex h-full w-full flex-row gap-16 md:gap-24 lg:gap-32 xl:gap-40">
-              <div className="flex h-auto w-full flex-col justify-center gap-10 md:gap-auto lg:w-[50vw]">
-                <PointItem
-                  number="01"
-                  title={contentA.title}
-                  description={contentA.description}
-                  thresholdStart={0}
-                  thresholdEnd={0.33}
-                  scrollProgress={scrollProgress}
-                />
-                <PointItem
-                  number="02"
-                  title={contentB.title}
-                  description={contentB.description}
-                  thresholdStart={0.33}
-                  thresholdEnd={0.66}
-                  scrollProgress={scrollProgress}
-                />
-                <PointItem
-                  number="03"
-                  title={contentC.title}
-                  description={contentC.description}
-                  thresholdStart={0.66}
-                  thresholdEnd={1}
-                  scrollProgress={scrollProgress}
-                />
-              </div>
-              <div className="relative hidden h-full w-[50vw] flex-col items-center justify-center lg:flex">
-                <Image
-                  width={contentA.image.width}
-                  height={contentA.image.height}
-                  src={contentA.image.url}
-                  alt={contentA.image.alt}
-                  className={cn(
-                    imageClass,
-                    scrollProgress > -1 ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <Image
-                  width={contentB.image.width}
-                  height={contentB.image.height}
-                  src={contentB.image.url}
-                  alt={contentB.image.alt}
-                  className={cn(
-                    imageClass,
-                    scrollProgress > 0.33 ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <Image
-                  width={contentC.image.width}
-                  height={contentC.image.height}
-                  src={contentC.image.url}
-                  alt={contentC.image.alt}
-                  className={cn(
-                    imageClass,
-                    scrollProgress > 0.66 ? "opacity-100" : "opacity-0"
-                  )}
-                />
-              </div>
+    <div className={cn("relative bg-background", className)} ref={containerRef} {...props}>
+      {/* This tall container enables the scroll-driven animation */}
+      <div className="h-[300vh]">
+        <div
+          className="sticky top-0 flex h-screen w-full items-center"
+        >
+          <div className="mx-auto flex w-full max-w-[1340px] flex-row gap-16 px-6 md:gap-24 lg:gap-32 lg:px-12 xl:gap-40">
+            <div className="flex w-full flex-col justify-center gap-10 lg:w-1/2">
+              <PointItem
+                number="01"
+                title={contentA.title}
+                description={contentA.description}
+                thresholdStart={0}
+                thresholdEnd={0.33}
+                scrollProgress={scrollProgress}
+              />
+              <PointItem
+                number="02"
+                title={contentB.title}
+                description={contentB.description}
+                thresholdStart={0.33}
+                thresholdEnd={0.66}
+                scrollProgress={scrollProgress}
+              />
+              <PointItem
+                number="03"
+                title={contentC.title}
+                description={contentC.description}
+                thresholdStart={0.66}
+                thresholdEnd={1}
+                scrollProgress={scrollProgress}
+              />
+            </div>
+            <div className="relative hidden h-[70vh] w-1/2 items-center justify-center overflow-hidden rounded-2xl lg:flex">
+              <Image
+                width={contentA.image.width}
+                height={contentA.image.height}
+                src={contentA.image.url}
+                alt={contentA.image.alt}
+                className={cn(
+                  imageClass,
+                  scrollProgress > -1 ? "opacity-100" : "opacity-0"
+                )}
+              />
+              <Image
+                width={contentB.image.width}
+                height={contentB.image.height}
+                src={contentB.image.url}
+                alt={contentB.image.alt}
+                className={cn(
+                  imageClass,
+                  scrollProgress > 0.33 ? "opacity-100" : "opacity-0"
+                )}
+              />
+              <Image
+                width={contentC.image.width}
+                height={contentC.image.height}
+                src={contentC.image.url}
+                alt={contentC.image.alt}
+                className={cn(
+                  imageClass,
+                  scrollProgress > 0.66 ? "opacity-100" : "opacity-0"
+                )}
+              />
             </div>
           </div>
-          <div className="h-[300vh]" />
         </div>
       </div>
     </div>
