@@ -79,9 +79,9 @@ export function SequenceWizard({
     if (open) {
       fetchAudiences()
       fetchTopics()
-      fetchTemplates()
       fetchPrompts()
       if (sequence) {
+        const seqTemplateId = sequence.templateId || ""
         // Load existing sequence data
         setFormData({
           name: sequence.name || "",
@@ -92,21 +92,23 @@ export function SequenceWizard({
           dayOfWeek: sequence.dayOfWeek || [],
           time: sequence.time || "09:00",
           timezone: sequence.timezone || "America/New_York",
-          templateId: sequence.templateId || "",
+          templateId: seqTemplateId,
           promptKey: sequence.promptKey || "daily_insights",
         })
-        setSelectedTemplateId(sequence.templateId || "")
+        setSelectedTemplateId(seqTemplateId)
 
         // Load template HTML if sequence has a templateId
-        if (sequence.templateId) {
-          loadTemplateHtml(sequence.templateId)
+        if (seqTemplateId) {
+          loadTemplateHtml(seqTemplateId)
         } else {
-          // If no templateId, use default template
           setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
         }
+        // Pass the sequence's templateId so fetchTemplates won't override it
+        fetchTemplates(seqTemplateId)
       } else {
         // New sequence: use default template
         setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
+        fetchTemplates("")
       }
       setPreviewData(null)
     }
@@ -155,25 +157,15 @@ export function SequenceWizard({
     }
   }
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (currentTemplateId: string) => {
     try {
       const response = await fetch("/api/newsletter-templates", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
-        const defaultTemplate = data.find((template: any) => template.isDefault)
-        if (!selectedTemplateId && !sequence?.templateId) {
-          if (defaultTemplate) {
-            setSelectedTemplateId(defaultTemplate.id)
-            setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
-            setCustomHtml(defaultTemplate.html || DEFAULT_NEWSLETTER_TEMPLATE)
-          } else if (!sequence) {
-            setSelectedTemplateId(systemDefaultValue)
-            setFormData(prev => ({ ...prev, templateId: "" }))
-            setCustomHtml(DEFAULT_NEWSLETTER_TEMPLATE)
-          }
-        }
-        if (sequence && !sequence.templateId && !selectedTemplateId) {
+        // Only apply a default template if no template was already selected
+        if (!currentTemplateId) {
+          const defaultTemplate = data.find((template: any) => template.isDefault)
           if (defaultTemplate) {
             setSelectedTemplateId(defaultTemplate.id)
             setFormData(prev => ({ ...prev, templateId: defaultTemplate.id }))
