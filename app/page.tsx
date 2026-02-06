@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/home/site-header"
 import { Hero } from "@/components/home/hero"
-import { Features } from "@/components/home/features"
+import { Showcase } from "@/components/home/showcase"
 import { About } from "@/components/home/about"
 import { CTA } from "@/components/home/cta"
 import { SiteFooter } from "@/components/home/site-footer"
@@ -14,7 +14,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6 lg:px-12">
           <div className="h-px w-full bg-border" />
         </div>
-        <Features />
+        <Showcase />
         <div className="mx-auto max-w-7xl px-6 lg:px-12">
           <div className="h-px w-full bg-border" />
         </div>
