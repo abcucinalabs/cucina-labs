@@ -222,8 +222,8 @@ export function SequenceWizard({
 
       if (response.ok) {
         // Refresh the templates list to get updated isDefault flags
-        await fetchTemplates()
         setSelectedTemplateId(data.id)
+        await fetchTemplates(data.id)
         setSaveTemplateDialogOpen(false)
         setNewTemplateName("")
         setSaveAsDefault(false)
