@@ -17,11 +17,9 @@ export async function GET(request: NextRequest) {
 
     const logs = await findNewsActivity(limit)
 
-    return NextResponse.json(logs, {
-      headers: {
-        "Cache-Control": "no-store, max-age=0",
-      },
-    })
+    const response = NextResponse.json(logs)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch news logs:", error)
     return NextResponse.json(

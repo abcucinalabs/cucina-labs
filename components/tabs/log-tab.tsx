@@ -40,7 +40,7 @@ export function LogTab() {
       setError(null)
     }
     try {
-      const response = await fetch("/api/news/logs?limit=100", { cache: "no-store" })
+      const response = await fetch(`/api/news/logs?limit=100&_t=${Date.now()}`, { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setLogs(data)
