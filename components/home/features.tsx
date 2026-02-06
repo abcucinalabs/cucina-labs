@@ -1,23 +1,23 @@
-import { Zap, BookOpen, Utensils } from "lucide-react"
+import { Zap, Blocks, LayoutTemplate } from "lucide-react"
 
 const features = [
   {
     icon: Zap,
     title: "Daily Insights",
     description:
-      "Curated AI news and analysis delivered every day. We cut through the noise so you don't have to.",
+      "The signal in the noise. Every day we distill the most important AI developments, launches, and research into a brief that respects your time and sharpens your edge.",
   },
   {
-    icon: BookOpen,
-    title: "Deep Dives",
+    icon: Blocks,
+    title: "Skills",
     description:
-      "In-depth explorations of AI tools, frameworks, and emerging trends that matter to builders.",
+      "A growing library of production-ready agentic skills you can drop into your stack. Built for composability, tested in real workflows, and ready to ship today.",
   },
   {
-    icon: Utensils,
-    title: "Recipes Coming Soon",
+    icon: LayoutTemplate,
+    title: "Templates",
     description:
-      "Step-by-step guides for building with AI. Practical, tested, and ready to ship.",
+      "Enterprise-grade starter apps for newsletters, content management, CRMs, and more. Skip the boilerplate and go straight to building what matters.",
   },
 ]
 
