@@ -1,49 +1,28 @@
-import { HomeCarousel } from "@/components/home-carousel"
+import { SiteHeader } from "@/components/home/site-header"
+import { Hero } from "@/components/home/hero"
+import { Showcase } from "@/components/home/showcase"
+import { About } from "@/components/home/about"
+import { CTA } from "@/components/home/cta"
+import { SiteFooter } from "@/components/home/site-footer"
 
 export default function Home() {
+  console.log("[v0] Home page rendering - Showcase version")
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      <div className="relative min-h-screen overflow-hidden">
-        {/* Background Video */}
-        <div className="absolute inset-0">
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center grayscale"
-            style={{ backgroundImage: "url('/video-background-2-still.png')" }}
-            aria-hidden="true"
-          />
+    <div className="min-h-screen bg-background text-foreground">
+      <SiteHeader />
+      <main>
+        <Hero />
+        <div className="mx-auto max-w-7xl px-6 lg:px-12">
+          <div className="h-px w-full bg-border" />
         </div>
-
-        {/* Content */}
-        <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Header */}
-          <header className="bg-white py-3 px-4 sm:py-4 sm:px-6 lg:px-12">
-            <div className="max-w-7xl mx-auto">
-              <h1 style={{ fontFamily: 'Arial, sans-serif' }} className="text-lg sm:text-xl text-black">
-                cucina <span className="font-bold">labs</span>
-              </h1>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main className="flex-1 flex items-center">
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-12 lg:py-20">
-              <HomeCarousel />
-            </div>
-          </main>
-
-          {/* Footer */}
-          <footer className="relative z-10 py-4 px-4 sm:py-6 sm:px-6 lg:px-12">
-            <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <p className="text-white/60 text-xs sm:text-sm">
-                © {new Date().getFullYear()} cucina <span className="font-bold">labs</span>
-              </p>
-              <span className="text-white/60 text-xs sm:text-sm">
-                All rights reserved
-              </span>
-            </div>
-          </footer>
+        <Showcase />
+        <div className="mx-auto max-w-7xl px-6 lg:px-12">
+          <div className="h-px w-full bg-border" />
         </div>
-      </div>
+        <About />
+        <CTA />
+      </main>
+      <SiteFooter />
     </div>
   )
 }

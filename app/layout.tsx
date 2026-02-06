@@ -1,14 +1,19 @@
 import type { Metadata, Viewport } from "next"
-import { Instrument_Sans } from "next/font/google"
+import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/components/providers"
 import { PwaRegister } from "@/components/pwa-register"
 
-const instrumentSans = Instrument_Sans({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+})
 
 export const metadata: Metadata = {
-  title: "cucina labs",
-  description: "Curated AI product content for builders",
+  title: "cucina labs — The test kitchen for AI Builders",
+  description:
+    "Fresh insights, emerging trends, and the latest developments in artificial intelligence — served straight to your inbox.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -25,7 +30,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0d0d0d",
+  themeColor: "#0a0a0a",
 }
 
 export default function RootLayout({
@@ -34,8 +39,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={instrumentSans.className}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
+    >
+      <body>
         <div className="ambient-glow--green" />
         <div className="ambient-glow--purple" />
         <div className="relative z-10">

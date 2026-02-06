@@ -91,16 +91,16 @@ export function SignUpForm() {
 
   if (success) {
     return (
-      <div className="max-w-md rounded-[var(--radius-2xl)] border border-white/15 bg-[#0d0d0d]/70 p-4 sm:p-6 shadow-[var(--shadow-md)] backdrop-blur">
+      <div className="max-w-md rounded-lg border border-border bg-secondary p-4 sm:p-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[var(--accent-primary-light)] flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[color:var(--accent-primary-dark)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-border bg-background sm:h-10 sm:w-10">
+            <svg className="h-4 w-4 text-foreground sm:h-5 sm:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <div>
-            <p className="text-white font-medium text-sm sm:text-base">You&apos;re in!</p>
-            <p className="text-white/70 text-xs sm:text-sm">
+            <p className="text-sm font-medium text-foreground sm:text-base">You&apos;re in!</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
               {successMessage || "Check your inbox for confirmation."}
             </p>
           </div>
@@ -112,11 +112,11 @@ export function SignUpForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-md">
       <div className="flex flex-col gap-3 sm:flex-row">
-        <div className="flex-1 relative">
+        <div className="relative flex-1">
           <input
             type="email"
             placeholder="Enter your email"
-            className="w-full h-12 sm:h-14 px-4 sm:px-6 rounded-full border border-white/20 bg-white/5 text-white text-sm sm:text-base placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] focus:border-[var(--accent-primary)] focus:bg-white/10 transition-all duration-300"
+            className="h-12 w-full rounded-lg border border-border bg-secondary px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-foreground focus:outline-none focus:ring-1 focus:ring-foreground sm:px-5 sm:text-base"
             {...register("email")}
           />
         </div>
@@ -124,18 +124,18 @@ export function SignUpForm() {
           type="submit"
           disabled={isSubmitting}
           isLoading={isSubmitting}
-          className="h-12 sm:h-14 px-6 sm:px-8 rounded-full whitespace-nowrap text-sm sm:text-base bg-gradient-to-br from-[var(--accent-primary)] to-[#7ce8b5] text-[#0d0d0d] shadow-[0_12px_24px_-8px_rgba(155,242,202,0.4)] hover:-translate-y-0.5 hover:shadow-[0_16px_30px_-10px_rgba(155,242,202,0.5)] active:translate-y-0"
+          className="h-12 whitespace-nowrap rounded-lg bg-foreground px-6 text-sm font-medium text-background transition-opacity hover:opacity-90 active:opacity-80 sm:px-8 sm:text-base"
         >
           Sign Up
         </Button>
       </div>
 
       {errors.email && (
-        <p className="text-red-300 text-xs sm:text-sm mt-2 sm:mt-3 ml-2 sm:ml-4">{errors.email.message}</p>
+        <p className="ml-1 mt-2 text-xs text-red-400 sm:text-sm">{errors.email.message}</p>
       )}
 
       {error && (
-        <p className="text-red-300 text-xs sm:text-sm mt-2 sm:mt-3 ml-2 sm:ml-4">{error}</p>
+        <p className="ml-1 mt-2 text-xs text-red-400 sm:text-sm">{error}</p>
       )}
     </form>
   )
