@@ -123,7 +123,7 @@ export default function SavedContentAdminPage() {
         method: "DELETE",
       })
       if (res.ok) {
-        loadSavedItems()
+        setSavedItems((prev) => prev.filter((item) => item.id !== id))
       }
     } catch (error) {
       console.error("Failed to delete:", error)

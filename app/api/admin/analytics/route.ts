@@ -403,7 +403,7 @@ export async function GET(request: NextRequest) {
       ? totalArticles / recentNewsletters.length
       : 0
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       period: {
         label: period.label,
         start: start.toISOString(),
@@ -489,6 +489,9 @@ export async function GET(request: NextRequest) {
         })),
       },
     })
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    response.headers.set("Pragma", "no-cache")
+    return response
   } catch (error) {
     console.error("Failed to fetch analytics:", error)
     return NextResponse.json(
