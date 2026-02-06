@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
           metadata: {
             sequenceId: sequence.id,
             sequenceName: sequence.name,
-            schedule: sequence.time,
+            cronSchedule: sequence.schedule,
+            timeColumn: sequence.time,
             timezone: sequence.timezone || "UTC",
             dayOfWeek: sequence.dayOfWeek,
             localTime: scheduleCheck.localTime,
@@ -121,20 +122,54 @@ function checkSchedule(sequence: any): { shouldRun: boolean; localTime: string }
     return { shouldRun: false, localTime: "invalid" }
   }
 
-  const [hours, minutes] = sequence.time.split(":")
+  // Parse time and days from the schedule cron expression (source of truth)
+  // Format: "minute hour * * days" e.g. "00 13 * * 0,5,6"
+  const cronParts = (sequence.schedule || "").split(" ")
+  let scheduleMinute = 0
+  let scheduleHour = 0
+  let scheduleDays: number[] = []
+
+  if (cronParts.length >= 5) {
+    scheduleMinute = parseInt(cronParts[0], 10)
+    scheduleHour = parseInt(cronParts[1], 10)
+    const daysPart = cronParts[4]
+    if (daysPart === "*") {
+      scheduleDays = [0, 1, 2, 3, 4, 5, 6]
+    } else {
+      scheduleDays = daysPart.split(",").map((d: string) => parseInt(d, 10))
+    }
+  } else {
+    // Fallback to sequence.time and sequence.dayOfWeek if no cron schedule
+    const [hours, minutes] = (sequence.time || "09:00").split(":")
+    scheduleHour = parseInt(hours, 10)
+    scheduleMinute = parseInt(minutes, 10)
+  }
+
   const currentDay = weekdayPart.toLowerCase()
   const localTime = `${currentDay} ${hourPart}:${minutePart} ${timeZone}`
 
+  // Map current day name to cron day number
+  const dayNameToNumber: Record<string, number> = {
+    sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+    thursday: 4, friday: 5, saturday: 6,
+  }
+  const currentDayNumber = dayNameToNumber[currentDay]
+
   // Check if today is in the schedule
-  if (!sequence.dayOfWeek.includes(currentDay)) {
-    return { shouldRun: false, localTime }
+  if (cronParts.length >= 5) {
+    if (!scheduleDays.includes(currentDayNumber)) {
+      return { shouldRun: false, localTime }
+    }
+  } else {
+    // Fallback: use dayOfWeek array
+    if (!sequence.dayOfWeek.includes(currentDay)) {
+      return { shouldRun: false, localTime }
+    }
   }
 
   // Check if current time matches (within 5 minutes)
   const currentHour = parseInt(hourPart, 10)
   const currentMinute = parseInt(minutePart, 10)
-  const scheduleHour = parseInt(hours)
-  const scheduleMinute = parseInt(minutes)
 
   const timeDiff = Math.abs(
     currentHour * 60 + currentMinute - (scheduleHour * 60 + scheduleMinute)
