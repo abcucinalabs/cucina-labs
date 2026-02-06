@@ -60,7 +60,7 @@ export default function SavedContentAdminPage() {
 
   const loadSavedItems = async () => {
     try {
-      const res = await fetch("/api/saved-content")
+      const res = await fetch("/api/saved-content", { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setSavedItems(data)

@@ -22,22 +22,26 @@ export async function GET(request: NextRequest) {
     const template = await findEmailTemplateWithNewsletterTemplate("welcome")
 
     if (!template) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         enabled: false,
         subject: "Welcome to cucina labs",
         html: "",
         templateId: null,
         templateName: null,
       })
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return response
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       enabled: template.enabled,
       subject: template.subject || "Welcome to cucina labs",
       html: template.html || "",
       templateId: template.templateId,
       templateName: template.template?.name || null,
     })
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch template:", error)
     return NextResponse.json(

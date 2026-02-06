@@ -115,7 +115,7 @@ export function SequenceWizard({
 
   const fetchAudiences = async () => {
     try {
-      const response = await fetch("/api/resend/audiences")
+      const response = await fetch("/api/resend/audiences", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setAudiences(data)
@@ -127,7 +127,7 @@ export function SequenceWizard({
 
   const fetchTopics = async () => {
     try {
-      const response = await fetch("/api/resend/topics")
+      const response = await fetch("/api/resend/topics", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTopics(data)
@@ -139,7 +139,7 @@ export function SequenceWizard({
 
   const fetchPrompts = async () => {
     try {
-      const response = await fetch("/api/prompts")
+      const response = await fetch("/api/prompts", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setPrompts(
@@ -157,7 +157,7 @@ export function SequenceWizard({
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch("/api/newsletter-templates")
+      const response = await fetch("/api/newsletter-templates", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)
@@ -192,7 +192,7 @@ export function SequenceWizard({
 
   const loadTemplateHtml = async (templateId: string) => {
     try {
-      const response = await fetch(`/api/newsletter-templates/${templateId}`)
+      const response = await fetch(`/api/newsletter-templates/${templateId}`, { cache: "no-store" })
       if (response.ok) {
         const template = await response.json()
         setCustomHtml(template.html || DEFAULT_NEWSLETTER_TEMPLATE)

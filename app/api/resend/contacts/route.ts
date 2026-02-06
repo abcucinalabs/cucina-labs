@@ -76,11 +76,13 @@ export async function GET(request: NextRequest) {
 
     const resendApiKey = await getServiceApiKey("resend")
     if (!resendApiKey) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         contacts: [],
         audiences: [],
         error: "Resend API key not configured. Go to Settings to add your API key."
       })
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return response
     }
 
     // Fetch all audiences, but do not fail the endpoint if this call fails.
@@ -95,11 +97,13 @@ export async function GET(request: NextRequest) {
     } else {
       const errorText = await audiencesResponse.text()
       console.error("Failed to fetch audiences from Resend:", audiencesResponse.status, errorText)
-      return NextResponse.json({
+      const res = NextResponse.json({
         contacts: [],
         audiences: [],
         error: `Failed to fetch from Resend API: ${audiencesResponse.status}. Check your API key in Settings.`
       })
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return res
     }
 
     // Build a map of all contacts, deduplicating by email
@@ -156,10 +160,12 @@ export async function GET(request: NextRequest) {
 
     const enrichedContacts = Array.from(contactMap.values())
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       contacts: enrichedContacts,
       audiences: audiences.map((a) => ({ id: a.id, name: a.name })),
     })
+    res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return res
   } catch (error) {
     console.error("Failed to fetch contacts:", error)
     return NextResponse.json({ error: "Failed to fetch contacts" }, { status: 500 })

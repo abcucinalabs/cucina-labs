@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
 
     const dataSources = await findAllDataSources()
 
-    return NextResponse.json(dataSources)
+    const response = NextResponse.json(dataSources)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch data sources:", error)
     return NextResponse.json(

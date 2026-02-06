@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
       resendFromEmail: resendRecord?.resendFromEmail || "hello@jimmy-iliohan.com",
     }
 
-    return NextResponse.json(result)
+    const response = NextResponse.json(result)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch integrations:", error)
     return NextResponse.json(

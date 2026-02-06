@@ -28,16 +28,20 @@ export async function GET(request: NextRequest) {
     const config = await findIngestionConfig()
 
     if (!config) {
-      return NextResponse.json(null)
+      const response = NextResponse.json(null)
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return response
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       schedule: config.schedule,
       time: config.time,
       timezone: config.timezone,
       timeFrame: config.timeFrame,
       promptKey: "ingestion",
     })
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch config:", error)
     return NextResponse.json(

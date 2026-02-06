@@ -118,7 +118,7 @@ export function AdHocEmailTab() {
   const fetchAudiences = async () => {
     setIsLoadingAudiences(true)
     try {
-      const response = await fetch("/api/resend/audiences")
+      const response = await fetch("/api/resend/audiences", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setAudiences(data)

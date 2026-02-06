@@ -45,7 +45,7 @@ export function IngestionTab() {
 
   const fetchRssSources = async () => {
     try {
-      const response = await fetch("/api/rss-sources")
+      const response = await fetch("/api/rss-sources", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setRssSources(data)
@@ -57,7 +57,7 @@ export function IngestionTab() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch("/api/ingestion/config")
+      const response = await fetch("/api/ingestion/config", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         if (data) {

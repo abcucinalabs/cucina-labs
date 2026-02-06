@@ -55,7 +55,7 @@ export function DragDropBuilder({
 
   const fetchComponents = useCallback(async () => {
     try {
-      const response = await fetch("/api/newsletter-components")
+      const response = await fetch("/api/newsletter-components", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setComponents(data)
@@ -67,7 +67,7 @@ export function DragDropBuilder({
 
   const fetchDataSources = useCallback(async () => {
     try {
-      const response = await fetch("/api/data-sources")
+      const response = await fetch("/api/data-sources", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setDataSources(data)

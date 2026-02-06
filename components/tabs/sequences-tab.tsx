@@ -32,7 +32,7 @@ export function SequencesTab() {
 
   const fetchSequences = async () => {
     try {
-      const response = await fetch("/api/sequences")
+      const response = await fetch("/api/sequences", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setSequences(data)
@@ -44,7 +44,7 @@ export function SequencesTab() {
 
   const fetchAudiences = async () => {
     try {
-      const response = await fetch("/api/resend/audiences")
+      const response = await fetch("/api/resend/audiences", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setAudiences(data)

@@ -23,7 +23,9 @@ export async function GET(request: Request) {
 
     const content = await findSavedContent(filters)
 
-    return NextResponse.json(content)
+    const response = NextResponse.json(content)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch saved content:", error)
     return NextResponse.json(

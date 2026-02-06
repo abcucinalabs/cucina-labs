@@ -37,7 +37,7 @@ export default function SubscribersPage() {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await fetch("/api/resend/contacts", { signal })
+      const response = await fetch("/api/resend/contacts", { signal, cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         if (requestId === requestIdRef.current) {

@@ -129,8 +129,8 @@ export function DashboardTiles() {
     setSequencesLoading(true)
     try {
       const [seqRes, audRes] = await Promise.all([
-        fetch("/api/sequences"),
-        fetch("/api/resend/audiences"),
+        fetch("/api/sequences", { cache: "no-store" }),
+        fetch("/api/resend/audiences", { cache: "no-store" }),
       ])
       if (seqRes.ok) {
         const data = await seqRes.json()

@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
 
     const components = await findAllNewsletterComponents()
 
-    return NextResponse.json(components)
+    const response = NextResponse.json(components)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch newsletter components:", error)
     return NextResponse.json(

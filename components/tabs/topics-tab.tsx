@@ -25,7 +25,7 @@ export function TopicsTab() {
   const fetchTopics = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/resend/topics")
+      const response = await fetch("/api/resend/topics", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTopics(data)

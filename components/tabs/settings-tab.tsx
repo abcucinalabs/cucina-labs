@@ -32,7 +32,7 @@ export function SettingsTab() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch("/api/email-templates/welcome")
+      const response = await fetch("/api/email-templates/welcome", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setWelcomeEmailEnabled(data.enabled)
@@ -46,7 +46,7 @@ export function SettingsTab() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch("/api/newsletter-templates")
+      const response = await fetch("/api/newsletter-templates", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)

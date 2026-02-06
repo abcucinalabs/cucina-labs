@@ -187,7 +187,7 @@ export function TemplatesTab() {
   const fetchTemplates = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/newsletter-templates")
+      const response = await fetch("/api/newsletter-templates", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setTemplates(data)

@@ -93,7 +93,9 @@ export async function GET(request: NextRequest) {
 
     const decryptedKey = await getResendKey()
     if (!decryptedKey) {
-      return NextResponse.json([])
+      const res = NextResponse.json([])
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return res
     }
 
     try {
@@ -101,15 +103,21 @@ export async function GET(request: NextRequest) {
 
       console.log(`Found ${audiences.length} audiences from Resend`)
 
-      return NextResponse.json(buildAudienceOptions(audiences))
+      const res = NextResponse.json(buildAudienceOptions(audiences))
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return res
     } catch (error) {
       console.error("Failed to fetch audiences:", error)
       if (audiencesCache?.data?.length) {
-        return NextResponse.json(buildAudienceOptions(audiencesCache.data))
+        const res = NextResponse.json(buildAudienceOptions(audiencesCache.data))
+        res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+        return res
       }
-      return NextResponse.json([
+      const res = NextResponse.json([
         { id: "resend_all", name: "All Subscribers (Resend)" },
       ])
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return res
     }
   } catch (error) {
     console.error("Failed to fetch audiences:", error)

@@ -39,7 +39,9 @@ export async function GET(request: Request) {
         ? await findSavedContentByIds(newsletter.recipeIds)
         : []
 
-      return NextResponse.json({ ...newsletter, recipes })
+      const response = NextResponse.json({ ...newsletter, recipes })
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return response
     }
 
     // List all newsletters
@@ -47,7 +49,9 @@ export async function GET(request: Request) {
       ? await findWeeklyNewslettersByStatus(status)
       : await findAllWeeklyNewsletters()
 
-    return NextResponse.json(newsletters)
+    const response = NextResponse.json(newsletters)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch weekly newsletters:", error)
     return NextResponse.json(

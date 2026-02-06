@@ -38,7 +38,9 @@ export async function GET(request: NextRequest) {
 
     const sequences = await findAllSequences()
 
-    return NextResponse.json(sequences)
+    const response = NextResponse.json(sequences)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch sequences:", error)
     return NextResponse.json(

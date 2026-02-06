@@ -43,7 +43,7 @@ export function PromptsTab() {
     setIsLoading(true)
     setSaveStatus(null)
     try {
-      const response = await fetch(`/api/prompts?key=${key}`)
+      const response = await fetch(`/api/prompts?key=${key}`, { cache: "no-store" })
       if (!response.ok) throw new Error("Failed to load prompt")
       const data: PromptResponse = await response.json()
       setPromptData(data)

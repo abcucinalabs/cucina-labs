@@ -72,15 +72,21 @@ export async function GET(request: NextRequest) {
 
     const decryptedKey = await getResendKey()
     if (!decryptedKey) {
-      return NextResponse.json([])
+      const res = NextResponse.json([])
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return res
     }
 
     const topics = await fetchTopicsWithRetry(decryptedKey)
-    return NextResponse.json(topics)
+    const response = NextResponse.json(topics)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch topics:", error)
     if (topicsCache?.data) {
-      return NextResponse.json(topicsCache.data)
+      const response = NextResponse.json(topicsCache.data)
+      response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+      return response
     }
     return NextResponse.json({ error: "Failed to fetch topics" }, { status: 500 })
   }

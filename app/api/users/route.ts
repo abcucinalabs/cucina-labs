@@ -55,7 +55,9 @@ export async function GET(request: NextRequest) {
       createdAt: u.created_at,
     }))
 
-    return NextResponse.json(users)
+    const response = NextResponse.json(users)
+    response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate")
+    return response
   } catch (error) {
     console.error("Failed to fetch users:", error)
     return NextResponse.json(

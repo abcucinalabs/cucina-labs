@@ -94,7 +94,7 @@ export function WeeklyNewsletterTab() {
 
   const loadCurrentNewsletter = async () => {
     try {
-      const res = await fetch("/api/weekly-newsletter?current=true")
+      const res = await fetch("/api/weekly-newsletter?current=true", { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setNewsletter(data)
@@ -108,7 +108,7 @@ export function WeeklyNewsletterTab() {
 
   const loadSavedContent = async () => {
     try {
-      const res = await fetch("/api/saved-content?type=reading&used=false")
+      const res = await fetch("/api/saved-content?type=reading&used=false", { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setSavedContent(data)
@@ -120,7 +120,7 @@ export function WeeklyNewsletterTab() {
 
   const loadAudiences = async () => {
     try {
-      const res = await fetch("/api/resend/audiences")
+      const res = await fetch("/api/resend/audiences", { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setAudiences(data)

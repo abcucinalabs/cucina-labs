@@ -44,7 +44,7 @@ export function IntegrationsTab() {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch("/api/integrations")
+      const response = await fetch("/api/integrations", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setIntegrations(data)

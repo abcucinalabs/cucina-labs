@@ -25,7 +25,7 @@ export function AudiencesTab() {
   const fetchAudiences = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/resend/audiences")
+      const response = await fetch("/api/resend/audiences", { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setAudiences(data)
