@@ -11,7 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "cucina labs — The newsletter for AI builders",
+  title: "cucina labs — The test kitchen for AI Builders",
   description:
     "Fresh insights, emerging trends, and the latest developments in artificial intelligence — served straight to your inbox.",
   manifest: "/manifest.webmanifest",

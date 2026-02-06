@@ -24,7 +24,7 @@ export function Hero() {
         </div>
 
         <h1 className="text-balance font-sans text-5xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-6xl md:text-7xl lg:text-8xl">
-          The newsletter for AI builders
+          The test kitchen for AI Builders
         </h1>
 
         <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-8 md:text-xl">
