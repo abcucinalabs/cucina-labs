@@ -44,7 +44,6 @@ export default function ScrollRevealContent({
     const totalHeight = containerRef.current.scrollHeight - window.innerHeight
     const scrolled = -rect.top
     const progress = Math.max(0, Math.min(1, scrolled / totalHeight))
-    console.log("[v0] scroll progress:", progress, "rect.top:", rect.top, "totalHeight:", totalHeight)
     setScrollProgress(progress)
   }, [])
 
