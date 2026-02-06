@@ -94,6 +94,9 @@ export default function SavedContentAdminPage() {
       })
 
       if (res.ok) {
+        const created = await res.json()
+        setSavedItems((prev) => [created, ...prev])
+
         setTitle("")
         setUrl("")
         setDescription("")
@@ -102,7 +105,6 @@ export default function SavedContentAdminPage() {
 
         setShowSuccess(true)
         setTimeout(() => setShowSuccess(false), 2000)
-        loadSavedItems()
       } else {
         const error = await res.json()
         alert(`Failed to save: ${error.error}`)
